@@ -1,8 +1,7 @@
 package psl.xues.util;
 
-import siena.TCPPacketReceiver;
-import java.io.IOException;
 import siena.HierarchicalDispatcher;
+import java.io.IOException;
 
 /**
  * Various Siena utilities.

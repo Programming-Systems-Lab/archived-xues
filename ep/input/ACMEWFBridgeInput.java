@@ -16,6 +16,7 @@ public class ACMEWFBridgeInput extends EPInput implements Notifiable {
   private String sienaHost = null;
   private HierarchicalDispatcher hd = null;
   private int doublePreventer = 0;
+  private int whichHost = 0; // 0 == varick, 1 == amsterdam
   
   public ACMEWFBridgeInput(EPInputInterface ep, Element el) throws
   InstantiationException {
@@ -88,9 +89,9 @@ public class ACMEWFBridgeInput extends EPInput implements Notifiable {
       n2.putAttribute("Level", "IMPLEMENTATION");
       n2.putAttribute("DirectiveID", n.getAttribute("DirectiveID"));
       n2.putAttribute("RepairDirective", "migrateServiceToNewHost");
-      n2.putAttribute("ServiceType", "XXX");
-      n2.putAttribute("Service", "XXX");
-      n2.putAttribute("Owner", "XXX");
+      //      n2.putAttribute("ServiceType", "XXX");
+      //      n2.putAttribute("Service", "XXX");
+      //      n2.putAttribute("Owner", "XXX");
       n2.putAttribute("oldHost", n.getAttribute("OldHost"));
       n2.putAttribute("newHost", n.getAttribute("NewHost"));
       // Publish it
@@ -126,7 +127,7 @@ public class ACMEWFBridgeInput extends EPInput implements Notifiable {
           debug.warn("Repair was unsuccessful");
         }
         n2.putAttribute("NewHost", n.getAttribute("newHost"));
-
+        
         // Finally, publish
         try {
           debug.debug("Publishing repair message" + n2);
@@ -142,7 +143,7 @@ public class ACMEWFBridgeInput extends EPInput implements Notifiable {
     }
     
     // 3. Tailor asks query
-    else if(n.getAttribute("Type") != null && 
+    else if(n.getAttribute("Type") != null &&
     n.getAttribute("Query") != null &&
     n.getAttribute("Level") != null &&
     n.getAttribute("Direction") != null &&
@@ -151,7 +152,7 @@ public class ACMEWFBridgeInput extends EPInput implements Notifiable {
     n.getAttribute("Level").stringValue().equals("ARCHITECTURE") &&
     n.getAttribute("Direction").stringValue().equals("Request")) {
       Notification n2 = new Notification();
-      n2.putAttribute("Type", "TailorQuery");
+/*      n2.putAttribute("Type", "TailorQuery");
       n2.putAttribute("Level", "IMPLEMENTATION");
       n2.putAttribute("Direction", "Request");
       n2.putAttribute("QueryID", n.getAttribute("QueryID"));
@@ -164,7 +165,7 @@ public class ACMEWFBridgeInput extends EPInput implements Notifiable {
         debug.error("Could not publish Tailor lookup", e);
       }
     }
-    
+ 
     // 4. Workflakes replies to query
     else if(n.getAttribute("Type") != null &&
     n.getAttribute("Query") != null &&
@@ -174,25 +175,27 @@ public class ACMEWFBridgeInput extends EPInput implements Notifiable {
     n.getAttribute("Query").stringValue().equals("findBestHostForService") &&
     n.getAttribute("Level").stringValue().equals("IMPLEMENTATION") &&
     n.getAttribute("Direction").stringValue().equals("Reply")) {
-      Notification n2 = new Notification();
+      Notification n2 = new Notification();*/
       n2.putAttribute("Type", "TailorQuery");
       n2.putAttribute("Level", "ARCHITECTURE");
       n2.putAttribute("Direction", "Reply");
       n2.putAttribute("QueryID", n.getAttribute("QueryID"));
       n2.putAttribute("Query", "findBestHostForService");
-      n2.putAttribute("Result", n.getAttribute("Result"));
-      n2.putAttribute("Success", n.getAttribute("Success"));
-      // Sanity check
-      if(n.getAttribute("Success").booleanValue() == false) {
-        debug.warn("Could not queryBestHostForService");
+      if(whichHost == 0) {
+        whichHost = 1;
+        n2.putAttribute("Result", "amsterdam");
+      } else { // whichHost = 1
+        whichHost = 0;
+        n2.putAttribute("Result", "varick");
       }
+      n2.putAttribute("Success", n.getAttribute("true"));
       try {
         debug.debug("Publishing reply message " + n2);
         hd.publish(n2);
-      } catch(Exception e) { 
+      } catch(Exception e) {
         debug.error("Could not publish Workflakes reply", e);
       }
-    }      
+    }
   }
   
   public void notify(Notification[] n) { ; }

@@ -48,21 +48,24 @@ public class SienaInput extends EPInput implements Notifiable {
     sienaPort = el.getAttribute("SienaReceivePort");
     if(sienaHost == null || sienaHost.length() == 0) {
       sienaHost = null; // In case of the length-0 scenario
-      if(sienaPort == null || sienaPort.length() == 0) {
-        sienaPort = null; // In case of the length-0 scenario
-        debug.warn("Siena host not specified, assuming local operation");
-      } else {
-        debug.info("Siena host not specified, will run as Siena master");
-      }
-      
     }
+    if(sienaPort == null || sienaPort.length() == 0) {
+      sienaPort = null; // In case of the length-0 scenario
+    }
+    
+    if(sienaHost == null && sienaPort == null) {
+      debug.warn("Siena host not specified, assuming local operation");
+    } else if(sienaHost == null) {
+      debug.info("Siena host not specified, will run as Siena master");
+    }
+    
     
     // Now actually try and connect
     hd = new HierarchicalDispatcher();
     try {
       if(sienaPort != null) {
         // Custom port
-        hd.setReceiver(SienaUtils.newTCPPacketReceiver(Integer.parseInt(sienaPort)));
+        SienaUtils.setTCPPacketReceiver(hd, Integer.parseInt(sienaPort));
       }
       if(sienaHost != null) hd.setMaster(sienaHost);
     } catch(Exception ex) {
@@ -127,7 +130,7 @@ public class SienaInput extends EPInput implements Notifiable {
           if(valueType.equalsIgnoreCase("String"))
             f.addConstraint(attrName, opcode, value);
           else if(valueType.equalsIgnoreCase("Boolean"))
-            f.addConstraint(attrName, opcode, 
+            f.addConstraint(attrName, opcode,
             Boolean.valueOf(value).booleanValue());
           else if(valueType.equalsIgnoreCase("ByteArray"))
             debug.warn("Bytearrays not yet supported in Siena constraint, "+

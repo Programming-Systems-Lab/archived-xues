@@ -257,7 +257,7 @@ public class JDBCStore extends EPStore {
    *
    * @return True usually, false if you can't shutdown for some reason.
    */
-  public boolean shutdown() {
+  public void shutdown() {
     try {
       // Write out last ID
       debug.debug("Shutting down...");
@@ -270,7 +270,6 @@ public class JDBCStore extends EPStore {
     } catch(Exception e) {
       debug.error("Could not shutdown, ignoring", e);
     }
-    return true;
   }
   
   /**

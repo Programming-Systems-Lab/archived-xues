@@ -96,7 +96,7 @@ public class SienaOutput extends EPOutput {
     try {
       if(sienaPort != null && sienaPort.length() > 0) {
         // Specify a custom receiver
-        hd.setReceiver(SienaUtils.newTCPPacketReceiver(Integer.parseInt(sienaPort)));
+        SienaUtils.setTCPPacketReceiver(hd, Integer.parseInt(sienaPort));
       }
       if(sienaHost != null && sienaHost.length() > 0) hd.setMaster(sienaHost);
     } catch(Exception ex) {

@@ -32,7 +32,7 @@ import psl.xues.ep.store.EPStoreInterface;
  * City of New York.  All Rights Reserved.
  *
  * <!--
- * TODO: 
+ * TODO:
  * - Support propertysets for event formats(?), inputters, outputters,
  * and transformers.
  * - Dynamic (re)configuration
@@ -49,12 +49,12 @@ class EPConfiguration {
   /** Reference to the event packager */
   private EventPackager ep = null;
   
-  /** 
+  /**
    * CTOR.
    *
    * @param configFile The file to read initial configuration from.
    * @param ep Reference to the Event Packager being configured.
-   */  
+   */
   public EPConfiguration(String configFile, EventPackager ep) {
     this.ep = ep;
     
@@ -103,7 +103,7 @@ class EPConfiguration {
       if(eventFormat != null)
         ep.eventFormats.add(eventFormat);
     }
-            
+    
     // Stores.  We build these first because other modules might need
     // access to stores.
     NodeList storesList = e.getElementsByTagName("Stores");
@@ -112,9 +112,7 @@ class EPConfiguration {
       NodeList stores = storesList.item(0).getChildNodes();
       for(int i=0; i < stores.getLength(); i++) {
         if(stores.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
-        EPStore eps = buildStore((Element)stores.item(i));
-        if(eps != null)
-          ep.stores.put(eps.getName(), eps);
+        addPlugin(EPPlugin.STORE, (Element)stores.item(i));
       }
     }
     
@@ -129,9 +127,7 @@ class EPConfiguration {
       NodeList inputters = inputtersList.item(0).getChildNodes();
       for(int i=0; i < inputters.getLength(); i++) {
         if(inputters.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
-        EPInput epi = buildInputter((Element)inputters.item(i));
-        if(epi != null)
-          ep.inputters.put(epi.getName(), epi);
+        addPlugin(EPPlugin.INPUT, (Element)inputters.item(i));
       }
     }
     
@@ -142,9 +138,7 @@ class EPConfiguration {
       NodeList transforms = transformsList.item(0).getChildNodes();
       for(int i=0; i < transforms.getLength(); i++) {
         if(transforms.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
-        EPTransform ept = buildTransform((Element)transforms.item(i));
-        if(ept != null)
-          ep.transformers.put(ept.getName(), ept);
+        addPlugin(EPPlugin.TRANSFORM, (Element)transforms.item(i));
       }
     }
     
@@ -159,9 +153,7 @@ class EPConfiguration {
       NodeList outputters = outputtersList.item(0).getChildNodes();
       for(int i=0; i < outputters.getLength(); i++) {
         if(outputters.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
-        EPOutput epo = buildOutputter((Element)outputters.item(i));
-        if(epo != null)
-          ep.outputters.put(epo.getName(), epo);
+        addPlugin(EPPlugin.OUTPUT, (Element)outputters.item(i));
       }
     }
     
@@ -220,106 +212,72 @@ class EPConfiguration {
   }
   
   /**
-   * Build a new inputter based on a XML DOM description of it.
+   * Add a plugin based on an XML DOM description of it.
    *
-   * @param inputter The description in DOM-tree form.
-   * @return An instance of EPInput if successful, else null.
+   * @param type The type of plugin this is.  Use EPPlugin constants.
+   * @param data The XML data needed to construct this plugin.
+   * @return An instance of EPPlugin if successful, else null.
    */
-  private EPInput buildInputter(Element inputter) {
-    String inputterName = inputter.getAttribute("Name");
-    String inputterType = inputter.getAttribute("Type");
-    if(inputterName == null || inputterType == null ||
-    inputterName.length() == 0 || inputterType.length() == 0) {
-      debug.warn("Invalid inputter name or type detected, ignoring");
+  private EPPlugin addPlugin(short type, Element data) {
+    // Read the configuration
+    String pluginName = data.getAttribute("Name");
+    String pluginClass = data.getAttribute("Type");
+    if(pluginName == null || pluginClass == null ||
+    pluginName.length() == 0 || pluginClass.length() == 0) {
+      debug.warn("Invalid plugin name \"" + pluginName + "\"" +
+      "or type \"" + pluginClass + "\" detected, ignoring");
       return null;
     }
     
-    // Try loading this one
-    EPInput epi = null;
+    // Obtain the parameters needed for the construction of the plugin
+    Class epInterface = null;
+    String pluginType = null;
+    HashMap pluginList = null;
+    switch(type) {
+      case EPPlugin.INPUT:
+        pluginType = "Inputter";
+        epInterface = EPInputInterface.class;
+        pluginList = ep.inputters;
+        break;
+      case EPPlugin.OUTPUT:
+        pluginType = "Outputter";
+        epInterface = EPOutputInterface.class;
+        pluginList = ep.outputters;
+        break;
+      case EPPlugin.TRANSFORM:
+        pluginType = "Transform";
+        epInterface = EPTransformInterface.class;
+        pluginList = ep.transformers;
+        break;
+      case EPPlugin.STORE:
+        pluginType = "Store";
+        epInterface = EPStoreInterface.class;
+        pluginList = ep.stores;
+        break;
+      default:
+        debug.warn("Invalid plugin type \"" + type + "\" specified, skipping");
+        return null;
+    }
+    
+    // Try constructing it
+    EPPlugin epp = null;
     try {
-      debug.debug("Loading inputter \"" + inputterName + "\"...");
-      // XXX - Should we be making a deep copy of the inputter element,
-      // since we're handing it to a potentially unknown constructor?
-      epi = (EPInput)Class.forName(inputterType).getConstructor(new Class[]
-      { EPInputInterface.class, Element.class }).newInstance(new Object[]
-      { (EPInputInterface)ep, inputter });
+      debug.debug(pluginType + " \"" + pluginName + "\" being loaded...");
+      // XXX - Should we be making a deep copy of the element, since we're 
+      // handing it to a potentially unknown constructor?
+      epp = (EPPlugin)Class.forName(pluginClass).getConstructor(new Class[]
+      { epInterface, Element.class }).newInstance(new Object[]
+      { ep, data });
     } catch(Exception e) {
-      debug.warn("Failed in loading inputter \"" + inputterName +
-      "\", ignoring", e);
+      debug.warn(pluginType + " \"" + pluginName +
+      "\" failed to load, ignoring", e);
       return null;
     }
     
     // Success
-    debug.info("Inputter \"" + inputterName + "\" loaded.");
-    return epi;
-  }
-  
-  /**
-   * Build a new outputter given the XML DOM definition of it.
-   *
-   * @param outputter The description in DOM-tree form.
-   * @return An instance of EPOutput if successful, else null.
-   */
-  private EPOutput buildOutputter(Element outputter) {
-    String outputterName = outputter.getAttribute("Name");
-    String outputterType = outputter.getAttribute("Type");
-    if(outputterName == null || outputterType == null ||
-    outputterName.length() == 0 || outputterType.length() == 0) {
-      debug.warn("Invalid outputter name or type detected, ignoring");
-      return null;
-    }
-    
-    // Load and instantiate this outputter
-    EPOutput epo = null;
-    try {
-      debug.debug("Loading outputter \"" + outputterName + "\"...");
-      // XXX - Should we be making a deep copy of the outputter element,
-      // since we're handing it to a potentially unknown constructor?
-      epo = (EPOutput)Class.forName(outputterType).getConstructor(new Class[]
-      { EPOutputInterface.class, Element.class }).newInstance(new Object[] 
-      { (EPOutputInterface)ep, outputter });
-    } catch(Exception e) {
-      debug.warn("Failed in loading outputter \"" + outputterName +
-      "\", ignoring", e);
-      return null;
-    }
-    
-    // Success!
-    return epo;
-  }
-  
-  /**
-   * Build a new transform given the XML DOM definition of it.
-   *
-   * @param transform The description in DOM-tree form.
-   * @return An instance of EPTransform if successful, else null.
-   */
-  private EPTransform buildTransform(Element transform) {
-    String transformName = transform.getAttribute("Name");
-    String transformType = transform.getAttribute("Type");
-    if(transformName == null || transformType == null ||
-    transformName.length() == 0 || transformType.length() == 0) {
-      debug.warn("Invalid transform name or type detected, ignoring");
-      return null;
-    }
-    
-    // Load and instantiate this transform
-    EPTransform ept = null;
-    try {
-      debug.debug("Loading transform \"" + transformName + "\"...");
-      // XXX - Should we be making a deep copy of the transform element,
-      // since we're handing it to a potentially unknown constructor?
-      ept = (EPTransform)Class.forName(transformType).getConstructor(new Class[]
-      { EPTransformInterface.class, Element.class }).newInstance(new Object[] 
-      { (EPTransformInterface)ep, transform });
-    } catch(Exception e) {
-      debug.warn("Failed in loading transform \"" + transformName +
-      "\", ignoring", e);
-      return null;
-    }
-    
-    // Success!
-    return ept;
+    debug.info(pluginType + " loaded successfully.");
+    pluginList.put(epp.getName(), epp);
+    return epp;
   }
   
   /**
@@ -328,7 +286,7 @@ class EPConfiguration {
    * @param store The description in DOM-tree form.
    * @return An instance of EPStore if successful, else null.
    */
-  private EPStore buildStore(Element store) {
+  private EPStore addStore(Element store) {
     String storeName = store.getAttribute("Name");
     String storeType = store.getAttribute("Type");
     if(storeName == null || storeType == null ||
@@ -344,7 +302,7 @@ class EPConfiguration {
       // XXX - Should we be making a deep copy of the store element,
       // since we're handing it to a potentially unknown constructor?
       eps = (EPStore)Class.forName(storeType).getConstructor(new Class[]
-      { EPStoreInterface.class, Element.class }).newInstance(new Object[] 
+      { EPStoreInterface.class, Element.class }).newInstance(new Object[]
       { (EPStoreInterface)ep, store });
     } catch(Exception e) {
       debug.warn("Failed in loading store \"" + storeName +
@@ -355,5 +313,4 @@ class EPConfiguration {
     // Success!
     return eps;
   }
-  
 }

@@ -3,6 +3,7 @@ package psl.xues.ep.store;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 
+import psl.xues.ep.EPPlugin;
 import psl.xues.ep.event.EPEvent;
 
 /**
@@ -16,7 +17,7 @@ import psl.xues.ep.event.EPEvent;
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-public abstract class EPStore implements Runnable {
+public abstract class EPStore implements Runnable, EPPlugin {
   /** The name of this instance */
   protected String storeID = null;
   /** Our logger */
@@ -120,13 +121,10 @@ public abstract class EPStore implements Runnable {
   
   /**
    * Handle shutdown.
-   *
-   * @return True usually, false if you can't shutdown for some reason.
    */
-  public boolean shutdown() {
-    shutdown = true;
+  public void shutdown() {
     // Do nothing by default
-    return true;
+    return;
   }
 
   /**

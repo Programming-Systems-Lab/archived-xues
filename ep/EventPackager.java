@@ -81,8 +81,8 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
   /** Is shutdown actually proceeding? */
   private boolean inShutdown = false;
 
-  /** Reference to the GUI */
-  EPgui epgui = null;
+  /** Reference to the EPConfiguration class */
+  private EPConfiguration epc = null;
   
   /**
    * Default embedded CTOR.
@@ -90,7 +90,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    * @param configFile The configuration file for EP's initial config.
    */
   public EventPackager(String configFile) { 
-    this(configFile, false, null, false); 
+    this(configFile, false, null); 
   }
   
   /**
@@ -101,13 +101,12 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    * @param debugFile Specify log4j-compliant debug specification file, or
    * null.
    */
-  public EventPackager(String configFile, boolean debugging, String debugFile,
-  boolean gui) {
+  public EventPackager(String configFile, boolean debugging, String debugFile) {
     // Initialize the debugging context
     initDebug(debugging, debugFile);
     
     // Parse the configuration file
-    EPConfiguration epc = new EPConfiguration(configFile, this);
+    epc = new EPConfiguration(configFile, this);
     
     // Initialize the event queue.  Make it synchronized.
     eventQueue = Collections.synchronizedList(new ArrayList());
@@ -121,13 +120,6 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     
     // Start ourselves up.  XXX - do we want to do this permanently?
     new Thread(this).start();
-    
-    // Start GUI
-    if(gui) {
-      debug.debug("Starting GUI...");
-      epgui = new EPgui(this);
-      new Thread(epgui).start();
-    }
   }
   
   /**
@@ -241,9 +233,6 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     debug.info("Shutting down EP...");
     inShutdown = true;
     
-    // First, shut down the gui
-    if(epgui != null) epgui.shutdown();
-    
     // Now shut down the inputters
     synchronized(inputters) {
       Iterator i = inputters.values().iterator();
@@ -287,7 +276,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    */
   public static void main(String args[]) {
     String configFile = defaultConfigFile, debugFile = null;
-    boolean debugging = false, gui = false;
+    boolean debugging = false;
     
     if(args.length > 0) {
       for(int i=0; i < args.length; i++) {
@@ -298,14 +287,12 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
         else if(args[i].equals("-df")) {
           debugging = true;
           debugFile = args[++i];
-        } else if(args[i].equals("-gui")) {
-          gui = true;
         } else
           usage();
       }
     }
     
-    new EventPackager(configFile, debugging, debugFile, gui);
+    new EventPackager(configFile, debugging, debugFile);
   }
   
   /** Prints usage. */

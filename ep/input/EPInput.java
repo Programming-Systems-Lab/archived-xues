@@ -7,6 +7,7 @@ import org.w3c.dom.Element;
 
 import psl.xues.ep.EventPackager;
 import psl.xues.ep.EPRule;
+import psl.xues.ep.EPPlugin;
 
 /**
  * Extend this class to have your very own input mechanism.
@@ -22,7 +23,7 @@ import psl.xues.ep.EPRule;
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-public abstract class EPInput implements Runnable {
+public abstract class EPInput implements Runnable, EPPlugin {
   /** Reference to the EP inputting interface (primarily for callbacks */
   protected EPInputInterface ep = null;
   /** The name of this instance (the "source") */

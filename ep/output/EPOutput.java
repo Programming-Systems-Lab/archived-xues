@@ -4,6 +4,7 @@ import org.w3c.dom.Element;
 import org.apache.log4j.Logger;
 
 import psl.xues.ep.EventPackager;
+import psl.xues.ep.EPPlugin;
 import psl.xues.ep.event.EPEvent;
 
 /**
@@ -21,7 +22,7 @@ import psl.xues.ep.event.EPEvent;
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-public abstract class EPOutput implements Runnable {
+public abstract class EPOutput implements Runnable, EPPlugin {
   /** Instance name */
   protected String outputID = null;
   /** Logger */

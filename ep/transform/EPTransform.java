@@ -2,6 +2,8 @@ package psl.xues.ep.transform;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
+
+import psl.xues.ep.EPPlugin;
 import psl.xues.ep.event.EPEvent;
 
 /**
@@ -20,7 +22,7 @@ import psl.xues.ep.event.EPEvent;
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-public abstract class EPTransform {
+public abstract class EPTransform implements EPPlugin {
   /** Instance ID */
   protected String transformID = null;
   /** Debugger */
