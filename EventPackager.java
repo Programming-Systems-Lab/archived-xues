@@ -26,7 +26,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.15  2001-01-29 05:22:53  jjp32
+ * Revision 1.16  2001-01-30 00:24:50  jjp32
+ *
+ * Bug fixes, added test class
+ *
+ * Revision 1.15  2001/01/29 05:22:53  jjp32
  *
  * Reaper written - but it's probably a problem
  *
@@ -96,6 +100,9 @@ public class EventPackager implements Notifiable {
   ObjectOutputStream spoolFile;
   int srcIDCounter = 0;
   Siena siena = null;
+
+  /* Debug flag */
+  static boolean DEBUG = false;
 
   /**
    * Basic CTOR.  
@@ -199,6 +206,8 @@ public class EventPackager implements Notifiable {
 	  sienaHost = args[++i];
 	else if(args[i].equals("-?"))
 	  usage();
+	else if(args[i].equals("-d"))
+	  DEBUG = true;
 	else
 	  usage();
       }
@@ -220,13 +229,22 @@ public class EventPackager implements Notifiable {
    * Handle incoming siena notifications.
    */
   public void notify(Notification n) {
+    if(DEBUG) System.err.println("EventPackager: received notification " + n);
+
     // Do a turnaround and send it out.
-    String data = n.getAttribute("SmartEvent").stringValue();
-    Notification q = 
-      KXNotification.EventPackagerKXNotification(11111,22222,(String)null,
-						 data);
-  
+    Notification q = null;
+    if(n.getAttribute("Type").stringValue().equals("SmartEvent")) {
+      // Extract the XML data and send it out
+      String data = n.getAttribute("SmartEvent").stringValue();
+      q = KXNotification.EventPackagerKXNotification(11111,22222,(String)null,
+						     data);
+    } else {
+      // Direct Siena thing, just send it out
+      q = KXNotification.EventPackagerKXNotification(11111,22222,n);
+    }
+
     try {
+      if(DEBUG) System.err.println("EventPackager: sending notification " + q);
       siena.publish(q);
     } catch(SienaException e) { e.printStackTrace(); }
   }

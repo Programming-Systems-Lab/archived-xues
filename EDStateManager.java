@@ -26,14 +26,17 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * TODO:
  * - More efficient way of garbage collecting state machines
- * - Make sure fudge factor != negative result
  * - Event/reap collision
  * 
  * @author Janak J Parekh (jjp32@cs.columbia.edu)
  * @version 1.0
  *
  * $Log$
- * Revision 1.8  2001-01-29 05:22:53  jjp32
+ * Revision 1.9  2001-01-30 00:24:50  jjp32
+ *
+ * Bug fixes, added test class
+ *
+ * Revision 1.8  2001/01/29 05:22:53  jjp32
  *
  * Reaper written - but it's probably a problem
  *
