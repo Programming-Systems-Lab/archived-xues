@@ -17,6 +17,14 @@ import org.apache.log4j.Logger;
 public class Siena14Utils {
   static Logger debug = Logger.getLogger(Siena14Utils.class.getName());
   
+  /**
+   * Unwrapper for reflection call.
+   */
+  public static boolean setTCPPacketReceiver(HierarchicalDispatcher hd,
+  Integer port) {
+    return setTCPPacketReceiver(hd, port.intValue());
+  }
+  
   public static boolean setTCPPacketReceiver(HierarchicalDispatcher hd, 
   int port) {
     try {

@@ -14,7 +14,7 @@ import psl.xues.ep.input.EPInput;
 import psl.xues.ep.output.EPOutput;
 import psl.xues.ep.transform.EPTransform;
 import psl.xues.ep.exception.NoSuchPluginException;
-import psl.xues.ep.exception.InvalidPluginType;
+import psl.xues.ep.exception.InvalidPluginTypeException;
 
 /**
  * Event packager rule representation.
@@ -248,7 +248,7 @@ public class EPRule {
           throw new NoSuchPluginException();
         return false;
       default:
-        throw new InvalidPluginType();
+        throw new InvalidPluginTypeException();
     }
   }
 }

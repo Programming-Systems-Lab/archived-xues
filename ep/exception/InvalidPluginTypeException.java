@@ -9,8 +9,8 @@ package psl.xues.ep.exception;
  * @author Janak J Parekh
  * @version $Revision$
  */
-public class InvalidPluginType extends RuntimeException {
-  public InvalidPluginType() {
+public class InvalidPluginTypeException extends RuntimeException {
+  public InvalidPluginTypeException() {
     super("Invalid plugin type supplied");
   }
 }

@@ -35,6 +35,9 @@ public class SienaInput extends EPInput implements Notifiable {
    *  a custom one. */
   private String sienaPort = null;
   private HierarchicalDispatcher hd = null;
+  /** Are EP control commands supported on this Siena channel?  If so,
+   * we make the necessary subscriptions and listen for relevant commands. */
+  private boolean control = false;
   
   /**
    * CTOR.  Modeled after the EPInput CTOR.
@@ -59,7 +62,6 @@ public class SienaInput extends EPInput implements Notifiable {
       debug.info("Siena host not specified, will run as Siena master");
     }
     
-    
     // Now actually try and connect
     hd = new HierarchicalDispatcher();
     try {
@@ -72,6 +74,16 @@ public class SienaInput extends EPInput implements Notifiable {
       debug.error("Cannot establish Siena node", ex);
       hd = null;
       throw new InstantiationException("Cannot establish Siena node");
+    }
+    
+    // Control channel?
+    String control = el.getAttribute("Control");
+    if(control != null && control.length() > 0) {
+      if(Boolean.valueOf(control) != null) {
+        this.control = Boolean.valueOf(control).booleanValue();
+      } else {
+        debug.warn("Invalid value for control attribute, ignoring");
+      }
     }
   }
   
@@ -172,6 +184,12 @@ public class SienaInput extends EPInput implements Notifiable {
           continue; // Do we need to make this explicit?
         }
       }
+      
+      if(control) {
+        // Subscription for EP control channel
+        
+      }
+      
       
       // And we continue with the next filter...
     } // end subscription loop

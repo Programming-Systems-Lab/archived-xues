@@ -17,6 +17,10 @@ import psl.xues.ep.event.StringEvent;
 
 import siena.Notification;
 import java.net.DatagramSocket;
+import java.util.Iterator;
+import java.io.InputStreamReader;
+import java.net.DatagramPacket;
+import java.io.ByteArrayInputStream;
 
 /**
  * Socket event input mechanism.  Allows EP to be a server which receives
@@ -115,7 +119,7 @@ public class SocketInput extends EPInput {
     
     // Determine data type
     String dataType = el.getAttribute("dataType");
-    if(type == null || type.length() == 0) {
+    if(dataType == null || dataType.length() == 0) {
       debug.warn("Type not specified, assuming \"StringObject\"");
       this.dataType = STRING_OBJECT;
     } else { // validate type of object
@@ -161,7 +165,7 @@ public class SocketInput extends EPInput {
         try {
           cs = ss.accept();
         } catch(Exception e) {
-          debug.error("Could not accept connection, shutting down inputter" e);
+          debug.error("Could not accept connection, shutting down inputter", e);
           shutdown();
           return;
         }
@@ -178,10 +182,15 @@ public class SocketInput extends EPInput {
         }
       }
     } else { // UDP
-      ct = new ClientThread(ds, dataType);
-      clientSockets.put(ds, ct);
-      ct.run();  /* We don't need a separate thread for the client handler,
-       * since there's only one socket connection */
+      try {
+        ClientThread ct = new ClientThread(ds, dataType);
+        clientSockets.put(ds, ct);
+        ct.run();  /* We don't need a separate thread for the client handler,
+         * since there's only one socket connection */
+      } catch(InstantiationException e) {
+        debug.error("Could not instantiate client", e);
+        return;
+      }
     }
   }
   
@@ -222,12 +231,23 @@ public class SocketInput extends EPInput {
   }
   
   /**
-   * Shutdown.  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-   * XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-   * XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+   * Handle a shutdown request.
    */
-  public abstract void shutdown() {
-    
+  public void shutdown() {
+    super.shutdown();
+    // Close all client socket threads
+    synchronized(clientSockets) {
+      Iterator i = clientSockets.values().iterator();
+      while(i.hasNext()) {
+        ((ClientThread)i.next()).shutdown();
+      }
+    }
+    /* Now shut down the "server sockets". XXX - through the current setup, the
+     * datagram socket will close twice.  Obviously, it'll fail the second time,
+     * but we should try and eliminate that redundancy */
+    if(ss != null) try { ss.close(); } catch(Exception e) { ; }
+    if(ds != null) try { ds.close(); } catch(Exception e) { ; }
+    debug.debug("SocketInput shutdown complete");
   }
   
   /**
@@ -243,8 +263,8 @@ public class SocketInput extends EPInput {
     private DatagramSocket ds = null;
     /** Are we in shutdown? */
     private boolean shutdown = false;
-    /** InputStream to handle client input */
-    private InputStream cin = null;
+    /** Structure (either stream or reader) to handle client input */
+    private Object cin = null;
     /** The socket type */
     private short socketType = -1;
     /** Data type */
@@ -332,7 +352,7 @@ public class SocketInput extends EPInput {
             } catch(Exception e) {
               debug.error("Could not create ObjectInputStream for UDP buffer, "
               + "closing down client thread", e);
-              if(!shutdown) shutdown;
+              if(!shutdown) shutdown();
               return;
             }
           }
@@ -385,8 +405,14 @@ public class SocketInput extends EPInput {
     public void shutdown() {
       shutdown = true;
       try {
-        if(cs != null) cs.close();
-        if(ds != null) ds.close();
+        if(cs != null) {
+          cs.close();
+          cs = null;
+        }
+        if(ds != null) {
+          ds.close();
+          ds = null;
+        }
       } catch(Exception e) { }
       cs = null; ds = null;
     }

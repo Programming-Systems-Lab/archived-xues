@@ -44,16 +44,18 @@ public class SienaUtils {
       debug.debug("Using Siena 1.4...");
       success = ((java.lang.Boolean)Class.
       forName("psl.xues.util.Siena14Utils").
-      getMethod("setTCPPacketReceiver",new Class[]{HierarchicalDispatcher.class}).
-      invoke(null, new Object[] { hd })).booleanValue();
+      getMethod("setTCPPacketReceiver",new Class[]{HierarchicalDispatcher.class,
+      Integer.class}).invoke(null, new Object[] { hd, new Integer(port) })).
+      booleanValue();
     } catch(Exception e) {
       // We're using the older-style Siena packaging
-      debug.debug("Using Siena 1.3...");
+      debug.debug("Using Siena 1.3...",e);
       try {
         success = ((java.lang.Boolean)Class.
         forName("psl.xues.util.Siena13Utils").
-        getMethod("setTCPPacketReceiver",new Class[]{HierarchicalDispatcher.class}).
-        invoke(null, new Object[] { hd })).booleanValue();
+        getMethod("setTCPPacketReceiver",new Class[]{HierarchicalDispatcher.class,
+        Integer.class}).invoke(null, new Object[] { hd, new Integer(port) })).
+        booleanValue();
       } catch(Exception e2) {
         return false;
       }
