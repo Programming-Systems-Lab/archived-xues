@@ -1,26 +1,35 @@
 package psl.xues;
 
-import psl.groupspace.*;
+import siena.*;
 import java.net.*;
 import java.io.*;
 
 /** 
- * EventPackager for Xues.
+ * EventPackager for Xues.  Now Siena-compliant(TM).
  *
- * Copyright (c) 2000: The Trustees of Columbia University and the
+ * Copyright (c) 2000: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
  * TODO: 
- * Listening on local bus.
- * Handling multi-line input as an event - how to delineate?  Right
- * now, we just blindly do it on a line-by-line basis.
- * When socket closes, we wipe out TriKX.  More permanent solution.
+ * - Listening on local bus.
+ * - Handling multi-line input as an event - how to delineate?  Right
+ *   now, we just blindly do it on a line-by-line basis.
+ * - When socket closes, we wipe out TriKX.  More permanent solution.
+ * - Put associated data onto webserver.  Send URL to KXNotification.
+ *   Handle streaming in some appropriate way (non-trivial?  custom 
+ *   webserver?)
+ * - Integrate conf file handling
+ * - Intelligent connection to Event Distiller
  *
  * @author Janak J Parekh <jjp32@cs.columbia.edu>
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.8  2000-12-26 22:25:13  jjp32
+ * Revision 1.9  2001-01-01 00:32:28  jjp32
+ *
+ * Added rudimentary Siena-publishing capabilities to Event Packager.  Created a (possibly, in the future) base notification class with convenience constructors (right now just for EP but in the future also for other KX components).
+ *
+ * Revision 1.8  2000/12/26 22:25:13  jjp32
  *
  * Updating to latest preview versions
  *
@@ -50,15 +59,13 @@ import java.io.*;
  * Updating
  *
  */
-public class EventPackager implements GroupspaceService,
-				      GroupspaceCallback {
-  GroupspaceController gcRef = null;
+public class EventPackager /*implements*/ {
   int listeningPort = -1;
   ServerSocket listeningSocket = null;
   String spoolFilename;
   ObjectOutputStream spoolFile;
   int srcIDCounter = 0;
-  private String roleName = "EventPackager";
+  Siena sienaRef = null;
 
   /**
    * Basic CTOR.  
@@ -89,31 +96,13 @@ public class EventPackager implements GroupspaceService,
 
     /* Add a shutdown hook for JDK 1.3 */
     Runtime.getRuntime().addShutdownHook(new EPShutdownThread());
+
+    // Now create a Siena node
+    sienaRef = new HierarchicalDispatcher();
+    // BUG? - no port number?
+    sienaRef.setMaster("senp://localhost");
   }
     
-  /**
-   * Initialization routine.
-   */
-  public boolean gsInit(GroupspaceController gc) {
-    this.gcRef = gc;
-    gcRef.registerRole(roleName, this); // Register to receive events
-    gcRef.Log(roleName, "Ready.");
-    return true;
-  }
-
-  /**
-   * Shutdown routine.
-   */
-  public void gsUnload() { 
-    /* Cleanup */
-    if(spoolFile != null) {
-      try{
-	spoolFile.close();
-	spoolFile = null;
-      } catch(Exception e) { e.printStackTrace(); }
-    }
-  }
-
   /**
    * Run routine.
    */
@@ -122,8 +111,8 @@ public class EventPackager implements GroupspaceService,
     try {
       listeningSocket = new ServerSocket(listeningPort);
     } catch(Exception e) {
-      gcRef.Log(roleName, "Failed in setting up serverSocket, "+
-		"shutting down");
+      System.err.println("EventPackager: Failed in setting up serverSocket, "+
+			 "shutting down");
       listeningSocket = null;
       return;
     }
@@ -134,7 +123,8 @@ public class EventPackager implements GroupspaceService,
 	/* Hand the hot potato off! */
 	new Thread(new EPClientThread(srcIDCounter++,newSock)).start();
       } catch(Exception e) {
-	gcRef.Log(roleName, "Failed in accept from serverSocket");
+	System.err.println("EventPackager: Failed in accept from "+
+			   "serverSocket");
       }
     }
   }
@@ -187,7 +177,8 @@ public class EventPackager implements GroupspaceService,
 	//	this.out = new PrintWriter(clientSocket.getOutputStream(), 
 	//				   true); //autoflush
       } catch(Exception e) {
-	gcRef.Log(roleName,"Error establishing client connection:" + e.toString());
+	System.err.println("Error establishing client connection: " +
+			   e.toString());
 	e.printStackTrace();
       }
     }
@@ -205,33 +196,19 @@ public class EventPackager implements GroupspaceService,
 	  }
 	  System.err.println("EPCThread: Got " + newInput);
 	  if(spoolFile != null) spoolFile.writeObject(newInput);
-	  if(gcRef != null) {
-	    /* Send the event */
-	    gcRef.groupspaceEvent(new 
-	      GroupspaceEvent(new EPPayload(srcID,newInput),
-			      "EventDistillerIncoming", 
-			      null, null, true));
-	  }
+	  // Now send out the event.
+	  if(sienaRef != null) {
+	    sienaRef.publish(new KXNotification(srcID,null);
 	}
       } catch(SocketException e) {
-	if(gcRef != null) {
-	   gcRef.Log(roleName,"Client socket unexpectedly closed");
-	   // Clear out TriKX--HACKO
-	   gcRef.groupspaceEventNonVetoable(new
-	     GroupspaceEvent(new EPPayload(srcID,"allusers null null true"),
-			     "EventDistillerIncoming",
-			     null,null,true));
-	}
+	System.err.println("EPCThread: Client socket unexpectedly closed");
 	return;
       } catch(Exception e) {
-	if(gcRef != null)
-	  gcRef.Log(roleName,"Error communicating with client:" + 
-		    e.toString());
+	System.err.println("EPCThread: Error communicating with client:" + 
+			   e.toString());
 	e.printStackTrace();
 	return;
       }
     }
   }
-
-  public String roleName() { return this.roleName; }
 }
