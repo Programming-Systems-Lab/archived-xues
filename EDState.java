@@ -16,7 +16,11 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.6  2001-01-30 06:26:18  jjp32
+ * Revision 1.7  2001-03-21 18:14:02  jjp32
+ *
+ * Fixed comment
+ *
+ * Revision 1.6  2001/01/30 06:26:18  jjp32
  *
  * Lots and lots of updates.  EventDistiller is now of demo-quality.
  *
@@ -122,9 +126,6 @@ public class EDState {
    * was successfully matched within the appropriate timebounds.
    *
    * BUG WARNING: If timestamp is mapped to a non-long, we will crash.
-   *
-   * GOOD LUCK if you can understand this.  Read through a few times,
-   * hopefully it'll make sense then :-)
    */
   public boolean validate(Notification n, EDState prev) {
     // Step 1. Perform timestamp validation.  If timestamp validation
@@ -152,6 +153,9 @@ public class EDState {
 
   /**
    * Internal validate function - just check one attribute-value pair
+   *
+   * GOOD LUCK if you can understand this.  Read through a few times,
+   * hopefully it'll make sense then :-)
    */
   private boolean validate(String attr, AttributeValue internalVal,
 			   AttributeValue externalVal) {
