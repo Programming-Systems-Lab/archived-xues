@@ -1,14 +1,23 @@
-Event loopback support
+Event loopback support.  Apparently already done, needs testing.
 
-Perhaps, to solve the spamblocker rule, a way of limiting the number of simultaneous threads, or absorb rules.
+Perhaps, to solve the spamblocker rule, a way of limiting the number
+of simultaneous threads, or absorb rules.  
+* Consider implementing ordering in ED.  Looks like we have to
+implement this in DOS as well.
 
-Integrate James's daughter-of-Siena (DOS) :)
+Integrate James's daughter-of-Siena (DOS).  Will be done once DOS has
+grown up :)
 
-What if all the attributes for a state are not there?
+What if all the attributes for a state are not there?  ED looks at the
+specified subset, so this should not be a problem.
 
-Clean up the schema file (Janak)
+Clean up the schema file (Janak).
 
-Dynamic rules - what happens if you try to add a rule that already exists?  Perhaps we need to use rule naming to establish a policy about this.
+Dynamic rules - what happens if you try to add a rule that already
+exists?  Already fixed (EDStateManager).
 
 "Counter" feature for "identical" events (matching a given filter) -
-e.g. a rule is generated if X instances of it are found.
+e.g. an action is generated if X instances of the notification are
+encountered.
+
+Take and modify matched notifications into an action.
