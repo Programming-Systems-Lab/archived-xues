@@ -75,6 +75,7 @@ public class EPHandler implements Notifiable{
 	String opName = n.getAttribute("AttrOp").stringValue();
 	String attrValue = n.getAttribute("AttrVal").stringValue();
 	//is there an easier way of converting a string to boolean value?
+	// XXX - this will crash if keepFilter is not defined
 	Boolean a = new Boolean(n.getAttribute("keepFilter").stringValue());
 	boolean keepFilter = a.booleanValue();
 	try{
@@ -86,9 +87,12 @@ public class EPHandler implements Notifiable{
 	    if(keepFilter){
 		//add to EventPackager.cfg file for permanent addition of the filter
 		if(DEBUG)System.out.println("filter added permanently");
-		FileWriter writer = new FileWriter("EventPackager.cfg");
+		FileWriter writer = new FileWriter("EventPackager.cfg",true);
 		PrintWriter out = new PrintWriter(writer);
-		out.print(filterIndex + " " + attrName + ", " + opName + ", " + attrValue + ";");
+		out.println(filterIndex + " " + attrName + ", " + opName + ", " + attrValue + ";");
+		//		out.flush();
+		out.close();
+		writer.close();
 	    }
 	}//try
 	catch(IOException er){
