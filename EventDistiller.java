@@ -1,21 +1,28 @@
 package psl.xues;
 
-import psl.groupspace.*;
-import psl.trikx.impl.TriKXUpdateObject;
+import psl.kx.*;
 import java.io.*;
 import java.util.*;
+import siena.*;
 
 /**
  * The Event Distiller.
  *
- * Copyright (c) 2000: The Trustees of Columbia University and the
+ * Copyright (c) 2000-2001: The Trustees of Columbia University and the
  * City of New York.  All Rights Reserved.
  *
+ * TODO:
+ * - Something more complex than a Notification as Action
+ *
  * @author Janak J Parekh
- * @version 0.01 (9/7/2000)
+ * @version 0.02 (1/20/2001)
  *
  * $Log$
- * Revision 1.8  2001-01-18 01:41:35  jjp32
+ * Revision 1.9  2001-01-22 02:11:54  jjp32
+ *
+ * First full Siena-aware build of XUES!
+ *
+ * Revision 1.8  2001/01/18 01:41:35  jjp32
  *
  * Moved KXNotification to kx; other modifications for demo
  *
@@ -48,42 +55,69 @@ import java.util.*;
  * Updating
  *
  */
-public class EventDistiller {
-  GroupspaceController gcRef = null;
-  private String roleName = "EventDistiller";
-
+public class EventDistiller implements Notifiable {
   /**
    * We maintain a stack of events to process - this way incoming
    * callbacks don't get tied up - they just push onto the stack.
    */
-  Vector eventProcessQueue = null;
-
+  private Vector eventProcessQueue = null;
+  
   /** My main execution context */
-  Thread edContext = null;
+  private Thread edContext = null;
 
+  /** Private (internal) siena for the state machines */
+  private Siena privateSiena = null;
+
+  /** Public (KX) siena to communicate with the outside world */
+  private Siena publicSiena = null;
+
+  /** Debug flag. */
+  public static final boolean DEBUG = true;
+  
+  /**
+   * CTOR.
+   */
   public EventDistiller() { 
     eventProcessQueue = new Vector();
-  }
 
-  public boolean gsInit(GroupspaceController gc) {
-    this.gcRef = gc;
-    this.gcRef.registerRole(roleName, this);
-    // Subscribe to EventPackager events
-    this.gcRef.subscribeEvent(this,"EventDistillerIncoming");
-    this.gcRef.subscribeEvent(this,"MetaparserResult");
-    gcRef.Log(roleName,"Ready.");
-    return true;
-  }
-
-  public void gsUnload() {
-    // Nothing right now 
-  }
-
-  public void run() { 
     // Set the current execution context, so if the callback is called
     // it can wake up a sleeping distiller
     edContext = Thread.currentThread();
 
+    // Siena handling
+    // Subscribe to the "master" Siena
+    publicSiena = new HierarchicalDispatcher();
+    try {
+      ((HierarchicalDispatcher)publicSiena).
+	setReceiver(new TCPPacketReceiver(91978));
+      ((HierarchicalDispatcher)publicSiena).setMaster("senp://localhost");
+    } catch(Exception e) { e.printStackTrace(); }
+   
+    // Subscribe to packager input
+    Filter packagerFilter = new Filter();
+    packagerFilter.addConstraint("Type","PackagedEvent");
+    try {
+      publicSiena.subscribe(packagerFilter, this);
+    } catch(SienaException e) { e.printStackTrace(); }
+
+    // Subscribe to metaparser results
+    Filter metaparserFilter = new Filter();
+    metaparserFilter.addConstraint("Type","ParsedEvent");
+    try {
+      publicSiena.subscribe(metaparserFilter, this);
+    } catch(SienaException e) { e.printStackTrace(); }
+
+    // Create private siena
+    privateSiena = new HierarchicalDispatcher();
+    try {
+      ((HierarchicalDispatcher)privateSiena).
+	setReceiver(new TCPPacketReceiver(91979));
+    } catch(Exception e) { e.printStackTrace(); }
+    
+    // Initialize state machine manager.  Hand it the private siena.
+    EDStateManager edsm = new EDStateManager(privateSiena, this);
+
+    // Run
     while(true) {
       // Poll for events to process
       if(eventProcessQueue.size() == 0) {
@@ -94,92 +128,55 @@ public class EventDistiller {
       } else {
 	// Otherwise pull them off
 	synchronized(eventProcessQueue) {
-	  GroupspaceEvent ge = (GroupspaceEvent)eventProcessQueue.remove(0);
-	  System.err.println("EventDistiller: " + ge);
-
+	  Notification n = (Notification)eventProcessQueue.remove(0);
+	  // Feed it to our internal Siena
 	  try {
-	    // Unwrap the stuff into separate strings
-	    EPPayload epp = (EPPayload)ge.getDbo();
-	    StringTokenizer st = new StringTokenizer((String)epp.getPayload());
-	    st.nextToken();
-	    String oldRoomName = st.nextToken();
-	    // Horrible hack because of current TriKX implementation
-	    if(oldRoomName.equals("Linux-2.0.36")) oldRoomName = "root";
-	    String newRoomName = st.nextToken();
-	    // Horrible hack because of current TriKX implementation
-	    if(newRoomName.equals("Linux-2.0.36")) newRoomName = "root";
-	    boolean success = Boolean.valueOf(st.nextToken()).booleanValue();
-	    
-	    // If both old and new room are null, clear out
-	    if(oldRoomName.equals("null") && newRoomName.equals("null")) {
-	      gcRef.groupspaceEvent(new 
-		GroupspaceEvent(new
-		  TriKXUpdateObject(null,null),
-				"TriKXEventIncoming",null,null,false));
-	    } else if(success == true) { // IF successful do the switch
-	      // Clear out old room name
-	      gcRef.groupspaceEvent(new 
-		GroupspaceEvent(new 
-		  TriKXUpdateObject(oldRoomName,null),
-				"TriKXEventIncoming",null,null,false));
-	      
-	      // Set up new room name
-	      gcRef.groupspaceEvent(new
-		GroupspaceEvent(new
-		  TriKXUpdateObject(newRoomName, java.awt.Color.green),
-				"TriKXEventIncoming",null,null,false));
-	    } else {
-	      // Megamegahack
-	      gcRef.groupspaceEvent(new
-		GroupspaceEvent(new
-		  TriKXUpdateObject(newRoomName, java.awt.Color.blue),
-				"TriKXEventIncoming",null,null,false));
-
-	      for(int i=0; i < 5; i++) {
-		// Mark the failed room red for a few seconds
-		gcRef.groupspaceEvent(new
-		  GroupspaceEvent(new
-		    TriKXUpdateObject(newRoomName, java.awt.Color.red),
-				  "TriKXEventIncoming",null,null,false));
-		Thread.currentThread().sleep(500);
-		gcRef.groupspaceEvent(new
-		  GroupspaceEvent(new
-		    TriKXUpdateObject(newRoomName, java.awt.Color.black),
-				  "TriKXEventIncoming",null,null,false));
-		Thread.currentThread().sleep(500);
-	      }
-	      gcRef.groupspaceEvent(new
-		GroupspaceEvent(new
-		  TriKXUpdateObject(newRoomName, null),
-				"TriKXEventIncoming",null,null,false));
-	      
-	    }
-	      
-
-	    
-	    //	  ten.callback(new GroupspaceEvent(new TriKXUpdateObject("drivers",java.awt.Color.blue),"TriKXEventIncoming",null,null,false));
-	  } catch(Exception e) { e.printStackTrace(); }
-	}
+	    privateSiena.publish(n);
+	  } catch(SienaException e) { e.printStackTrace(); }
+	}	      
       }
     }
   }
 
-  public int callback(GroupspaceEvent ge) {
-    if(ge.getEventDescription().equals("EventDistillerIncoming")) {
-      // Add the event onto the stack and then wake up the distiller
+  /**
+   * Siena Callback.  We receive two kinds of callbacks: data from the
+   * event packager, and interpreted results from the metaparser.
+   */
+  public void notify(Notification n) {
+    if(DEBUG) System.out.println("[EventDistiller] Received notification " +
+				 n.toString());
+    // What kind of notification is it?
+    if(n.getAttribute("Type").stringValue().equals("PackagedEvent")) {
+      // Just wrap it up and send it out to the metaparser, for now.
+      try {
+	publicSiena.
+	  publish(KXNotification.
+		  EventDistillerKXNotification(12345,
+					       (int)n.
+					       getAttribute("DataSourceID").
+					       longValue(),
+					       (String)null, //dataSourceURL
+					       n.getAttribute("SmartEvent").
+					       stringValue()));
+      } catch(SienaException e) { e.printStackTrace(); }
+    } else if(n.getAttribute("Type").stringValue().equals("ParsedEvent")) {
+      // Add the event onto the queue and then wake up the engine
       synchronized(eventProcessQueue) {
-	eventProcessQueue.addElement(ge);
+	eventProcessQueue.addElement(n);
       }
       edContext.interrupt();
-    } else if(ge.getEventDescription().equals("MetaparserResult")) {
-      // Need to deal with this
-      System.err.println("METAPARSER RESULT: " + ge);   
     }
-   
-    // And we are done
-    return GroupspaceCallback.CONTINUE;
   }
 
-  public String roleName() { return this.roleName; }
-    
+  /** Unused Siena construct. */
+  public void notify(Notification[] s) { ; }
+
+  /**
+   * Send out to the world.  Used for the state machine.
+   */
+  void sendPublic(Notification n) {
+    try {
+      publicSiena.publish(n);
+    } catch(SienaException e) { e.printStackTrace(); }
+  }
 }

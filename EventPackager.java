@@ -1,6 +1,7 @@
 package psl.xues;
 
 import siena.*;
+import psl.kx.*;
 import java.net.*;
 import java.io.*;
 
@@ -11,21 +12,25 @@ import java.io.*;
  * City of New York.  All Rights Reserved.
  *
  * TODO: 
- * - Listening on local bus.
  * - Handling multi-line input as an event - how to delineate?  Right
- *   now, we just blindly do it on a line-by-line basis.
+ *   now, we just IGNORE all socket event!!!
  * - When socket closes, we wipe out TriKX.  More permanent solution.
  * - Put associated data onto webserver.  Send URL to KXNotification.
  *   Handle streaming in some appropriate way (non-trivial?  custom 
  *   webserver?)
  * - Integrate conf file handling
  * - Intelligent connection to Event Distiller
+ * - Timestamp non-stamped incoming events
  *
  * @author Janak J Parekh <jjp32@cs.columbia.edu>
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.10  2001-01-18 01:41:35  jjp32
+ * Revision 1.11  2001-01-22 02:11:54  jjp32
+ *
+ * First full Siena-aware build of XUES!
+ *
+ * Revision 1.10  2001/01/18 01:41:35  jjp32
  *
  * Moved KXNotification to kx; other modifications for demo
  *
@@ -63,13 +68,13 @@ import java.io.*;
  * Updating
  *
  */
-public class EventPackager {
+public class EventPackager implements Notifiable {
   int listeningPort = -1;
   ServerSocket listeningSocket = null;
   String spoolFilename;
   ObjectOutputStream spoolFile;
   int srcIDCounter = 0;
-  Siena sienaRef = null;
+  Siena siena = null;
 
   /**
    * Basic CTOR.  
@@ -102,9 +107,19 @@ public class EventPackager {
     Runtime.getRuntime().addShutdownHook(new EPShutdownThread());
 
     // Now create a Siena node
-    sienaRef = new HierarchicalDispatcher();
-    // BUG? - no port number?
-    sienaRef.setMaster("senp://localhost");
+    siena = new HierarchicalDispatcher();
+    try {
+      ((HierarchicalDispatcher)siena).
+	setReceiver(new TCPPacketReceiver(91977));
+      ((HierarchicalDispatcher)siena).setMaster("senp://localhost");
+    } catch(Exception e) { e.printStackTrace(); }
+
+    // Set up listening.
+    Filter f = new Filter();
+    f.addConstraint("Type","SmartEvent");
+    try {
+      siena.subscribe(f, this);
+    } catch(SienaException e) { e.printStackTrace(); }
   }
     
   /**
@@ -134,20 +149,30 @@ public class EventPackager {
   }
 
   /**
-   * Handle callbacks
-   */
-  public int callback(GroupspaceEvent ge) {
-    System.err.println("EventPackager: received GroupspaceEvent " + ge);
-    return GroupspaceCallback.CONTINUE;
-  }
-
-  /**
    * Tester.
    */
   public static void main(String args[]) {
     EventPackager ep = new EventPackager(7777, "EventPackager.spl");
     ep.run();
   } 
+
+  /**
+   * Handle incoming siena notifications.
+   */
+  public void notify(Notification n) {
+    // Do a turnaround and send it out.
+    String data = n.getAttribute("SmartEvent").stringValue();
+    Notification q = 
+      KXNotification.EventPackagerKXNotification(11111,22222,(String)null,
+						 data);
+  
+    try {
+      siena.publish(q);
+    } catch(SienaException e) { e.printStackTrace(); }
+  }
+
+  /** Unused Siena construct. */
+  public void notify(Notification[] s) { ; }
 
   /**
    * Small thread for the addShutdownHook method.
@@ -201,8 +226,11 @@ public class EventPackager {
 	  System.err.println("EPCThread: Got " + newInput);
 	  if(spoolFile != null) spoolFile.writeObject(newInput);
 	  // Now send out the event.
-	  if(sienaRef != null) {
-	    sienaRef.publish(new KXNotification(srcID,null);
+	  if(siena != null) {
+	    //	    try {
+	    //	      siena.publish(new KXNotification(srcID,null));
+	    //	    } catch(SienaException e) { e.printStackTrace(); }
+	  }
 	}
       } catch(SocketException e) {
 	System.err.println("EPCThread: Client socket unexpectedly closed");
