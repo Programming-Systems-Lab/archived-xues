@@ -1,10 +1,13 @@
 package psl.xues.ep.transform;
 
 import java.util.HashMap;
+
 import org.w3c.dom.Element;
+
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
 import psl.xues.ed.EDConst;
+
 import siena.Notification;
 import siena.AttributeValue;
 
@@ -12,12 +15,15 @@ import siena.AttributeValue;
  * Time synchronizer transform module for the Event Packager.  Handles only
  * Siena-style events for now, but will attempt to convert another type of
  * EPEvent to Siena form.
- *
+ * <p>
  * When instantiating a TimeSynchronizer, you must specify a SourceAttribute
  * in the XML - this is the attribute that will be used for source
  * uniqueness (so that we can calibrate timestamps on a source-by-source
  * basis).  Note that this must exist in the Siena notification before it
  * hits the EP, as it is non-trivial to conclusively identify a given "source".
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
  * <!--
  * TODO:
@@ -46,8 +52,9 @@ public class TimeSynchronizer extends EPTransform {
    *
    * @param el The Element with relevant information about our instantiation.
    */
-  public TimeSynchronizer(Element el) throws InstantiationException {
-    super(el);
+  public TimeSynchronizer(EPTransformInterface ep, Element el) 
+  throws InstantiationException {
+    super(ep,el);
     
     // Attempt to obtain the sourceAttribute
     sourceAttribute = el.getAttribute("SourceAttribute");

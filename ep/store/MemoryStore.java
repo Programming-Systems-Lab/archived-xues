@@ -8,7 +8,7 @@ import psl.xues.ep.event.EPEvent;
 /**
  * Simple implementation of an EP store to store events in memory.
  * Fast, and useful for testing.
- *
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
@@ -41,8 +41,9 @@ public class MemoryStore extends EPStore {
   /**
    * CTOR.
    */
-  public MemoryStore(Element el) throws InstantiationException {
-    super(el);
+  public MemoryStore(EPStoreInterface ep, Element el) 
+  throws InstantiationException {
+    super(ep,el);
     
     // Saved file?
     //storeFile = el.getAttribute("StoreFile");

@@ -7,18 +7,25 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.log4j.Category;
+
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.input.EPInput;
 import psl.xues.ep.input.EPInputInterface;
 import psl.xues.ep.output.EPOutput;
+import psl.xues.ep.output.EPOutputInterface;
 import psl.xues.ep.transform.EPTransform;
+import psl.xues.ep.transform.EPTransformInterface;
+import psl.xues.ep.store.EPStore;
+import psl.xues.ep.store.EPStoreInterface;
 
 /**
  * Event Packager for XUES.
- *
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
@@ -32,10 +39,11 @@ import psl.xues.ep.transform.EPTransform;
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-public class EventPackager implements Runnable, EPInputInterface {
-  /** log4j category class */
-  static Category debug =
-  Category.getInstance(EventPackager.class.getName());
+public class EventPackager implements Runnable, EPInputInterface, 
+EPOutputInterface, EPTransformInterface, EPStoreInterface {
+  /** Log4j logger class */
+  static Logger debug =
+  Logger.getLogger(EventPackager.class.getName());
   
   /** Base CTOR. */
   public EventPackager() { this(null); }
@@ -55,6 +63,8 @@ public class EventPackager implements Runnable, EPInputInterface {
   HashMap outputters = null;
   /** Transforms */
   HashMap transformers = null;
+  /** Stores */
+  HashMap stores = null;
   /** Rules */
   HashMap rules = null;
   
@@ -228,11 +238,9 @@ public class EventPackager implements Runnable, EPInputInterface {
       BasicConfigurator.configure();             // Basic (all) debugging)
     } else if(debug == true && debugFile != null) {
       PropertyConfigurator.configure(debugFile); // Log4j format file
-    } else {                                     // No debugging at all
+    } else {                                     // No debug-level stuff at all
       BasicConfigurator.configure();
-      // Deprecated
-      // BasicConfigurator.disableDebug();
-      Category.getDefaultHierarchy().disableDebug();
+      Logger.getRootLogger().setLevel(Level.INFO);
     }
   }
   
@@ -283,5 +291,14 @@ public class EventPackager implements Runnable, EPInputInterface {
   public void error(String src, String err) {
     debug.error(src + ": " + err);
   }
-  
+
+  /**
+   * Get a handle to an EPStore.
+   *
+   * @param store The name of the store you want a handle to.
+   * @return The EPStore reference, or null.
+   */
+  public EPStore getStore(String storeName) {
+    return (EPStore)stores.get(storeName);
+  }
 }

@@ -5,6 +5,9 @@ import java.sql.*;
 
 /**
  * Database tester, to test what data types are supported, etc.
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
  * @author Janak J Parekh
  * @version $Revision$

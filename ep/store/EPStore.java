@@ -1,17 +1,18 @@
 package psl.xues.ep.store;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
+
 import psl.xues.ep.event.EPEvent;
 
 /**
  * Store interface.  Support these methods to allow EP to use this mechanism
  * as an event store.  You will be run as a thread.  Make sure to handle
  * sources and timestamps as first-class search primitives.
- *
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
- *
+ * 
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
@@ -19,21 +20,36 @@ public abstract class EPStore implements Runnable {
   /** The name of this instance */
   protected String storeID = null;
   /** Our logger */
-  protected Category debug = null;
+  protected Logger debug = null;
   /** Are we in shutdown? */
   protected boolean shutdown = false;
+  /** EP reference */
+  protected EPStoreInterface ep = null;
 
   /**
    * CTOR.
    */
-  public EPStore(Element el) throws InstantiationException {
+  public EPStore(EPStoreInterface ep, Element el) 
+  throws InstantiationException {
     this.storeID = el.getAttribute("Name");
     if(storeID == null || storeID.length() == 0) {
       throw new InstantiationException("No ID specified for store");
     }
     
     // Set up the debugging.
-    debug = Category.getInstance(this.getClass().getName() + "." + storeID);
+    debug = Logger.getLogger(this.getClass().getName() + "." + storeID);
+    
+    // Store reference to ep
+    this.ep = ep;
+  }
+
+  /**
+   * Get our instance name.
+   *
+   * @return The string representing the instance name of this store.
+   */
+  public String getName() {
+    return storeID;
   }
   
   /**

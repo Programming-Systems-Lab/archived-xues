@@ -1,7 +1,6 @@
 package psl.xues.ep.output;
 
 import org.w3c.dom.Element;
-import org.apache.log4j.Category;
 
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
@@ -13,12 +12,14 @@ import siena.SienaException;
 
 /**
  * Siena outputter for EP.
- *
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO:
  * - Implement a separate publisher thread (is this really necessary?)
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -33,8 +34,9 @@ public class SienaOutput extends EPOutput {
    * @exception InstantiationException is thrown if we cannot finish
    * initialization -- this is likely due to networking or parameter problems.
    */
-  public SienaOutput(Element e) throws InstantiationException {
-    super(e); // Set up debugging, etc.
+  public SienaOutput(EPOutputInterface ep, Element e) 
+  throws InstantiationException {
+    super(ep,e); // Set up debugging, etc.
     
     // Figure out to whom we should be publishing
     sienaHost = e.getAttribute("SienaHost");

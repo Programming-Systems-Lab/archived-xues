@@ -3,35 +3,46 @@ package psl.xues.ep;
 import java.io.*;
 import java.util.*;
 import javax.xml.parsers.*;
-import org.apache.log4j.Category;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.PropertyConfigurator;
+
+import org.apache.log4j.Logger;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
 import org.xml.sax.SAXException;
+
 import psl.xues.ep.EPRule;
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.input.EPInput;
 import psl.xues.ep.input.EPInputInterface;
 import psl.xues.ep.output.EPOutput;
+import psl.xues.ep.output.EPOutputInterface;
 import psl.xues.ep.transform.EPTransform;
+import psl.xues.ep.transform.EPTransformInterface;
+import psl.xues.ep.store.EPStore;
+import psl.xues.ep.store.EPStoreInterface;
 
 /**
  * Event packager configuration parser.  Uses JAXP to handle the XML-formatted
  * configuration file.
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO: Support propertysets for event formats(?), inputters, outputters,
  * and transformers.
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
 class EPConfiguration {
-  /** log4j category class */
-  static Category debug =
-  Category.getInstance(EPConfiguration.class.getName());
+  /** Log4j debugger */
+  static Logger debug =
+  Logger.getLogger(EPConfiguration.class.getName());
   
   private EventPackager ep = null;
   
@@ -107,6 +118,19 @@ class EPConfiguration {
       }
     }
     
+    // Stores
+    NodeList storesList = e.getElementsByTagName("Stores");
+    ep.stores = new HashMap();
+    if(storesList.getLength() > 0) { // No warnings if otherwise
+      NodeList stores = storesList.item(0).getChildNodes();
+      for(int i=0; i < stores.getLength(); i++) {
+        if(stores.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
+        EPStore eps = buildStore((Element)stores.item(i));
+        if(eps != null)
+          ep.stores.put(eps.getName(), eps);
+      }
+    }
+    
     // ...and outputters
     NodeList outputtersList = e.getElementsByTagName("Outputters");
     ep.outputters = new HashMap();
@@ -177,7 +201,7 @@ class EPConfiguration {
     debug.info("Successfully loaded event format \"" + eventFormatName + "\"");
     return eventFormatName;
   }
-
+  
   /**
    * Build a new inputter based on a XML DOM description of it.
    *
@@ -235,17 +259,18 @@ class EPConfiguration {
       // XXX - Should we be making a deep copy of the outputter element,
       // since we're handing it to a potentially unknown constructor?
       epo = (EPOutput)Class.forName(outputterType).getConstructor(new Class[]
-      { Element.class }).newInstance(new Object[] { outputter });
+      { EPOutputInterface.class, Element.class }).newInstance(new Object[] 
+      { outputter });
     } catch(Exception e) {
       debug.warn("Failed in loading outputter \"" + outputterName +
       "\", ignoring", e);
       return null;
     }
-
+    
     // Success!
     return epo;
   }
-
+  
   /**
    * Build a new transform given the XML DOM definition of it.
    *
@@ -268,14 +293,50 @@ class EPConfiguration {
       // XXX - Should we be making a deep copy of the transform element,
       // since we're handing it to a potentially unknown constructor?
       ept = (EPTransform)Class.forName(transformType).getConstructor(new Class[]
-      { Element.class }).newInstance(new Object[] { transform });
+      { EPTransformInterface.class, Element.class }).newInstance(new Object[] 
+      { transform });
     } catch(Exception e) {
       debug.warn("Failed in loading transform \"" + transformName +
       "\", ignoring", e);
       return null;
     }
-
+    
     // Success!
     return ept;
   }
+  
+  /**
+   * Build a new store given the XML DOM definition of it.
+   *
+   * @param outputter The description in DOM-tree form.
+   * @return An instance of EPStore if successful, else null.
+   */
+  private EPStore buildStore(Element store) {
+    String storeName = store.getAttribute("Name");
+    String storeType = store.getAttribute("Type");
+    if(storeName == null || storeType == null ||
+    storeName.length() == 0 || storeType.length() == 0) {
+      debug.warn("Invalid store name or type detected, ignoring");
+      return null;
+    }
+    
+    // Load and instantiate this store
+    EPStore eps = null;
+    try {
+      debug.debug("Loading store \"" + storeName + "\"...");
+      // XXX - Should we be making a deep copy of the store element,
+      // since we're handing it to a potentially unknown constructor?
+      eps = (EPStore)Class.forName(storeType).getConstructor(new Class[]
+      { EPStoreInterface.class, Element.class }).newInstance(new Object[] 
+      { store });
+    } catch(Exception e) {
+      debug.warn("Failed in loading store \"" + storeName +
+      "\", ignoring", e);
+      return null;
+    }
+    
+    // Success!
+    return eps;
+  }
+  
 }

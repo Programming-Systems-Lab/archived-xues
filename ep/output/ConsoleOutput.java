@@ -10,8 +10,12 @@ import psl.xues.ep.event.*;
 
 /**
  * Console output for debugging purposes.
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
- * <!-- TODO:
+ * <!-- 
+ * TODO:
  * - Handle every other kind of event other than DOMEvent :)
  * -->
  *
@@ -22,8 +26,9 @@ public class ConsoleOutput extends EPOutput {
   /**
    * CTOR.
    */
-  public ConsoleOutput(Element el) throws InstantiationException {
-    super(el);
+  public ConsoleOutput(EPOutputInterface ep, Element el) 
+  throws InstantiationException {
+    super(ep,el);
   }
   
   /**

@@ -2,13 +2,16 @@ package psl.xues.ep.event;
 
 import siena.Notification;
 
-import org.apache.log4j.Category;
-
 /**
  * Simple Siena event representation.  Embeds a Siena Notification for speed.
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO:
  * - Support conversion to basic formats.  (Where should this be?)
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -16,8 +19,7 @@ import org.apache.log4j.Category;
 public class SienaEvent extends EPEvent {
   private final String format = "SienaEvent";
   private Notification n = null;
-  private Category debug = Category.getInstance(SienaEvent.class.getName());
-  
+    
   /**
    * Base CTOR.
    *

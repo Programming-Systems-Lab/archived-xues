@@ -2,9 +2,14 @@ package psl.xues.ep.event;
 
 /**
  * Flat event format.  Compatible with Siena and others.
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO:
  * - Implement this!
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$

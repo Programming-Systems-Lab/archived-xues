@@ -2,12 +2,15 @@ package psl.xues.ep.event;
 
 import java.io.Serializable;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 
 /**
  * Abstract base class for EP event formats.  This is not intended to be
  * transported <em>between</em> EP instances, but rather to be used within
  * <em>one</em> EP.
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
  * <!--
  * TODO:
@@ -25,7 +28,7 @@ public abstract class EPEvent implements Comparable, Serializable {
   /** Timestamp of this event, in OUR perception */
   protected long timestamp = -1;
   /** Debugger */
-  protected Category debug = null;
+  protected Logger debug = null;
   /** 
    * Creator ("source", not "type").  NB: This creator must be the local
    * EP creator -- rules are fired by examining the source.
@@ -51,7 +54,7 @@ public abstract class EPEvent implements Comparable, Serializable {
     this.source = source;
     // Build our debugger.  Note that if another class extends this one, we
     // will use that class's name as the debugger's instance name.
-    debug = Category.getInstance(this.getClass().getName());
+    debug = Logger.getLogger(this.getClass().getName());
   }
   
   /**

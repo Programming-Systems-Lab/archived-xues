@@ -2,7 +2,7 @@ package psl.xues.ep.input;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 
 import psl.xues.ep.EventPackager;
@@ -11,8 +11,8 @@ import psl.xues.ep.EPRule;
 /**
  * Extend this class to have your very own input mechanism.
  * <p>
- * <em>Copyright (c) 2002: The Trustees of Columbia University in the
- * City of New York.  All Rights Reserved.</em>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
  * <!--
  * TODO:
@@ -28,7 +28,7 @@ public abstract class EPInput implements Runnable {
   /** The name of this instance (the "source") */
   protected String sourceID = null;
   /** Our logger */
-  protected Category debug = null;
+  protected Logger debug = null;
   /** Are we in shutdown? */
   protected boolean shutdown = false;
   /** The thread context of this object */
@@ -65,7 +65,7 @@ public abstract class EPInput implements Runnable {
     this.defnElem = el;
     
     // Set up the debugging.  We need the type for this as well.
-    debug = Category.getInstance(this.getClass().getName() + "." + sourceID);
+    debug = Logger.getLogger(this.getClass().getName() + "." + sourceID);
   }
   
   /**

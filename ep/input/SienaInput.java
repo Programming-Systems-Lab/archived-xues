@@ -2,7 +2,6 @@ package psl.xues.ep.input;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.apache.log4j.Category;
 
 import siena.AttributeConstraint;
 import siena.Filter;
@@ -18,7 +17,7 @@ import psl.xues.ep.event.SienaEvent;
 
 /**
  * Siena input filter for EP.
- *
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *

@@ -3,52 +3,50 @@
 <!-- Created by jjp32 on March 8, 2002, 8:31 PM -->
 
 <EventPackagerConfiguration>
-    <EventFormats>
-        <EventFormat Name="psl.xues.ep.event.HierarchicalEvent"></EventFormat>
-        <EventFormat Name="psl.xues.ep.event.SienaEvent"></EventFormat>
-        <EventFormat Name="psl.xues.ep.event.FlatEvent"></EventFormat>
-    </EventFormats>
-    <Inputters>
-        <Inputter Name="SienaInput1" Type="psl.xues.ep.input.SienaInput" SienaHost="senp://localhost:7890">
-            <SienaFilter Name="TestFilter1">
-                <SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue"></SienaConstraint>
-            </SienaFilter>
-            <SienaFilter Name="TestFilter2">
-                <SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue2"></SienaConstraint>
-            </SienaFilter>
-        </Inputter>
-        <!--This inputter allows for a console control-->
-        <Inputter Name="ConsoleInput1" Type="psl.xues.ep.input.ConsoleInput">
-            
-            
-        </Inputter>
-        
-    </Inputters>
-<Outputters>
-        <Outputter Name="SienaOutput1" Type="psl.xues.ep.output.SienaOutput" SienaHost="senp://localhost:7891"></Outputter>
-        <Outputter Name="NullOutput1" Type="psl.xues.ep.output.NullOutput"></Outputter>
-    </Outputters>
-<Transforms></Transforms>
-    <Rules>
-        <Rule Name="TestRule1"><!--Sources specify a disjoint set-->
-            <Inputs>
-                <Input Name="SienaInput1"></Input>
-            </Inputs>
-            
-            <!--Transforms are applied in order-->
-            <Transforms></Transforms>
-            <Outputs>
-                <Output Name="SienaOutput1"></Output>
-            </Outputs>
-        </Rule>
-        <Rule Name="ConsoleRule">
-            <Inputs>
-                <Input Name="ConsoleInput1"></Input>
-            </Inputs>
-            <Outputs>
-                <Output Name="NullOutput1"></Output>
-            </Outputs>
-        </Rule>
-    </Rules>
-    </EventPackagerConfiguration>
-
+  <EventFormats>
+    <EventFormat Name="psl.xues.ep.event.HierarchicalEvent"></EventFormat>
+    <EventFormat Name="psl.xues.ep.event.SienaEvent"></EventFormat>
+    <EventFormat Name="psl.xues.ep.event.FlatEvent"></EventFormat>
+  </EventFormats>
+  <Inputters>
+    <Inputter Name="SienaInput1" Type="psl.xues.ep.input.SienaInput" SienaHost="senp://localhost:7890">
+      <SienaFilter Name="TestFilter1">
+	<SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue"></SienaConstraint>
+      </SienaFilter>
+      <SienaFilter Name="TestFilter2">
+	<SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue2"></SienaConstraint>
+      </SienaFilter>
+    </Inputter>
+    <!--This inputter allows for a console control-->
+    <Inputter Name="ConsoleInput1" Type="psl.xues.ep.input.ConsoleInput"></Inputter>
+  </Inputters>
+  <Outputters>
+    <Outputter Name="SienaOutput1" Type="psl.xues.ep.output.SienaOutput" SienaHost="senp://localhost:7891"></Outputter>
+    <Outputter Name="NullOutput1" Type="psl.xues.ep.output.NullOutput"></Outputter>
+  </Outputters>
+  <Transforms></Transforms>
+  <Stores>
+    <Store Name="HSQLDB1" Type="psl.xues.ep.store.JDBCStore" DBType="hsqldb" DBDriver="org.hsqldb.jdbcDriver"
+	   DBName="xues" DBTable="xues" Username="sa" Password=""></Store>
+  </Stores>
+  <Rules>
+    <Rule Name="TestRule1"><!--Sources specify a disjoint set-->
+      <Inputs>
+	<Input Name="SienaInput1"></Input>
+      </Inputs>
+      <!--Transforms are applied in order-->
+      <Transforms></Transforms>
+      <Outputs>
+	<Output Name="SienaOutput1"></Output>
+      </Outputs>
+    </Rule>
+    <Rule Name="ConsoleRule">
+      <Inputs>
+	<Input Name="ConsoleInput1"></Input>
+      </Inputs>
+      <Outputs>
+	<Output Name="NullOutput1"></Output>
+      </Outputs>
+    </Rule>
+  </Rules>
+</EventPackagerConfiguration>

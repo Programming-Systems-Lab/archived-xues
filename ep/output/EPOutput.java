@@ -1,7 +1,7 @@
 package psl.xues.ep.output;
 
 import org.w3c.dom.Element;
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 
 import psl.xues.ep.EventPackager;
 import psl.xues.ep.event.EPEvent;
@@ -9,12 +9,14 @@ import psl.xues.ep.event.EPEvent;
 /**
  * Output mechanism for EP.  Extend this class if you want to output stuff
  * in a new format.
- *
- * TODO:
- * - Instead of returning success for handleEvent, support absorption?
- *
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
+ *
+ * <!--
+ * TODO:
+ * - Instead of returning success for handleEvent, support absorption?
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -23,11 +25,13 @@ public abstract class EPOutput implements Runnable {
   /** Instance name */
   protected String outputID = null;
   /** Logger */
-  protected Category debug = null;
+  protected Logger debug = null;
   /** The thread context of this object */
   protected Thread myThread = null;
   /** Are we in shutdown? */
   protected boolean shutdown = false;
+  /** Reference to EP */
+  protected EPOutputInterface ep = null;
   
   /**
    * CTOR.  You are instantiated by the Event Packager and given the XML DOM
@@ -36,7 +40,8 @@ public abstract class EPOutput implements Runnable {
    * @param e The element containing useful configuration information.
    * @exception InstantiationException
    */
-  public EPOutput(Element el) throws InstantiationException {
+  public EPOutput(EPOutputInterface ep, Element el) 
+  throws InstantiationException {
     // Attempt to identify our instance name, which we call sourceID
     this.outputID = el.getAttribute("Name");
     if(outputID == null || outputID.length() == 0) {
@@ -44,7 +49,10 @@ public abstract class EPOutput implements Runnable {
     }
     
     // Set up the debugging.  We need the type for this as well.
-    debug = Category.getInstance(this.getClass() + "." + outputID);
+    debug = Logger.getLogger(this.getClass() + "." + outputID);
+  
+    // Store reference to EP
+    this.ep = ep;
   }
   
   /**

@@ -23,6 +23,9 @@ import java.util.regex.*;
 
 /**
  * XMLification module for EP.
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
  * @author Amna Qaiser (aq41@cs.columbia.edu)
  * @version $Revision$
@@ -36,8 +39,9 @@ public class Xmlifier extends EPTransform {
    *@param String path in the xml document at the end of which the
    *extracted strings will be appended
    */
-  public Xmlifier(org.w3c.dom.Element el) throws InstantiationException {
-    super(el);
+  public Xmlifier(EPTransformInterface ep, Element el) 
+  throws InstantiationException {
+    super(ep,el);
     root = el;
     if(root == null){
       debug.warn( "No rules for xmlification given");

@@ -7,9 +7,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import psl.xues.ep.event.DOMEvent;
+import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
+import psl.xues.ep.event.StringEvent;
 
 import siena.Notification;
 
@@ -26,16 +30,16 @@ import siena.Notification;
  * Input types currently supported:<ol>
  * <li>Serialized Siena notifications (via type <b>JavaObject</b>)</li>
  * </ol>
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
  * <!--
  * TODO:
  * - Support simple XML Siena representations in addition to serialized Java
  * - Consider using NBIO instead for lots of clients
+ * - Support non-serialized for non-Java-specific objects
  * -->
- *
- * <p>
- * <em>Copyright (c) 2002: The Trustees of Columbia University in the
- * City of New York.  All Rights Reserved.</em>
  *
  * @author Janak J Parekh
  * @version $Revision$
@@ -56,7 +60,7 @@ public class SocketInput extends EPInput {
   /**
    * CTOR.
    */
-  public SocketInput(EPInputInterface ep, Element el) 
+  public SocketInput(EPInputInterface ep, Element el)
   throws InstantiationException {
     super(ep,el);
     
@@ -81,7 +85,7 @@ public class SocketInput extends EPInput {
         throw new InstantiationException("Invalid data type specified");
       }
     }
-
+    
     // Now build our ServerSocket
     try {
       ss = new ServerSocket(this.port);
@@ -92,7 +96,7 @@ public class SocketInput extends EPInput {
     
     // We're ready to run
   }
-
+  
   /**
    * Run.  We listen to the server socket, and hand client connections
    * to a handler.
@@ -108,15 +112,15 @@ public class SocketInput extends EPInput {
         shutdown();
         return;
       }
-
-      // Store a reference to cs, and then hand it to a client.  XXX - 
+      
+      // Store a reference to cs, and then hand it to a client.  XXX -
       // does hashing of sockets like this work?
       ClientThread ct = null;
       try {
         new ClientThread(cs, type);
         clientSockets.put(cs, ct);
         new Thread(ct).start(); // Start it up
-      } catch(InstantiationException e) { 
+      } catch(InstantiationException e) {
         debug.error("Could not instantiate client", e);
         continue;
       }
@@ -127,7 +131,7 @@ public class SocketInput extends EPInput {
    * Return our type.
    */
   public String getType() { return "SocketInput"; }
-
+  
   /**
    * Handle an object that comes from a client thread.
    *
@@ -135,19 +139,32 @@ public class SocketInput extends EPInput {
    * @return A boolean indicating success.
    */
   boolean handleObject(Object o) {
+    EPEvent ret = null;
     // Explicitly handle the different object types here.  If a recognized
     // object type, wrap it up in an EPEvent and give it to our InputHandler.
-    if(o instanceof Notification) {
-      SienaEvent se = new SienaEvent((Notification)o, getName());
-      
+    // If it's an EPEvent, just take it and hand it over without any wrapping.
+    if(o instanceof EPEvent) {
+      ret = (EPEvent)o;
+    } else if(o instanceof Notification) {
+      ret = new SienaEvent(getName(), (Notification)o);
+    } else if(o instanceof Element) {
+      ret = new DOMEvent(getName(), (Element)o);
+    } else if(o instanceof Document) {
+      ret = new DOMEvent(getName(), ((Document)o).getDocumentElement());
+    } else if(o instanceof String) {
+      ret = new StringEvent(getName(), (String)o);
+    } else {
+      // No clue what to do with this
+      return false;
+    }
     
-    
-  ///////////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////////
+    ep.injectEvent(ret);
+    return true;
+  }
   
   /**
    * Thread to handle a client connection.
-   * 
+   *
    * @author Janak J Parekh <janak@cs.columbia.edu>
    * @version $Revision$
    */
@@ -166,15 +183,15 @@ public class SocketInput extends EPInput {
         case JAVA_OBJECT:
           try {
             cin = new ObjectInputStream(cs.getInputStream());
-          } catch(Exception e) { 
-            throw new InstantiationException("Could not establish " + 
+          } catch(Exception e) {
+            throw new InstantiationException("Could not establish " +
             "ObjectInputStream: " + e);
           }
         default:
           throw new InstantiationException("Unhandled type in ClientThread");
       }
     }
-            
+    
     /**
      * Run.  Receive entities and hand them to our parent.
      */
@@ -191,7 +208,7 @@ public class SocketInput extends EPInput {
             if(!shutdown) shutdown();
             return;
           }
-
+          
           // Now hand the object to our parent
           if(!handleObject(input)) {
             // Problem
@@ -200,18 +217,18 @@ public class SocketInput extends EPInput {
             return;
           }
         }
-
+        
         // If we've gotten here, we're in shutdown
         return;
       }
       
       // We should NOT get here
-      debug.error("Unhandled type in client thread run(), " + 
+      debug.error("Unhandled type in client thread run(), " +
       "shutting thread down");
       if(!shutdown) shutdown();
       return;
     }
-
+    
     /**
      * Shutdown.  XXX - not clear if this will work correctly.
      */

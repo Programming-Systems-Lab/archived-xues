@@ -1,11 +1,13 @@
 package psl.xues.ep.util;
 
-import bsh.Interpreter;
 import psl.xues.ep.EventPackager;
 import siena.HierarchicalDispatcher;
 
 /**
  * Event packager testing framework.
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
  * @author Janak J Parekh
  * @version $Revision

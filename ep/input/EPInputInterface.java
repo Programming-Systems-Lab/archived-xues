@@ -1,11 +1,12 @@
 package psl.xues.ep.input;
 
 import psl.xues.ep.event.*;
+import psl.xues.ep.store.EPStore;
 
 /**
  * EP input interface.  Inputters can use this to give EP callbacks when there
  * is new data.
- *
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
@@ -52,4 +53,12 @@ public interface EPInputInterface {
    * @return A boolean indicating if we're in shutdonw
    */
   public boolean inShutdown();
+
+  /**
+   * Get a handle to an EPStore.
+   *
+   * @param store The name of the store you want a handle to.
+   * @return The EPStore reference, or null if not found.
+   */
+  public EPStore getStore(String storeName);
 }

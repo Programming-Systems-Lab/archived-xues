@@ -12,7 +12,7 @@ import psl.xues.ep.event.StringEvent;
 /**
  * Console interface to the Event Packager.  Primarily for administrative
  * tasks.  Only one of these can exist in a JVM.
- *
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *

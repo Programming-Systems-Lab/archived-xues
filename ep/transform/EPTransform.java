@@ -1,13 +1,13 @@
 package psl.xues.ep.transform;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 import psl.xues.ep.event.EPEvent;
 
 /**
  * Abstract class for transforms.  Extend this if you want to implement
  * your own.
- *
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
@@ -24,7 +24,9 @@ public abstract class EPTransform {
   /** Instance ID */
   protected String transformID = null;
   /** Debugger */
-  protected Category debug = null;
+  protected Logger debug = null;
+  /** EP reference */
+  protected EPTransformInterface ep = null;
   
   /**
    * CTOR.  The element is provided for any special customizations on this
@@ -32,7 +34,8 @@ public abstract class EPTransform {
    *
    * @param el The element with initialization info for this transform.
    */
-  public EPTransform(Element el) throws InstantiationException {
+  public EPTransform(EPTransformInterface ep, Element el) 
+  throws InstantiationException {
     // Attempt to obtain our transformID
     this.transformID = el.getAttribute("Name");
     if(transformID == null || transformID.length() == 0) {
@@ -41,14 +44,17 @@ public abstract class EPTransform {
     }
     
     // Initialize our debugger
-    debug = Category.getInstance(this.getClass().getName() + "." + 
+    debug = Logger.getLogger(this.getClass().getName() + "." + 
     transformID);
+
+    // Store event packager reference
+    this.ep = ep;
   }
   
   /**
    * Get our instance name.
    *
-   * @return The string representing the instance name of this input.
+   * @return The string representing the instance name of this transform.
    */
   public String getName() {
     return transformID;

@@ -6,9 +6,14 @@ import org.w3c.dom.Node;
 /**
  * Default EP event representation: hierarchical format.  Supports many
  * possible inputs, including both flat and XML-like hierarchies.
+ * <p>
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO:
  * - Implement this!
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @revision $Revision$

@@ -3,10 +3,12 @@ package psl.xues.ep;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Iterator;
-import org.apache.log4j.Category;
+
+import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.input.EPInput;
 import psl.xues.ep.output.EPOutput;
@@ -14,7 +16,7 @@ import psl.xues.ep.transform.EPTransform;
 
 /**
  * Event packager rule representation.
- *
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
@@ -40,7 +42,7 @@ public class EPRule {
   /** Set of outputs for this rule */
   private HashSet outputs = null;
   /** Our debugger */
-  private Category debug = Category.getInstance(this.getClass());
+  private Logger debug = Logger.getLogger(this.getClass());
   
   /**
    * CTOR.  Use an Element definition.
