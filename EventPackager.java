@@ -26,7 +26,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.17  2001-01-30 02:39:36  jjp32
+ * Revision 1.18  2001-06-01 15:43:39  jjp32
+ *
+ * Added support for AIDE
+ *
+ * Revision 1.17  2001/01/30 02:39:36  jjp32
  *
  * Added loopback functionality so hopefully internal siena gets the msgs
  * back
@@ -173,6 +177,12 @@ public class EventPackager implements Notifiable {
     try {
       siena.subscribe(g, this);
     } catch(SienaException e) { e.printStackTrace(); }
+
+    Filter h = new Filter();
+    h.addConstraint("ProbedClass", Op.ANY, "");
+    try {
+      siena.subscribe(h, this);
+    } catch(SienaException e) { e.printStackTrace(); }
   }
     
   /**
@@ -238,11 +248,16 @@ public class EventPackager implements Notifiable {
 
     // Do a turnaround and send it out.
     Notification q = null;
-    if(n.getAttribute("Type").stringValue().equals("SmartEvent")) {
+    if(n.getAttribute("Type") != null &&
+       n.getAttribute("Type").stringValue().equals("SmartEvent")) {
       // Extract the XML data and send it out
       String data = n.getAttribute("SmartEvent").stringValue();
       q = KXNotification.EventPackagerKXNotification(11111,22222,(String)null,
 						     data);
+    } else if(n.getAttribute("ProbedClass") != null) {
+      // AIDE stuff - send to metaparser
+      q = KXNotification.MetaparserInput("EventPackager",11111,22222,(String)null,
+					 n.getAttribute("Event").stringValue());
     } else {
       // Direct Siena thing, just send it out
       q = KXNotification.EventPackagerKXNotification(11111,22222,n);
