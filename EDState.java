@@ -16,7 +16,11 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.2  2001-01-28 22:58:58  jjp32
+ * Revision 1.3  2001-01-29 04:18:42  jjp32
+ *
+ * Lots of updates.  Doesn't compile yet, hopefully it will by the time I'm home :)
+ *
+ * Revision 1.2  2001/01/28 22:58:58  jjp32
  *
  * Wildcard support has been added
  *
@@ -26,8 +30,8 @@ import siena.*;
  * 
  */
 public class EDState {
-  private String attr;
-  private String val;
+  /* Hash of attribute/value pairs relevant to this state */
+  private Hashtable attributes;
   /**
    * Relative timebound from previous state.
    */
@@ -45,15 +49,11 @@ public class EDState {
   /**
    * CTOR.
    *
-   * @param attr AttributeValue of this state.
-   * @param val Value of this state.
    * @param tb Elapsed time bound of this state (e.g. how long to wait
    *           from the previous state).  -1 implies no time bound.
    *           Starting states ignore this.
    */
-  public EDState(String attr, String val, int tb) {
-    this.attr = attr;
-    this.val = val;
+  public EDState(int tb) {
     this.tb = tb;
     this.ts = -1;  // Unvalidated state.
   }
@@ -62,8 +62,8 @@ public class EDState {
    * Clone CTOR.
    */
   public EDState(EDState e) {
-    this.attr = e.attr;
-    this.val = e.val;
+    /* Ouch, but I have to do this */
+    this.attributes = (Hashtable)e.attributes.clone();
     this.tb = e.tb;
     this.ts = e.ts;
   }
@@ -73,8 +73,7 @@ public class EDState {
    * for many state machines.
    */
   public EDState(EDState e, EDStateMachine sm) {
-    this.attr = e.attr;
-    this.val = e.val;
+    this.attributes = (Hashtable)e.attributes.clone();
     this.tb = e.tb;
     this.ts = e.ts;
     this.sm = sm;
@@ -88,6 +87,23 @@ public class EDState {
   }
 
   /**
+   * Add an attribute/value pair.
+   *
+   * XXX - We should probably check to prevent overwriting, but heck.
+   */
+  public void add(String attr, AttributeValue val) {
+    attributes.put(attr,val);
+  }
+  
+  /**
+   * Add an attribute/value pair (strings).  This is accomplished by
+   * wrapping an AttributeValue val.
+   */
+  public void add(String attr, String val) {
+    add(attr, new AttributeValue(val));
+  }
+
+  /**
    * Validate a state.  If this returns true, then it means the state
    * was successfully matched within the appropriate timebounds.
    *
@@ -97,21 +113,60 @@ public class EDState {
    * hopefully it'll make sense then :-)
    */
   public boolean validate(Notification n, EDState prev) {
-    AttributeValue a = n.getAttribute(attr);
-    AttributeValue timestamp = n.getAttribute("timestamp");
+    // Step 1. Perform timestamp validation.  If timestamp validation
+    // fails, then we don't need to go further.
+    if(validateTimebound(prev,timestamp) == false)
+      return false;
 
-    // Check to make sure the attribute exists
-    if(a == null || a.stringValue() == null) {
-      // Not our event
+    // Step 2. Now try and compare the attributes in the state's
+    // notification.  This notification may have other attributes, but
+    // we ignore them.
+    Enumeration keys = attributes.keys();
+    Enumeration objs = attributes.elements();
+    while(keys.hasMoreElements()) {
+      String attr = (String)keys.nextElement();
+      AttributeValue val = (AttributeValue)objs.nextElement();
+      if(validate(attr, val, n.getAttribute(attr) == false)) {
+	return false;
+      } // else continue
+    }
+
+    // They all passed, return true
+    return true;
+  }
+
+  /**
+   * Internal validate function - just check one attribute-value pair
+   */
+  private boolean validate(String attr, AttributeValue internalVal,
+			   AttributeValue externalVal) {
+    // Simple bounds checking
+    if(attr == null || internalVal == null || internalVal.getType == null) {
+      System.err.println("FATAL: Internal representation error in "+
+			 "EDState");
       return false;
     }
 
+    // Attribute exists externally?
+    else if(externalVal == null || 
+	    externalVal.getType != internalVal.getType) {
+      // No match
+      return false;
+    }
+
+    // Debug
+    if(EventDistiller.DEBUG) {
+      System.err.println("EDState: comparing attribute \"" + attr +
+			 "\", internalVal = \"" + internalVal + "\", " +
+			 "externalVal = \"" + externalVal + "\"");
+    }
+
     // Wildcard binding?
-    if(val.startsWith("*")) {
+    else if(internalVal.startsWith("*")) {
       // Is this one previously bound?
-      String bindName = val.substring(1);
+      String bindName = internalVal.substring(1);
       if(bindName.length() == 0) { // Simple wildcard
-	return validateTimebound(prev, timestamp);
+	return true;
       } else { // Binding
 	if(sm == null || sm.wildHash == null) { // BAD
 	  System.err.println("EDState: ERROR - No State Machine hash "+
@@ -120,32 +175,26 @@ public class EDState {
 	}
 	// Now check the bind
 	if(sm.wildHash.get(bindName) != null) {
-	  if(((String)sm.wildHash.get(bindName)).equals(a.stringValue())) {
+	  if(((AttributeValue)sm.wildHash.get(bindName)).
+	     isEqualTo(externalVal)) {
 	    // YES!
-	    return validateTimebound(prev, timestamp);
+	    return true;
 	  }
-	  return false; // Complex wildcard doesn't match
-	} else { 
-	  // Binding requested, NOT YET BOUND, check timestamp and bind
-	  if(validateTimebound(prev, timestamp)) {
-	    // We have a match, bind and return true
-	    sm.wildHash.put(bindName, a.stringValue());
-	  } else { 
-	    // Not our event (timestamp failed)
-	    return false;
-	  }
+	  else return false; // Complex wildcard doesn't match
+	} else { // Binding requested, NOT YET BOUND, bind and return true
+	  sm.wildHash.put(bindName, externalVal);
+	  return true;
 	}
       }
     }
 
     // No wildcard binding, SIMPLE match
-    if(a.stringValue().equals(val)) {
-      // Pull out the timestamp
-      return validateTimebound(prev, timestamp);
+    else if(internalVal.isEqualTo(externalVal)) {
+      return true;
     }
 
     // Not our event
-    return false;
+    else return false;
   }
 
   /**
@@ -204,11 +253,19 @@ public class EDState {
     // We only want events from metaparser that have the state that
     // maches us
     f.addConstraint("type", "EDInput");
-    if(val.startsWith("*")) {
-      // XXX - will "" be a problem here?
-      f.addConstraint(attr, new AttributeConstraint(Op.ANY,""));
-    } else {
-      f.addConstraint(attr, val);
+    // Now enumerate through the actual attr, val pairs
+    Enumeration keys = attributes.keys();
+    Enumeration objs = attributes.elements();
+    while(keys.hasMoreElements()) {
+      String attr = (String)keys.nextElement();
+      AttributeValue val = (AttributeValue)objs.nextElement();
+      if(val.getType() == AttributeValue.STRING &&
+	 val.stringValue().startsWith("*")) {
+	// XXX - will "" be a problem here?
+	f.addConstraint(attr, new AttributeConstraint(Op.ANY,""));
+      } else {
+	f.addConstraint(attr, new AttributeConstraint(val));
+      }
     }
     return f;
   }  

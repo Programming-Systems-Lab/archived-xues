@@ -31,7 +31,11 @@ import org.xml.sax.helpers.DefaultHandler;
  * @version 1.0
  *
  * $Log$
- * Revision 1.5  2001-01-29 02:14:36  jjp32
+ * Revision 1.6  2001-01-29 04:18:42  jjp32
+ *
+ * Lots of updates.  Doesn't compile yet, hopefully it will by the time I'm home :)
+ *
+ * Revision 1.5  2001/01/29 02:14:36  jjp32
  *
  * Support for multiple attributes on a output notification added.
  *
@@ -64,8 +68,19 @@ public class EDStateManager extends DefaultHandler implements Runnable {
   private Vector stateMachines = null;
   /** SAX parser reference */
   private SAXParser sxp = null;
-  // The current state/statemachine/etc being built.
+  /** The current statemachine being built. */
   private EDStateMachineSpecification currentEdsms = null;
+  /** The current state being built. */
+  private EDState currentState = null;
+  /** The current action being built. */
+  private Notification currentAction = null;
+  /** What are we currently parsing? */
+  private int currentMode = -1;
+
+  /** Currently parsing state */
+  private static final int PARSINGSTATE = 1;
+  /** Currently parsing action */
+  private static final int PARSINGACTION = 2;
   
   /**
    * XML main test
@@ -149,41 +164,60 @@ public class EDStateManager extends DefaultHandler implements Runnable {
       currentEdsms = new EDStateMachineSpecification(siena,this);
       stateMachineTemplates.addElement(currentEdsms);
     }
-    if(localName.equals("state")) { 
+
+    /////
+
+    if(localName.equals("state")) { // Start of new state
       if(EventDistiller.DEBUG) {
-	System.out.println("--> attributename = " + 
-			   attributes.getValue("","attributename"));
-	System.out.println("--> value = " + 
-			   attributes.getValue("","value"));
 	System.out.println("--> timebound = " +
 			   attributes.getValue("","timebound"));
       }
 
-      // Create the state
       try {
-	currentEdsms.addState(new EDState(attributes.getValue("","attributename"),
-					  attributes.getValue("","value"),
-					  Integer.parseInt(attributes.getValue("","timebound"))));
+	currentMode = PARSINGSTATE;
+	currentState = new 
+	  EDState(Integer.parseInt(attributes.getValue("","timebound")));
+	currentEdsms.addState(currentState);
       } catch(Exception e) {
 	System.err.println("FATAL: EDStateManager init failed:");
 	e.printStackTrace();
+	System.exit(-1);
       }	
     }
-    if(localName.equals("attribute")) {
+
+    /////
+    
+    if(localName.equals("notification")) { // Start of new notification
+      currentAction = new Notification();
+      currentEdsms.addAction(currentAction);
+      currentMode = PARSINGACTION;
+    }
+
+    /////
+
+    if(localName.equals("attribute")) { // Start of new attribute
       if(EventDistiller.DEBUG) {
-	System.out.println("--> name = " +
+	System.out.println("--> name = " + 
 			   attributes.getValue("","name"));
-	System.out.println("--> value = " +
+	System.out.println("--> value = " + 
 			   attributes.getValue("","value"));
       }
 
-      try {
-	currentEdsms.
-	  addAction(attributes.getValue("","name"),
-		    new AttributeValue(attributes.getValue("","value")));
-      } catch(Exception e) {
-	System.err.println("FATAL: EDStateManager init failed:");
-	e.printStackTrace();
+      // Create the attribute
+      String attr = attributes.getValue("","name");
+      AttributeValue val = new AttributeValue(attributes.getValue("","value"));
+
+      // Add it (somewhere)
+      switch(currentMode) {
+      case PARSINGSTATE:
+	currentState.add(attr, val);
+	break;
+      case PARSINGACTION:
+	currentAction.add(attr, val);
+	break;
+      default:
+	System.err.println("FATAL: EDStateManager init failed in determining mode");
+	System.exit(-1);
       }
     }
   }
