@@ -1,4 +1,4 @@
-package psl.xues;
+package psl.xues.ed;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -74,7 +74,7 @@ class RuleDesigner extends JFrame implements Rulebase {
     File currentFile = null;
 
     /** Name of default directory. */
-    File currentDir = new File("C:/My Documents/Columbia.fl01/psl/xues");
+    File currentDir = new File("/");
 
     /** File chooser. */
     JFileChooser fileChooser = new JFileChooser();

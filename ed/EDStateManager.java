@@ -1,5 +1,4 @@
-
-package psl.xues;
+package psl.xues.ed;
 
 import psl.kx.KXNotification;
 import java.io.*;
@@ -34,7 +33,8 @@ import org.apache.log4j.Category;
  * @author Janak J Parekh (jjp32@cs.columbia.edu)
  * @version $Revision$
  */
-public class EDStateManager implements Rulebase, Runnable, EDNotifiable, Comparable {
+public class EDStateManager implements Rulebase, Runnable, EDNotifiable, 
+Comparable {
   /** Debugging context */
   static Category debug =
   Category.getInstance(EDStateManager.class.getName());

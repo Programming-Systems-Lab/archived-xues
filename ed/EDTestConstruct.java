@@ -1,4 +1,4 @@
-package psl.xues;
+package psl.xues.ed;
 
 import java.io.*;
 import java.util.*;
@@ -45,11 +45,11 @@ public class EDTestConstruct implements Notifiable {
   public EDTestConstruct() {
     
     // instantiate new ED
-    ed = new EventDistiller(this, "psl/xues/SampleRules.xml", true, null, 
+    ed = new EventDistiller(this, "psl/xues/ed/SampleRules.xml", true, null, 
     true, null);
     
     // and an output -- optional
-    if (output) ed.setOutputFile(new File("psl/xues/currentRulebase.xml"));
+    if (output) ed.setOutputFile(new File("psl/xues/ed/currentRulebase.xml"));
     
     // test spamblocker rule
     if(rule.equals("spamblocker")) {

@@ -1,4 +1,4 @@
-package psl.xues;
+package psl.xues.ed;
 
 import java.io.*;
 import java.net.*;
@@ -11,7 +11,10 @@ import siena.*;
  * @version 0.1
  *
  * $Log$
- * Revision 1.1  2002-01-23 02:17:15  jjp32
+ * Revision 1.2  2002-01-23 02:25:10  jjp32
+ * Fixed package designators associated with "move"
+ *
+ * Revision 1.1  2002/01/23 02:17:15  jjp32
  *
  * Another massive update - repackaging xues so I can release
  * EventDistiller separately (jar time coming up tomorrow :-))

@@ -1,21 +1,23 @@
-/**
- * This file contains all the objects that are needed in the XML generator / rule designer
- * for the tree representation of a rule. Each object can represent a specification,
- * a state, an action, or a folder of actions. Each object holds a referece to the state,
- * or edsms, or notif it represents, and a vector representation of the variables that
- * need to be represented in the tree, as well as methods that are called by the GUI to
- * modify the represented object.
- *
- * @author eb659
- */
-
-package psl.xues;
+package psl.xues.ed;
 
 import java.util.*;
 import javax.swing.tree.*;
 import siena.*;
 
-/** Represents a SMSpec in the tree of the RuleDesigner. */
+/** 
+ * Represents a SMSpec in the tree of the RuleDesigner.
+ *
+ * This file contains all the objects that are needed in the XML generator / 
+ * rule designer for the tree representation of a rule. Each object can 
+ * represent a specification, a state, an action, or a folder of actions. Each 
+ * object holds a referece to the state, or edsms, or notif it represents, and 
+ * a vector representation of the variables that need to be represented in the 
+ * tree, as well as methods that are called by the GUI to modify the 
+ * represented object.
+ *
+ * @author Enrico Buonnano <eb659@columbia.edu>
+ * @version 0.5
+ */
 class SpecNode implements TreeNode {
 
     /** The specification represented. */

@@ -1,4 +1,5 @@
-package psl.xues;
+package psl.xues.ed;
+
 import siena.Notification;
 
 /** Constants in ED. */

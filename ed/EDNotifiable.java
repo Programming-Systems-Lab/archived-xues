@@ -1,7 +1,11 @@
-package psl.xues;
+package psl.xues.ed;
+
 import siena.Notification;
 
-/** This interface must be implemented by objects that handle EDBus callbacks. */
+/** 
+ * This interface must be implemented by objects that handle EDBus 
+ * callbacks. 
+ */
 interface EDNotifiable {
     /**
      * Handles the callbacks.

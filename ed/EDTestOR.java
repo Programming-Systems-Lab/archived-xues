@@ -1,4 +1,4 @@
-package psl.xues;
+package psl.xues.ed;
 
 import psl.kx.KXNotification;
 import java.io.*;
