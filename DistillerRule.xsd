@@ -1,95 +1,101 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<xsd:schema xmlns:xsd="http://www.w3.org/2000/10/XMLSchema" targetNamespace="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2000/10/XMLSchema" 
+            targetNamespace="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" 
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
   <xsd:annotation>
     <xsd:documentation>Event Distiller Rule Specification.  Copyright
 	2001 Trustees of Columbia University in the City of New York.
 	All Rights Reserved.</xsd:documentation>
   </xsd:annotation>
-  <!-- Top-level rulebase declaration. -->
-  <xsd:element name="rulebase">
-    <xsd:complexType>
-      <xsd:sequence>
-        <!-- Rule specification.  A rule consists of "states" that make up a pattern, 
-	and "actions" to take based on those states. -->
-        <xsd:element name="rule" maxOccurs="unbounded">
-          <xsd:complexType>
-            <xsd:sequence>
-              <!-- States consist of many individual attribute/value states.  
-		They should be put in order, with appropriate timebounds. -->
-              <xsd:element name="states">
-                <xsd:complexType>
-                  <xsd:sequence>
-	            <xsd:element name="state" maxOccurs="unbounded">
-                      <xsd:complexType>
-                        <xsd:sequence>
-                          <xsd:element name="attribute" maxOccurs="unbounded">
-                            <xsd:complexType>
-                              <xsd:attribute name="name" type="xsd:string"/>
-                              <xsd:attribute name="value" type="xsd:string"/>
-                            </xsd:complexType>
-                          </xsd:element>
-                        </xsd:sequence>
-                        <!-- name for this event. Must be specifyed -->
-            		<xsd:attribute name="name" type="xsd:string" />	
-                        <!-- Timebound for occurrence of this event.
-			     unlimited by default -->
-                        <xsd:attribute name="timebound" type="xsd:integer" />
-                        <!-- comma-delimited list of (names of) events that may follow this.
-			     may be omitted  -->
-            		<xsd:attribute name="children" type="xsd:string" />
-                        <!-- List of (names of) notifications to send in the case that 
-			     this event is matched. May be omitted  -->
-            		<xsd:attribute name="actions" type="xsd:string" />
-                        <!-- List of (names of) notifications to send in the case that
-			     this event is NOT matched. May be omitted  -->
-            		<xsd:attribute name="fail_actions" type="xsd:string" />
-			<!-- Whether this state will absorb the events that match it;
-			     false by default -->
-			<xsd:attribute name="absorb" type="xsd:boolean" />
-			<!-- how many times this event will need to be matched to pass;
-			     if not specifyed, '1' will be assumed -->
-			<xsd:attribute name="count" type="xsd:decimal" />
-                      </xsd:complexType>
-                    </xsd:element> <!-- /state -->
-	          </xsd:sequence>
-	        </xsd:complexType>
-	      </xsd:element>
 
-              <xsd:element name="actions">
-	        <xsd:complexType>
-	          <xsd:sequence> <!-- multiple types of notifications provided. -->
-	            <xsd:element name="notification" minOccurs="0" maxOccurs="unbounded">
-		      <xsd:complexType>
-		        <xsd:sequence>
-		          <xsd:element name="attribute" maxOccurs="unbounded">
-		            <xsd:complexType>
-		              <xsd:attribute name="name" type="xsd:string" />
-		              <xsd:attribute name="value" type="xsd:string" />
-		            </xsd:complexType>
-		          </xsd:element>
-		        </xsd:sequence>
-		      </xsd:complexType>
-	            </xsd:element> <!-- /notification -->
-	          </xsd:sequence>
-                  <!-- name for this action -->
-            	  <xsd:attribute name="name" type="xsd:string" />	
-	        </xsd:complexType>
-	      </xsd:element> <!-- /actions -->
-            </xsd:sequence>
-            <!-- The name of this rule. -->
-            <xsd:attribute name="name" type="xsd:string" />
-            <!-- the position where this rule is inserted: 
-	         lower positions have higher priority -->
-            <xsd:attribute name="position" type="xsd:decimal" />
-            <!-- the cyterion for instantiating this state machine:
-	         '0' means the machine will only be instantiated once
-		 '1' means there will always be only one instance at any given time
-		 '2' means new machines are instantiated as one starts 
-		 see EDConst -->
-            <xsd:attribute name="instantiation" type="xsd:decimal" />
-          </xsd:complexType>
-        </xsd:element> <!-- /rule -->
-      </xsd:sequence>
-    </xsd:complexType>
-  </xsd:element> <!-- /rulebase --> 
+  <xsd:element name="comment" type="xsd:string"/>
+
+  <xsd:element name="rulebase" type="rulebaseType"/>
+
+<!-- ------------------------------------------------------------------------------- -->
+<!-- ------------------------------------------------------------------------------- -->
+
+  <!-- RULEBASE: topmost declaration -->
+  <xsd:complexType name="rulebaseType">
+    <xsd:sequence><!-- a sequence of rules -->
+      <xsd:element name="rule" type="ruleType" maxOccurs="unbounded">
+    </xsd:sequence>
+  </xsd:complexType> <!-- /rulebaseType -->
+
+
+  <!-- RULE: specification of an individual rule -->
+  <xsd:complexType name="ruleType">
+    <xsd:sequence> 
+
+      <xsd:element name="states">
+        <xsd:complexType>
+          <xsd:sequence> <!-- the list of states -->
+	    <xsd:element name="state" type="stateType" maxOccurs="unbounded"/>
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element> <!-- /states -->
+
+      <xsd:element name="actions">
+	<xsd:complexType>
+	  <xsd:sequence> <!-- the list of notifications that can be sent. -->
+	    <xsd:element name="notification" type="notificationType" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element> <!-- /actions -->
+
+    </xsd:sequence> 
+
+    <!-- The name of this rule. -->
+    <xsd:attribute name="name" type="xsd:string" />
+    <!-- the position where this rule is inserted: lower positions have higher priority -->
+    <xsd:attribute name="position" type="xsd:decimal" />
+    <!-- the cyterion for instantiating this state machine:
+	 '0' means the machine will only be instantiated once
+         '1' means there will always be only one instance at any given time
+         '2' means new machines are instantiated as one starts  see EDConst -->
+    <xsd:attribute name="instantiation" type="xsd:decimal" />
+  </xsd:complexType> <!-- /ruleType -->
+
+
+  <!-- STATE: states consist of many individual attribute/value states, and the relevant attributes. -->
+  <xsd:complexType name="stateType">
+    <xsd:sequence> <!-- all the attribute/value pairs that describe this state -->
+      <xsd:element name="attribute" type="attributeType" maxOccurs="unbounded"/>
+    </xsd:sequence>
+
+    <!-- name for this event. Must be specifyed -->
+    <xsd:attribute name="name" type="xsd:string" />	
+    <!-- Timebound for occurrence of this event, unlimited by default -->
+    <xsd:attribute name="timebound" type="xsd:integer" />
+    <!-- comma-delimited list of (names of) events that may follow this (optional).  -->
+    <xsd:attribute name="children" type="xsd:string" />
+    <!-- List of (names of) notifications to send in the case that this event is matched (optional).  -->
+    <xsd:attribute name="actions" type="xsd:string" />
+    <!-- List of (names of) notifications to send in the case that this event is NOT matched (optional). -->
+    <xsd:attribute name="fail_actions" type="xsd:string" />
+    <!-- Whether this state will absorb the events that match it (optional; false by default) -->
+    <xsd:attribute name="absorb" type="xsd:boolean" />
+    <!-- how many times this event will need to be matched to pass (optional; '1' by default) -->
+    <xsd:attribute name="count" type="xsd:decimal" />
+  </xsd:complexType>
+
+
+  <!-- NOTIFICATION: This is the action we take, or, event we send. -->
+  <xsd:complexType name="notificationType">
+    <xsd:sequence> <!-- list of attribute/value pairs to be included in this notification -->
+      <xsd:element name="attribute" type="attributeType" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <!-- name for this action; use this name when specifying actions in states -->
+    <xsd:attribute name="name" type="xsd:string" />	
+  </xsd:complexType> <!-- /notification -->
+
+
+  <!-- ATTRIBUTE: attribute/value pair: the building blocks for Siena events. -->
+  <xsd:complexType name="attributeType">
+    <xsd:attribute name="name" type="xsd:string" />
+    <xsd:attribute name="value" type="xsd:string" />
+  </xsd:complexType>
+
 </xsd:schema>
