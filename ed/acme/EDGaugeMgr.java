@@ -71,6 +71,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
     // requests for gauge creation, deletion, etc.
     debug.debug("Registering myself");
     reportingBus.sienaBus.registerGaugeMgr(this);
+    debug.debug("Registration complete");
   }
   
   /**
@@ -84,13 +85,14 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    */
   public GaugeControl createGauge(GaugeID gauge, StringPairVector setupParams,
   StringPairVector mappings) {
-    debug.debug("createGauge called");
+    debug.debug("createGauge called for gauge " + gauge);
     if (managesType(gauge.gaugeType)) { // Our gauge to manage
       // "Dummy" handle.  What's the point?
       debug.debug("Our gauge to handle, mappings are " + mappings);
       debug.debug("Creating a gauge handle");
       SienaGaugeMgrGaugeHandle gaugeHandle=new SienaGaugeMgrGaugeHandle(gauge);
-      debug.debug("Handle created, about to start creating gauge");
+      debug.debug("Handle created: " + gaugeHandle);
+      debug.debug("About to start creating gauge");
       SienaEDGauge sed = new SienaEDGauge(gauge, getGaugeMgrID(), setupParams,
         mappings, EDOutputBus);
       synchronized(gauges) {
@@ -149,6 +151,12 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
         reportingBus.reportDeleted(event);
       }
     }
+    // Finally shutdown our siena node
+    try {
+      reportingBus.sienaBus.siena.shutdown();
+    } catch(Exception e) {
+      debug.warn("Error in shutting down", e);
+    }
   }
   
   /**
@@ -186,6 +194,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    * @return True if we do.
    */
   public boolean managesType(String gaugeType) {
+    debug.debug("managesType called");
     if(gaugeType.equals("EDGauge")) return true;
     else return false;
   }

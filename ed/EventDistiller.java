@@ -365,7 +365,10 @@ public class EventDistiller implements Runnable, Notifiable {
     inShutdown = true;
     debug.info("Shutting down");
     
-    /* Shut down the dispatchers */
+    // Shut down the ACME stuff, if it's around
+    if(acmeGM != null) acmeGM.shutdown();
+    
+    // Shut down the dispatchers
     if (owner == null) try {
       ((HierarchicalDispatcher)publicSiena).shutdown();
     } catch(Exception e) {

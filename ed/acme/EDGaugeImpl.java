@@ -7,7 +7,10 @@ import java.util.*;
 
 import org.apache.log4j.Logger;
 
+import siena.Filter;
 import siena.Siena;
+import siena.Notifiable;
+import siena.Op;
 
 /**
  * Event Distiller ACME Gauge Bus implementation.  This maps to a given
@@ -18,18 +21,22 @@ import siena.Siena;
  *
  * <!--
  * TODO:
- * - Support dynamic rule creation upon gauge creation request
+ * - Support dynamic rule creation upon gauge creation request (currently,
+ * we assume gauges are already instantiated... instead, setup parameter with
+ * XML embedded?)
  * - Additionally, consider probe deployment upon gauge creation request
  * -->
  *
  * @author Janak J Parekh
  * @version $Revision$
  */
-public class EDGaugeImpl extends GaugeImpl {
+public class EDGaugeImpl extends GaugeImpl implements Notifiable {
   /** Debugging logger */
   private Logger debug = Logger.getLogger(EDGaugeImpl.class.getName());
   /** ED output bus */
   private Siena EDOutputBus = null;
+  /** Mappings hash */
+  private HashMap mappings = null;
   
   /**
    * CTOR.
@@ -43,8 +50,39 @@ public class EDGaugeImpl extends GaugeImpl {
     this.EDOutputBus = EDOutputBus;
     
     // Insert code to check setup parameters
-    debug.debug("Called with mappings " + mappings );
-    debug.debug("Called with setupParams " + setupParams);
+    debug.debug("Called with mappings " + mappings);
+
+    // We don't handle setup parameters at this moment, we assume gauges are
+    // precreated
+    //debug.debug("Called with setupParams " + setupParams);
+    
+    // Copy the mappings into a hash so we can quickly rewrite the results.
+    // At the same time, build the subscription filter.
+    this.mappings = new HashMap();
+    Filter sienaFilter = new Filter();
+    for(int i=0; i < mappings.size(); i++) {
+      this.mappings.put(mappings.nameAt(i), mappings.valueAt(i));
+      sienaFilter.addConstraint(mappings.nameAt(i), Op.ANY, (String)null);
+    }
+    
+    // Create a subscription for the left-hand-side of the mappings.  
+    // For now, we assume a conjoined set with ONE subscription.
+    try {
+      EDOutputBus.subscribe(sienaFilter, this);
+    } catch(Exception e) {
+      debug.warn("Could not create subscription for gauge bridging", e);
+    }
+  }
+  
+  /**
+   * Unused CTOR.  We override to ensure no other class is calling this one.
+   */
+  public EDGaugeImpl(GaugeID gid, StringPairVector setupParams, 
+  StringPairVector mappings, GaugeReportingBus bus) {
+    super(gid, setupParams, mappings, bus);
+    
+    debug.error("Invalid constructor (2) called");
+    return;
   }
   
   /**
@@ -58,7 +96,8 @@ public class EDGaugeImpl extends GaugeImpl {
   }
   
   /** 
-   * Configure the gauge.
+   * Configure the gauge.  For now, we do nothing, since we don't take any
+   * parameters.
    *
    * @param configParams The parameters used to configure the gauge.
    * @return A boolean indicating success.
@@ -67,11 +106,7 @@ public class EDGaugeImpl extends GaugeImpl {
     // At this moment, we do nothing, since we implicitly assume the
     // subscription is all we need.  In the future, this might contain
     // the information we need to create the ED gauge.
-    debug.warn("Configure not implemented");
-    
-    //for (int i = 0; i < configParams.size(); i++) {
-      // Insert code to process configuration parameters
-    //}
+    // debug.warn("Configure not implemented");
     return true;
   }
   
@@ -84,7 +119,7 @@ public class EDGaugeImpl extends GaugeImpl {
   public boolean queryAllValues(GaugeValueVector values) {
     // Insert code to fill values with the current value of all values that 
     // the gauge reports.
-    debug.warn("QueryAllValues not implemented");
+    debug.warn("QueryAllValues not supported");
     return false;
   }
   
@@ -146,4 +181,9 @@ public class EDGaugeImpl extends GaugeImpl {
   public void shutdown() {
     return; // Do nothing for now.
   }
+  
+  public void notify(siena.Notification notification) {
+  }
+  
+  public void notify(siena.Notification[] notification) { ; }
 }

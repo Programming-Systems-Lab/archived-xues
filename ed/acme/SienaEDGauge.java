@@ -14,7 +14,7 @@ import siena.Siena;
  * @author Janak J Parekh
  * @version $Revision$
  */
-public class SienaEDGauge 
+public class SienaEDGauge
 extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGauge {
   /** Debugger */
   private Logger debug = Logger.getLogger(SienaEDGauge.class.getName());
@@ -23,19 +23,19 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGauge {
   /** Reference to actual gauge implementation */
   private EDGaugeImpl impl = null;
   
-  /** 
+  /**
    * Creates a new gauge.
    *
    * @param gaugeID The ID of the new gauge.
    * @param creatorID The ID of the gauge manager that created the gauge.
    * @param setupParams The parameters that the gauge uses to set itself up.
-   * @param mappings The property that the <pre>date</pre> value is associated 
+   * @param mappings The property that the <pre>date</pre> value is associated
    * with.
    * @param EDOutputBus The ED's output bus that we watch and bridge events
    * to the CMU gauge infrastructure.
    */
-  public SienaEDGauge(GaugeID gaugeID, String creatorID, 
-  StringPairVector setupParams, StringPairVector mappings, 
+  public SienaEDGauge(GaugeID gaugeID, String creatorID,
+  StringPairVector setupParams, StringPairVector mappings,
   Siena EDOutputBus) {
     super(gaugeID, creatorID, setupParams, mappings);
     debug.debug("Creating implementation");
@@ -45,13 +45,31 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGauge {
     finalizeCreation(creatorID, impl.consistentlyCreated());
   }
   
-  /** 
+  /**
+   * Unused CTOR.  We override to ensure no other class is calling this one.
+   */
+  public SienaEDGauge(GaugeID gid, String creatorID,
+  StringPairVector setupParams, StringPairVector mappings) {
+    super(gid, creatorID, setupParams, mappings);
+    debug.error("Invalid constructor (2) called");
+  }
+  
+  /**
+   * Other unused CTOR.
+   */
+  public SienaEDGauge(String modelName, String modelType, String gaugeName,
+  String gaugeType, String creatorID) {
+    super(modelName, modelType, gaugeName, gaugeType, creatorID);
+    debug.error("Invalid constructor (3) called");
+  }
+  
+  /**
    * The method called when configuring a gauge.
    *
-   * @param configParams The configuration parameters for the gauge as 
+   * @param configParams The configuration parameters for the gauge as
    * (name, value) pairs.
    *
-   * @return <B>true</B> if the gauge could be configured successfully; 
+   * @return <B>true</B> if the gauge could be configured successfully;
    * <B>false</B> otherwise
    *
    */
@@ -59,13 +77,13 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGauge {
     return impl.configure(configParams);
   }
   
-  /** 
+  /**
    * Returns all the gauge values that the gauge reports.
    *
-   * @param values This is filled with all the values as a (valueName, 
+   * @param values This is filled with all the values as a (valueName,
    * propertyName, value) tuple
    *
-   * @return <B>true</B> if the values were successfully determined; 
+   * @return <B>true</B> if the values were successfully determined;
    * <B>false</B> otherwise.
    */
   public boolean queryAllValues(GaugeValueVector values) {
@@ -74,26 +92,26 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGauge {
   
   /** The method called to query the state of the gauge
    *
-   * @param setupParams Will be filled with the parameters with which the gauge 
+   * @param setupParams Will be filled with the parameters with which the gauge
    * was setup, as (name, value) pairs.
-   * @param configParams Will be filled with the current configuration of the 
+   * @param configParams Will be filled with the current configuration of the
    * gauge, as (name, value) pairs
-   * @param mappings Will be filled with the mappings for the gauge, as (name, 
+   * @param mappings Will be filled with the mappings for the gauge, as (name,
    * propertyName) pairs.
-   * @return <B>true</B> if the gauge successfully returns its state; 
+   * @return <B>true</B> if the gauge successfully returns its state;
    * <B>false</B> otherwise
    */
-  public boolean queryState(StringPairVector setupParams, 
+  public boolean queryState(StringPairVector setupParams,
   StringPairVector configParams, StringPairVector mappings) {
     return impl.queryState(setupParams, configParams, mappings);
   }
   
-  /** 
+  /**
    * Called when a gauge is queried for a value. This provides an
    * alternative to the gauge reporting events.
    *
    * @param valueName The name of the value to be queried.
-   * @return The value corresponding to the name passed in; <B>null</B> 
+   * @return The value corresponding to the name passed in; <B>null</B>
    * indicates that the gauge value could not be determined.
    */
   public String queryValue(String valueName) {
