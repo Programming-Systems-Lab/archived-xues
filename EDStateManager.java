@@ -40,7 +40,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.15  2001-05-21 00:43:04  jjp32
+ * Revision 1.16  2001-05-29 17:31:08  jjp32
+ * Reflected change from branch on main version (re spec file)
+ *
+ * Revision 1.15  2001/05/21 00:43:04  jjp32
  * Rolled in Enrico's changes to main Xues trunk
  *
  * Revision 1.12.4.8  2001/05/06 05:31:07  eb659
@@ -245,15 +248,16 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
     subscribe();
 
     // Do we have a spec filename?
-    if(specFilename == null) return; // No further
-    // Initialize SAX parser and run it on the file
-    sxp = new SAXParser();
-    sxp.setContentHandler(this);
-    try {
-      sxp.parse(new InputSource(new FileInputStream(specFilename)));
-    } catch(Exception e) {
-      System.err.println("FATAL: EDStateManager init failed:");
-      e.printStackTrace();
+    if(specFilename != null) {
+      // Initialize SAX parser and run it on the file
+      sxp = new SAXParser();
+      sxp.setContentHandler(this);
+      try {
+	sxp.parse(new InputSource(new FileInputStream(specFilename)));
+      } catch(Exception e) {
+	System.err.println("FATAL: EDStateManager init failed:");
+	e.printStackTrace();
+      }
     }
 
     // Start da reapah.  In a new thread.
