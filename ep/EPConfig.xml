@@ -20,6 +20,8 @@
     <Outputter Name="ConsoleOutput1" Type="psl.xues.ep.output.ConsoleOutput"></Outputter>
   </Outputters>
   <Transforms>
+    <Transform Name="EventConverter1" 
+        Type="psl.xues.ep.transform.EventConverter" OutputFormat="SienaEvent"/>
   </Transforms>
   <Stores>
   </Stores>
@@ -44,6 +46,9 @@
       <Inputs>
 	<Input Name="ConsoleInput1"></Input>
       </Inputs>
+      <Transforms>
+        <!--<Transform Name="EventConverter1" />-->
+      </Transforms>
       <Outputs>
 	<Output Name="ConsoleOutput1"></Output>
       </Outputs>

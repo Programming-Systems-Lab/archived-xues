@@ -8,6 +8,17 @@ import psl.xues.ep.util.EPConst;
  * Transform that forces an event conversion.  By default, Event Packager does
  * lazy conversion; this forces it explicitly.
  * <p>
+ * Required attributes:<ol>
+ * <li><b>OutputFormat</b>: specify the output format to request event conversion to</li>
+ * </ol>
+ * <p>
+ * Output formats currently supported (you can use either designator):<ul>
+ * <li>DOMEvent (DOM_OBJECT)</li>
+ * <li>SienaEvent (SIENA_OBJECT)</li>
+ * <li>XMLEvent (XML_OBJECT)</li>
+ * <li>StringEvent (STRING_OBJECT)</li>
+ * </ul>
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
@@ -78,6 +89,8 @@ public class EventConverter extends EPTransform implements EPConst {
 
   /**
    * Get the type.
+   *
+   * @return The type of EPTransform that this module is.
    */
   public String getType() {
     return "EventConverter";

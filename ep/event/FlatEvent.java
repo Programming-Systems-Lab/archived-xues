@@ -10,13 +10,14 @@ package psl.xues.ep.event;
  *
  * <!--
  * TODO:
- * - Implement this!
+ * - Finish abstract class implementation
+ * - Create necessary implementations of this abstract class
  * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-public class FlatEvent extends EPEvent {
+public abstract class FlatEvent extends EPEvent {
   /**
    * Create an empty FlatEvent.
    *

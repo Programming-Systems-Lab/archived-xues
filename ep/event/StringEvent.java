@@ -98,5 +98,7 @@ public class StringEvent extends EPEvent {
     return null;
   }
   
-  
+  public String toString() {
+    return data;
+  }
 }

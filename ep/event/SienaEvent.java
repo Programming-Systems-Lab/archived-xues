@@ -89,8 +89,7 @@ public class SienaEvent extends EPEvent {
    * @return The string representation
    */
   public String toString() {
-    return "psl.xues.ep.event.SienaEvent - source \"" + source +
-    "\", timestamp \"" + timestamp + "\", notification " + n;
+    return n.toString();
   }
   
   /**

@@ -131,4 +131,22 @@ public abstract class EPEvent implements Comparable, Serializable {
     else if(this.timestamp == ((EPEvent)o).timestamp) return 0;
     else return 1; // Must be greater
   }
+  
+  /**
+   * toString method -- all extenders must implement this.
+   *
+   * @return A string representation of this EPEvent
+   */
+  public abstract String toString();
+  
+  /**
+   * Event information, returned in string format.  Utilizes the toString
+   * method implemented by children, but appends some metadata to the result.
+   *
+   * @return A string with all the information and data for this event.
+   */
+  public String getInfo() {
+    return getFormat() + "- source \"" + source +
+    "\", timestamp \"" + timestamp + "\", data {" + toString() + "}";
+  }
 }

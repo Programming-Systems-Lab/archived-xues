@@ -14,13 +14,14 @@ import org.w3c.dom.Node;
  *
  * <!--
  * TODO:
- * - Implement this!
+ * - Finish abstract class implementation
+ * - Create necessary implementations of this abstract class
  * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @revision $Revision$
  */
-public class HierarchicalEvent extends EPEvent {
+public abstract class HierarchicalEvent extends EPEvent {
   /** Format of this event */
   private final String format = "HierarchicalEvent";
   /** Associated data */

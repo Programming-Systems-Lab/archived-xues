@@ -109,21 +109,7 @@ public class DOMEvent extends EPEvent {
   public EPEvent convertEvent(String newFormat) {
     // TO STRING FORMAT ///////////////////////////////////////////////
     if(newFormat.equalsIgnoreCase("StringEvent")) {
-      // DOM output to String
-      StringWriter sw = new StringWriter();
-      // Use transformer
-      Transformer t = JAXPUtil.newTransformer();
-      // Set up the source and target
-      DOMSource source = new DOMSource(data);
-      StreamResult result = new StreamResult(sw);
-      try {
-        t.transform(source, result);
-      } catch(Exception e) {
-        debug.error("Could not convert event to String", e);
-        return null;
-      }
-      // Finally, construct the StringEvent and return it
-      return new StringEvent(getSource(), sw.toString());
+      return new StringEvent(getSource(), toString());
     }
     // TO OTHER FORMAT... /////////////////////////////////////////////
     
@@ -131,5 +117,27 @@ public class DOMEvent extends EPEvent {
     // Not supported
     debug.warn("DOMEvent can't be converted to \"" + newFormat + "\"");
     return null;
+  }
+  
+  /**
+   * Return a String representation of this DOMEvent.
+   *
+   * @return A String representation (in our case, XML is outputted).
+   */
+  public String toString() {
+    // DOM output to String
+    StringWriter sw = new StringWriter();
+    // Use transformer
+    Transformer t = JAXPUtil.newTransformer();
+    // Set up the source and target
+    DOMSource source = new DOMSource(data);
+    StreamResult result = new StreamResult(sw);
+    try {
+      t.transform(source, result);
+    } catch(Exception e) {
+      debug.error("Could not convert event to String", e);
+      return null;
+    }
+    return sw.toString();
   }
 }
