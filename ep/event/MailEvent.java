@@ -10,7 +10,7 @@ import java.util.Hashtable;
  * City of New York.  All Rights Reserved.
  *
  * <!--
- * TODO: better documentation
+ * TODO: not sure...
  *  -->
  *
  * @author Julia Cheng <jc424@columbia.edu>
@@ -25,6 +25,9 @@ public class MailEvent extends EPEvent {
 	private String cc = null;
 	private String bcc = null;
 	private String date = null;
+	
+	/** Additional header fields that may appear in the message, for example, subject or message ID.  
+	 */
 	private Hashtable additionalHeaders = null;
 	
 	/** Associated data: the actual message part of the mail. */
@@ -50,7 +53,11 @@ public class MailEvent extends EPEvent {
 		this.data = data;
 	}
 
-
+	/**
+	 * String representation of MailEvent
+	 *
+	 * @return The string representation
+	 */
 	public String toString()
 	{
 		StringBuffer sb = new StringBuffer();

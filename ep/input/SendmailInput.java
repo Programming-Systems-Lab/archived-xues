@@ -12,23 +12,58 @@ import org.w3c.dom.Element;
 import psl.xues.ep.event.MailEvent;
 
 /**
+ * SMTP input filter. 
+ * <p>Usage: <em>([] implies an optional parameter)</em></p>
+ * (in the inputters section of the configuration file:)<br>
+ * <code> &ltInputter Name="SendmailInput1" Type="psl.xues.ep.input.
+ * SendmailInput" [ListenPort="<i>port number</i>"] [EndOfMailMarker="
+ * <i>marker</i>"] [MailFieldSeparator="<i>delimiter</i>"]/&gt
+ * </code>
+ * <ul>
+ * <li>ListenPort: a number indicating the port number where the Inputter will
+ * listen
+ * <li>EndOfMailMarker: The string (one or more characters) that will indicate
+ * the end of data in the socket.  The entire value of this field is one
+ * delimiter.
+ * <li>MailFieldSeparator: The string (one or more characters) that will
+ * indicate break between fields of data.  The entire value of this field is
+ * one delimiter.
+ * </ul>
+ * <p>
+ * (in the rules section of the configuration file:) <br>
+ * <code> &ltRule Name=" SendmailRule"&gt<br> &nbsp;&nbsp;&nbsp;&nbsp;
+ * &ltInputs&gt<br> &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&ltInput
+ * Name=" SendmailInput1" /&gt <br> &nbsp;&nbsp;&nbsp;&nbsp; &lt/Inputs&gt <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;  &ltOutputs&gt <br> &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;
+ * &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &ltOutput Name=" <i>outputter
+ * name</i>" /&gt <br> &nbsp;&nbsp;&nbsp;&nbsp; &lt/Outputs&gt<br> &lt/Rule&gt
+ * </code>
  * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
  * <!--
  * TODO:
- * - Better documentation for this class
- * -->
+ - Maybe separate out the string handling functions into a separate helper
+ class?  -- >
  * 
  * @author Julia Cheng <jc424@columbia.edu>
  * @version $Revision$
  */
 public class SendmailInput extends EPInput {
-  ServerSocket serverSocket = null;
-  int serverPort = 4444;
-  String inputEndMarker = ".";
-  String inputFieldSeparator = ";;";
+	/** The socket that will receive data
+	 */
+	ServerSocket serverSocket = null;
+	/** Indicates location of the socket. The default value is 4444.
+	 */
+	int serverPort = 4444;
+	/** String (one or more character) to indicate end of data in the socket. The 
+	 * default value is ".".   
+	 */
+  	String inputEndMarker = ".";
+  	/** The default value is ";;".
+  	 */
+	String inputFieldSeparator = ";;";
 
   /**
    * Constructor.
@@ -67,6 +102,12 @@ public class SendmailInput extends EPInput {
 	}
   }
 
+/**
+ * A simple function to test is a String object contains valid and useful data.
+ * @param str - the string to be tested
+ * @return true if the string has valid data, false if the string is empty,
+ * null, or contains only white space.
+ */
 	private boolean isStringValid(String str)
 	{
 		return ((str != null) && (str.trim().length() > 0));
@@ -98,7 +139,7 @@ public class SendmailInput extends EPInput {
 			return;
 	  	}
     
-    	// Read data from the socket
+    	// Read data from the socket until the EndOfMailMarker is reached. 
 		try {
 			BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			String sInput;
@@ -123,9 +164,11 @@ public class SendmailInput extends EPInput {
 			
 		// Parse out the fields of the message
 		String mailInput = sbInput.toString();
-		debug.info("mail message: " + mailInput);
 			
-		// Can't just use a stringTokenizer with a delimiter longer than 1 char
+		/* Can't just use a stringTokenizer to parse, because it will fail with a delimiter longer than 1 char
+		 * Instead, two numbers to keep track of the positions of delimitors,
+		 * and capture the substring between delimiters. 
+		*/ 
 		int index1 = 0;
 		int index2 = mailInput.indexOf(inputFieldSeparator);
 		Hashtable headersList = new Hashtable();
@@ -163,13 +206,12 @@ public class SendmailInput extends EPInput {
 				headersList.put("Subject", fieldValue);
 				me.setAdditionalHeaders(headersList);
 			} else if(fieldName.equals("HEADERS")) {
-				// Parse out the headers into a hashtable
+				// Parse out the additional headers into a hashtable
 				// Again, cannot use StringTokenizer in case the separator is more than 1 char long
 				int headersIndex1 = 0;
 				int headersIndex2 = fieldValue.indexOf(headerListSeparator);
 				while((headersIndex1 > -1) || (headersIndex2 > -1))
 				{
-					debug.info("index1: " + headersIndex1 + ", index2: " + headersIndex2);
 					String header = null;
 					if(headersIndex2 > -1)
 					{
@@ -212,6 +254,7 @@ public class SendmailInput extends EPInput {
   }
   
   public void shutdown() {
+  		super.shutdown();
   		// Close the server socket
   		try {
   			if(serverSocket != null)
