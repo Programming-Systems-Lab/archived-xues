@@ -17,6 +17,7 @@ import psl.xues.ep.event.EPEvent;
  * TODO:
  * - Consider making a thread (but first figure out if there is any advantage
  *   to this, since transforms have implied orderings)
+ * - If so (or otherwise), shutdown?
  * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
@@ -100,4 +101,11 @@ public abstract class EPTransform implements EPPlugin {
   public final long getCount() {
     return count;
   }
+  
+  /**
+   * Shutdown.  Currently, EP does nothing with EPTransform shutdowns, so
+   * this can't be overriden.  This behavior may change in the future if
+   * needed.
+   */
+  public final void shutdown() { return; }
 }

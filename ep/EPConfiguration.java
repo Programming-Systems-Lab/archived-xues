@@ -275,42 +275,8 @@ class EPConfiguration {
     }
     
     // Success
-    debug.info(pluginType + " loaded successfully.");
+    debug.info(pluginType + " \"" + pluginName + "\" loaded successfully.");
     pluginList.put(epp.getName(), epp);
     return epp;
-  }
-  
-  /**
-   * Build a new store given the XML DOM definition of it.
-   *
-   * @param store The description in DOM-tree form.
-   * @return An instance of EPStore if successful, else null.
-   */
-  private EPStore addStore(Element store) {
-    String storeName = store.getAttribute("Name");
-    String storeType = store.getAttribute("Type");
-    if(storeName == null || storeType == null ||
-    storeName.length() == 0 || storeType.length() == 0) {
-      debug.warn("Invalid store name or type detected, ignoring");
-      return null;
-    }
-    
-    // Load and instantiate this store
-    EPStore eps = null;
-    try {
-      debug.debug("Loading store \"" + storeName + "\"...");
-      // XXX - Should we be making a deep copy of the store element,
-      // since we're handing it to a potentially unknown constructor?
-      eps = (EPStore)Class.forName(storeType).getConstructor(new Class[]
-      { EPStoreInterface.class, Element.class }).newInstance(new Object[]
-      { (EPStoreInterface)ep, store });
-    } catch(Exception e) {
-      debug.warn("Failed in loading store \"" + storeName +
-      "\", ignoring", e);
-      return null;
-    }
-    
-    // Success!
-    return eps;
   }
 }

@@ -248,7 +248,8 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
       }
     }
     
-    // XXX - transforms?
+    // (note, transforms are currently not supported for shutdown purposes.
+    //  this may change in the future)
     
     // ... finally, the stores
     synchronized(stores) {
