@@ -16,21 +16,24 @@ import psl.xues.ep.event.SienaEvent;
  * Random Siena-probe input.  We just generate random values and stick them
  * in a SienaEvent.
  * <p>
+ * <b>Configuration:</b>
+ * <ul><li>
  * <b>Required attributes:</b> <tt>delay</tt> (<em>int</em>): How long
  * we should sleep between two events, in msec
- * <p>
+ * </li><li>
  * <b>Required embedded elements:</b>
  * <ul>
  * <li>(one or more) <tt>Attribute</tt>s, with attributes
  * <tt>Name</tt> (<em>String</em>) and <tt>Type</tt> (<em>String</em>)
  * </li>
  * </ul>
- * <p>
+ * </li><li>
  * Supported types include:
  * <ul>
  * <li>int</li>
  * <li>float</li>
  * </ul>
+ * </li></ul>
  * <p>
  * Copyright (c) 2000-2002: The Trustees of Columbia University and the
  * City of New York.  All Rights Reserved.

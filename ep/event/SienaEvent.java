@@ -17,7 +17,9 @@ import siena.Notification;
  * @version $Revision$
  */
 public class SienaEvent extends EPEvent {
+  /** Format of this event */
   private final String format = "SienaEvent";
+  /** Associated data */
   private Notification n = null;
     
   /**

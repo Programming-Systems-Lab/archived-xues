@@ -3,7 +3,7 @@ package psl.xues.ep.event;
 import org.w3c.dom.Element;
 
 /**
- * Simple Siena event representation.  Embeds a DOM Element.
+ * Simple DOM-based event representation.  Embeds a DOM Element.
  * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
@@ -17,7 +17,9 @@ import org.w3c.dom.Element;
  * @version $Revision$
  */
 public class DOMEvent extends EPEvent {
+  /** Format of this event */
   private final String format = "DOMEvent";
+  /** Associated DOM tree */
   private Element data = null;
 
   /**
@@ -31,7 +33,7 @@ public class DOMEvent extends EPEvent {
    * CTOR given an existing DOM element.
    *
    * @param source The generator ("source") of these events.
-   * @param n The DOM element to use (NOTE: it is NOT copied!)
+   * @param data The DOM element to use (NOTE: it is NOT copied!)
    */
   public DOMEvent(String source, Element data) {
     super(source);
@@ -42,7 +44,7 @@ public class DOMEvent extends EPEvent {
    * CTOR given an existing DOM element and a timestamp.
    *
    * @param source The generator ("source") of these events.
-   * @param n The DOM element to use (NOTE: it is NOT copied!)
+   * @param data The DOM element to use (NOTE: it is NOT copied!)
    * @param t The timestamp.
    */
   public DOMEvent(String source, Element data, long t) {

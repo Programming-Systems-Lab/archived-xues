@@ -118,6 +118,9 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     new Thread(this).start();
   }
   
+  /**
+   * Main run context.
+   */
   public void run() {
     // "Start" each of the components.  Inputters last, since they will
     // actually start moving data.
@@ -248,7 +251,11 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    */
   public boolean inShutdown() { return shutdown; }
   
-  /** Main. */
+  /** 
+   * EP main method.
+   * 
+   * @param args The command-line arguments to EP.
+   */
   public static void main(String args[]) {
     String configFile = defaultConfigFile, debugFile = null;
     boolean debugging = false;
@@ -301,7 +308,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    * Inject an event into the Event Packager.  Use any supported EPEvent
    * format.
    *
-   * @param e The EPEvent you wish to inject.
+   * @param epe The EPEvent you wish to inject.
    * @return A boolean indicating success.
    */
   public boolean injectEvent(EPEvent epe) {
@@ -339,6 +346,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    * (yet) for a good reason.  (You should consider instantiating log4j
    * somewhere...)
    *
+   * @param src The source of this error.
    * @param err The error to report.
    */
   public void error(String src, String err) {
@@ -348,7 +356,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
   /**
    * Get a handle to an EPStore.
    *
-   * @param store The name of the store you want a handle to.
+   * @param storeName The name of the store you want a handle to.
    * @return The EPStore reference, or null.
    */
   public EPStore getStore(String storeName) {

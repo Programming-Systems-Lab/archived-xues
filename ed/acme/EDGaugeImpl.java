@@ -43,7 +43,8 @@ public class EDGaugeImpl extends GaugeImpl {
     this.EDOutputBus = EDOutputBus;
     
     // Insert code to check setup parameters
-    debug.debug("Called with mappings " + mappings);
+    debug.debug("Called with mappings " + mappings );
+    debug.debug("Called with setupParams " + setupParams);
   }
   
   /**
@@ -66,6 +67,7 @@ public class EDGaugeImpl extends GaugeImpl {
     // At this moment, we do nothing, since we implicitly assume the
     // subscription is all we need.  In the future, this might contain
     // the information we need to create the ED gauge.
+    debug.warn("Configure not implemented");
     
     //for (int i = 0; i < configParams.size(); i++) {
       // Insert code to process configuration parameters
@@ -82,6 +84,7 @@ public class EDGaugeImpl extends GaugeImpl {
   public boolean queryAllValues(GaugeValueVector values) {
     // Insert code to fill values with the current value of all values that 
     // the gauge reports.
+    debug.warn("QueryAllValues not implemented");
     return false;
   }
   
@@ -95,15 +98,17 @@ public class EDGaugeImpl extends GaugeImpl {
    */
   public boolean queryState(StringPairVector setupParams, 
   StringPairVector configParams, StringPairVector mappings) {
-    this.setupParams.copyInto(setupParams);
+    debug.warn("QueryState not implemented");
+    
+    /*this.setupParams.copyInto(setupParams);*/
     
     // Do a deep copy of the mappings SPV.  This is needed because we are
     // returning the values by reference.
-    Enumeration enum = this.mappings.keys();
+    /*Enumeration enum = this.mappings.keys();
     while (enum.hasMoreElements()) {
       String key = (String)enum.nextElement();
       mappings.addElement(key, (String)this.mappings.get(key));
-    }
+    }*/
     
     return true;
   }
@@ -121,6 +126,7 @@ public class EDGaugeImpl extends GaugeImpl {
   public String queryValue(String valueName) {
     // Insert code to return the current value of the value referred to 
     // by valueName
+    debug.warn("QueryValue not implemented");
     return null;
   }
   
@@ -130,6 +136,7 @@ public class EDGaugeImpl extends GaugeImpl {
    */
   public void reportNewValue() {
     // Insert code to report a new value
+    debug.warn("ReportNewValue not implemented");
     return;
   }
   

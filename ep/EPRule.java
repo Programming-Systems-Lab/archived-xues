@@ -44,10 +44,11 @@ public class EPRule {
   /** Our debugger */
   private Logger debug = Logger.getLogger(this.getClass());
   
-  /**
-   * CTOR.  Use an Element definition.
+  /** CTOR.  Use an Element definition.
    *
    * @param el The DOM element defining us.
+   * @param ep A reference to the event packager.
+   * @throws InstantiationException If there is an error building the rule.
    */
   public EPRule(Element el, EventPackager ep) throws InstantiationException {
     this.ep = ep;
@@ -155,6 +156,7 @@ public class EPRule {
   /**
    * Process some incoming data.
    *
+   * @param epe The rule to be processed.
    * @return A boolean indicating success (why?)
    */
   public boolean processRule(EPEvent epe) {

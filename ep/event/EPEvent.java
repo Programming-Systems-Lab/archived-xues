@@ -17,9 +17,6 @@ import org.apache.log4j.Logger;
  * - Handle multiple/arbitrary sources
  * - Perhaps support wrapping EPEvent in another?
  * -->
- * <p>
- * <em>Copyright (c) 2002: The Trustees of Columbia University in the
- * City of New York.  All Rights Reserved.</em>
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -47,7 +44,12 @@ public abstract class EPEvent implements Comparable, Serializable {
   }
   
   /**
-   * CTOR.  Use specified timestamp.  See comments from previous CTOR.
+   * CTOR.  Use specified timestamp.
+   *
+   * @param source The generating source for this EPEvent.  Make sure it
+   * uniquely identifies the inputter, else EP will not be able to do anything
+   * useful with this event.
+   * @param timestamp The timestamp to be explicitly assigned to this event.
    */
   public EPEvent(String source, long timestamp) {
     this.timestamp = timestamp;
@@ -92,6 +94,7 @@ public abstract class EPEvent implements Comparable, Serializable {
   /**
    * Convert this event to one of another form.
    *
+   * @param newFormat The requested event format.
    * @return The EPEvent that's actually another event form, or null if it
    * cannot be done.
    */

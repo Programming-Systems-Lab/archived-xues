@@ -58,7 +58,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
     if(debugging)
       edu.cmu.cs.able.gaugeInfrastructure.util.Global.debugFlag = true;
     
-    // Let the acme infrastructure initialize the Siena node
+    // Let the acme infrastructure ini tialize the Siena node
     this.gaugeBusURL = gaugeBusURL;
     edu.cmu.cs.able.gaugeInfrastructure.Siena.Initialization.
     initSiena(gaugeBusURL);
@@ -84,13 +84,20 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    */
   public GaugeControl createGauge(GaugeID gauge, StringPairVector setupParams,
   StringPairVector mappings) {
+    debug.debug("createGauge called");
     if (managesType(gauge.gaugeType)) { // Our gauge to manage
       // "Dummy" handle.  What's the point?
+      debug.debug("Our gauge to handle, mappings are " + mappings);
+      debug.debug("Creating a gauge handle");
       SienaGaugeMgrGaugeHandle gaugeHandle=new SienaGaugeMgrGaugeHandle(gauge);
+      debug.debug("Handle created, about to start creating gauge");
+      SienaEDGauge sed = new SienaEDGauge(gauge, getGaugeMgrID(), setupParams,
+        mappings, EDOutputBus);
       synchronized(gauges) {
-        gauges.put(gauge, new SienaEDGauge(gauge, getGaugeMgrID(), setupParams,
-        mappings, EDOutputBus));
+        debug.debug("Inserting gauge into List");
+        gauges.put(gauge, sed);
       }
+      debug.debug("Gauge creation complete");
       return gaugeHandle;
     } else return null; // We aren't handling it
   }
@@ -102,6 +109,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    * @return A boolean indicating success.
    */
   public boolean deleteGauge(GaugeControl gauge) {
+    debug.debug("deleteGauge called");
     SienaEDGauge seg = null;
     synchronized(gauges) {
       seg = ((SienaEDGauge)gauges.get(gauge.getGaugeID()));
@@ -127,6 +135,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    * Handle a shutdown request.  Delete all gauges to do this.
    */
   public void shutdown() {
+    debug.debug("shutdown called");
     synchronized(gauges) {
       Iterator keys = gauges.keySet().iterator();
       while(keys.hasNext()) {
@@ -154,6 +163,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    */
   public boolean queryMetaInfo(String gaugeType,
   StringPairVector configParamsMeta, StringPairVector valuesMeta) {
+    debug.debug("queryMetaInfo called");
     if (gaugeType.equals("EDGauge")) { // Yes, we handle it
       //int index = gaugeTypes.indexOf(gaugeType);
       //switch (index) {

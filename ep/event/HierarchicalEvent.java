@@ -7,6 +7,8 @@ import org.w3c.dom.Node;
  * Default EP event representation: hierarchical format.  Supports many
  * possible inputs, including both flat and XML-like hierarchies.
  * <p>
+ * <b>Warning: this format is not yet implemented.</b>
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
@@ -19,15 +21,19 @@ import org.w3c.dom.Node;
  * @revision $Revision$
  */
 public class HierarchicalEvent extends EPEvent {
+  /** Format of this event */
   private final String format = "HierarchicalEvent";
+  /** Associated data */
   private Document eventData = null;
   
   /**
    * Create an empty HierarchicalEvent.
+   *
+   * @param source The generator of this event.
    */
   public HierarchicalEvent(String source) { super(source); }
   
-  /** 
+  /**
    * Get the format (type) of this event.
    *
    * @return A string indicating the type.

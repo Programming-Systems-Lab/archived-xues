@@ -46,8 +46,15 @@ class EPConfiguration {
   static Logger debug =
   Logger.getLogger(EPConfiguration.class.getName());
   
+  /** Reference to the event packager */
   private EventPackager ep = null;
   
+  /** 
+   * CTOR.
+   *
+   * @param configFile The file to read initial configuration from.
+   * @param ep Reference to the Event Packager being configured.
+   */  
   public EPConfiguration(String configFile, EventPackager ep) {
     this.ep = ep;
     
@@ -68,6 +75,13 @@ class EPConfiguration {
     }
   }
   
+  /**
+   * Given a DOM document, parse it and add any configurations to the
+   * Event Packager.
+   *
+   * @param config The new configuration.
+   * @return A boolean indicating success.
+   */
   private boolean parseConfiguration(Document config) {
     // Get the root
     Element e = config.getDocumentElement();
@@ -277,7 +291,7 @@ class EPConfiguration {
   /**
    * Build a new transform given the XML DOM definition of it.
    *
-   * @param outputter The description in DOM-tree form.
+   * @param transform The description in DOM-tree form.
    * @return An instance of EPTransform if successful, else null.
    */
   private EPTransform buildTransform(Element transform) {
@@ -311,7 +325,7 @@ class EPConfiguration {
   /**
    * Build a new store given the XML DOM definition of it.
    *
-   * @param outputter The description in DOM-tree form.
+   * @param store The description in DOM-tree form.
    * @return An instance of EPStore if successful, else null.
    */
   private EPStore buildStore(Element store) {

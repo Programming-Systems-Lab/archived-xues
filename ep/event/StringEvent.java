@@ -3,7 +3,7 @@ package psl.xues.ep.event;
 import siena.Notification;
 
 /**
- * Simple Siena event representation.  Embeds a string.
+ * String event representation.  Embeds a string.
  * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
@@ -17,7 +17,9 @@ import siena.Notification;
  * @version $Revision$
  */
 public class StringEvent extends EPEvent {
+  /** Format for this event. */
   private final String format = "StringEvent";
+  /** Associated data. */
   private String data = null;
  
   /**
@@ -31,7 +33,7 @@ public class StringEvent extends EPEvent {
    * CTOR given an existing String.
    *
    * @param source The generator ("source") of these events.
-   * @param n The String to use.
+   * @param data The String to use.
    */
   public StringEvent(String source, String data) {
     super(source);
@@ -42,7 +44,7 @@ public class StringEvent extends EPEvent {
    * CTOR given an existing String and a timestamp.
    *
    * @param source The generator ("source") of these events.
-   * @param n The String to use.
+   * @param data The String to use.
    * @param t The timestamp.
    */
   public StringEvent(String source, String data, long t) {
