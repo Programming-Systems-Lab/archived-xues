@@ -15,7 +15,10 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.11  2001-06-28 20:58:42  eb659
+ * Revision 1.12  2001-07-24 17:12:30  eb659
+ * dddd
+ *
+ * Revision 1.11  2001/06/28 20:58:42  eb659
  * Tested and debugged timeout, different instantiation policies,
  * improved ED shutdown
  * added functionality to sed an event that fails all events during runtime
@@ -456,11 +459,11 @@ class EDStateMachineSpecification {
      */
     public static Vector getWildcards(EDState checkState) {
 	Vector v = new Vector();
-	Hashtable ht = checkState.getAttributes();
+	Hashtable ht = checkState.getConstraints();
 	Enumeration elements = ht.elements();
 	while (elements.hasMoreElements()) {
-	    String s = ((AttributeValue)elements.nextElement()).stringValue();
-	    if (s.startsWith("*") && s.length() > 1) v.add(s.substring(1));
+	    String s = ((AttributeConstraint)elements.nextElement()).value.stringValue();
+	    if (s.startsWith("*") && s.length() > 1 && !s.startsWith("**")) v.add(s.substring(1));
 	}
 	return v;
     }

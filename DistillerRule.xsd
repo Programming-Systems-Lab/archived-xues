@@ -101,6 +101,16 @@
   <xsd:complexType name="attributeType">
     <xsd:attribute name="name" type="xsd:string" use="required"/>
     <xsd:attribute name="value" type="xsd:string" use="required"/>
+    <!-- the type of the value provided. 
+	 Can be of type: "string", "int", "long", "double", "bool".
+	 Set to type "string" by default -->
+    <xsd:attribute name="type" type="xsd:string"/>
+    <!-- a representation of the operator used to compare the value,
+	 for example, "=" for EQ, ">=" for GE, etc. For a full list
+	 of valid strings, see the source code in siena.Op 
+	 if this field is left blank or with an invalid value, 
+	 the EQ operator will be assumed -->
+    <xsd:attribute name="op" type="xsd:string"/>
   </xsd:complexType>
 
 </xsd:schema>

@@ -13,7 +13,7 @@ import siena.*;
  * -the notify method
  * if succeed, send notifs, and bear children
  * etc...
- * 
+ *
  * Individual Event Distiller state machine state.  A state is matched
  * against a String attribute-String value pair.  A upper bound
  * timestamp may be applied.
@@ -25,7 +25,10 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.25  2001-07-03 21:36:23  eb659
+ * Revision 1.26  2001-07-24 17:12:30  eb659
+ * dddd
+ *
+ * Revision 1.25  2001/07/03 21:36:23  eb659
  * Improved problems in race conditions. The application now hangs in the subscribe()
  * method in EDBus. Run EDTestConstruct: sometimes it works impeccably, other times
  * it hangs in EDBus.subscribe. James, Janak, do you want to have a look at it?
@@ -255,7 +258,7 @@ import siena.*;
  * Revision 1.1  2001/01/22 02:11:54  jjp32
  *
  * First full Siena-aware build of XUES!
- * 
+ *
  */
 public class EDState implements EDNotifiable {
 
@@ -267,9 +270,15 @@ public class EDState implements EDNotifiable {
      * This is in the form 'machineSpec:machineInstance:stateName'.
      */
     String myID;
-  
+
     /** Relative timebound from previous state. */
-    private long tb;
+    private long tb = -1;
+
+    /**
+     * Timestamp this state has fired in.  Created and used during
+     * timebound validation.
+     */
+    private long ts = -1;
 
     /** The list of (names of) the  states that may success this one */
     private String[] children;
@@ -280,8 +289,11 @@ public class EDState implements EDNotifiable {
     /** The list of (names of) notifications we will send if we fail to be matched. */
     private String[] fail_actions;
 
-    /** Hash of attribute/value pairs relevant to this state */
-    private Hashtable attributes;
+    /**
+     * Hash of constraints on the values in the events that can mathch this state.
+     * The keys to the table are the attribute names. The objects are of type siena.AttributeConstraint
+     */
+    private Hashtable constraints;
 
     /** Whether this state is currently subscribed and waiting to be matched */
     private boolean alive = false;
@@ -289,38 +301,40 @@ public class EDState implements EDNotifiable {
     /** Whether this state absorbs the event that it is notified of */
     private boolean absorb;
 
-    /** 
-     * Timestamp this state has fired in.  Created and used during
-     * timebound validation.
-     */
-    private long ts = -1;
-
-    /** 
-     * The list of states that preceded this one. We need this to 
-     * be able to validate the timebound (and wildcards) 
-     * against all possible parents that were matched and bore us.   
+    /**
+     * The list of states that preceded this one. We need this to
+     * be able to validate the timebound (and wildcards)
+     * against all possible parents that were matched and bore us.
      */
     private Vector parents;
+
+    /**
+     * List of subscribers used to subscribe. We need more than one subscriber for states
+     * that have more than one parent: if several parents bear us, we need to subscribe with
+     * different wildcard values - since different parents may have different values for wildcards.
+     * "parents" and "subscribers" are therefore parallel vectors.
+     */
+    private Vector subscribers;
 
     /**
      * Wildcard binding hashtable.  If there are wildcards in states that must
      * match later states, we store them in this table. The variable has package
      * access, but if a state needs to inherit its parent's wildHash, use
      * getWildHash(), which checks whether it is necessary to copy the table.
-     */ 
+     */
     private Hashtable wildHash;
 
     /** the internal bus; this is passed to us by our parent, when this state is subscribed */
     private EDBus bus = null;
-    
+
     /** The state machine that "ownes" us. */
     private EDStateMachine sm = null;
 
-    /** 
+    /**
      * Stores names and values for wildcard values temporarily,
-     * while the state checks that all attributes are matched
+     * while the state checks that all constraints are matched
      */
-    private Vector tempNames, tempValues;
+    //private Vector tempNames, tempValues;
 
     /** How many times this event will be matched, before it passes. */
     private int count = 1;
@@ -346,29 +360,28 @@ public class EDState implements EDNotifiable {
      * @param actionsList the list of actions to fire when this node is matche
      * @param failActionList the list of actions to fire if this node is not matched
      */
-    public EDState(String name, int tb, 
-		   String childrenList, 
-		   String actionsList, 
+    public EDState(String name, int tb,
+		   String childrenList,
+		   String actionsList,
 		   String failActionsList) {
 	this.name = name;
 	this.tb = tb;
 	this.ts = -1;  // Unvalidated state.
-	this.attributes = new Hashtable();
-	
+	this.constraints = new Hashtable();
+
 	children = listToArray(childrenList);
 	actions = listToArray(actionsList);
 	fail_actions = listToArray(failActionsList);
     }
 
     /**
-     * Clone-and-assign-state-machine CTOR. This constructor 
+     * Clone-and-assign-state-machine CTOR. This constructor
      * is used when a stateMachine is instantiated.
      * @param e the state in the underlying stateMachineSpecification
      * @param sm the stateMachine to which this state belongs
-     * @param siena the siena bus through which we are to subscribe
      */
-    public EDState(EDState e, EDStateMachine sm, EDBus bus) {
-	this.attributes = (Hashtable)e.attributes.clone();
+    public EDState(EDState e, EDStateMachine sm) {
+	this.constraints = (Hashtable)e.constraints.clone();
 	this.tb = e.tb;
 	this.ts = e.ts;
 	this.name = e.name;
@@ -377,7 +390,7 @@ public class EDState implements EDNotifiable {
 
 	this.sm = sm;
 	this.myID = sm.myID + ":" + name;
-	this.bus = bus;
+	this.bus = sm.getSpecification().getManager().getEventDistiller().getBus();
 	this.errorManager = sm.getSpecification().getManager().getEventDistiller().getErrorManager();
 
 	this.children = e.children;
@@ -386,15 +399,16 @@ public class EDState implements EDNotifiable {
     }
 
     /**
-     * Add an attribute/value pair.
-     * XXX - We should probably check to prevent overwriting, but heck.
+     * Adds a constraint.
+     * @param s the identifier name of the attribute value
+     * @param attributeconstraint the constraint to put on the value
      */
-    public void putAttribute(String attr, AttributeValue val) {
-	attributes.put(attr, val);
+    void addConstraint(String s, AttributeConstraint attributeconstraint){
+        constraints.put(s, attributeconstraint);
     }
 
     /**
-     * Gives life to this state. Assigns the owner state machine, 
+     * Gives life to this state. Assigns the owner state machine,
      * the parent state, and state machine, and the siena to subscribe to.
      * @param parent the parent node, against whom we validate our timestamp,
      *               or null, if this is an initial state
@@ -402,128 +416,124 @@ public class EDState implements EDNotifiable {
     void bear(EDState parent) {
 	errorManager.println("EDState: " + myID + " being born", EDErrorManager.STATE);
 	if (!alive) {
-	    parents = new Vector();
-	    errorManager.println("EDState: " + myID + " being born for the first time", EDErrorManager.STATE);
-    
-	    //subscribe -- our filter, we handle notifs, our machine determines priority
-	    bus.subscribe(buildSienaFilter(), this, sm);
-	    errorManager.println("EDState: " + myID + " subscribing state: ", EDErrorManager.STATE);
+            // initialize vectors
+            parents = new Vector();
+            subscribers = new Vector();
+
+	    /* make sure there is a hashtable defined at any time,
+	     * for handling wildcards in failure notifications.
+             * Also see note in fail() */
+            if(parent == null)
+                wildHash = new Hashtable();
+            else wildHash = parent.getWildHash();
+
+            errorManager.println("EDState: " + myID + " being born for the first time",
+                                 EDErrorManager.STATE);
 	}
 
-	// live!
-	errorManager.println("EDState: " + myID + " about to add parent to end", EDErrorManager.STATE);
+        // timebound for matching this state, given this parent
+        long l;
+        if(tb == -1) l = Long.MAX_VALUE; // forever
+        else l = sm.getSpecification().getManager().getEventDistiller().getTime() + tb;
 
-	/*synchronized (parents)*/ { 
-	    /* removing the parent, if already here, has the 
-	     * effect of putting the most recent parent at the 
-	     * end of the vector, which we want to */
-	    parents.remove(parent);
-	    parents.add(parent); }
+        //errorManager.print("EDState: " + myID + " checking parent...", EDErrorManager.STATE);
 
-	errorManager.println("EDState: " + myID + " added parent ", EDErrorManager.STATE);
+        // have we already been born by this parent? -- this can be the case in counter or loop states
+        int i = parents.indexOf(parent);
 
+        //errorManager.println("done", EDErrorManager.STATE);
+        if(i != -1) { // parent is already in the list, just reset timebound
+            errorManager.println("EDState: " + myID + " extending subscription timebound", EDErrorManager.STATE);
+            if(tb != -1) ((EDSubscriber)subscribers.get(i)).resetTimebound(l);
+
+            // put most recent parent at the end of the list -- see reap()
+            parents.add(parents.remove(i));
+            subscribers.add(subscribers.remove(i));
+        }
+        else { // new parent
+            Hashtable wc; // wildcard values for this subscription
+            if(parents.size() == 0) wc = wildHash;
+            else wc = parent.getWildHash();
+
+            errorManager.println("EDState: " + myID + " subscribing...", EDErrorManager.STATE);
+
+            EDSubscriber edsubscriber = new EDSubscriber(createFilter(wc, l), this, sm);
+            bus.subscribe(edsubscriber);
+
+            errorManager.println("EDState: " + myID + " done subscribing ", EDErrorManager.STATE);
+
+            // put most recent parent at the end of the list
+            parents.add(parent);
+            subscribers.add(edsubscriber);
+        }
+
+        errorManager.println("EDState: " + myID + " born successfully ", EDErrorManager.STATE);
 	this.alive = true;
-
-	/* make sure there is a hashtable defined at any time,
-	 * for handling wildcards in failure notifications.
-	 * if this is a loop state, that bears itself, don't 
-	 * worry about the wildhash.
-	 * Also see note in fail() */
-	if (wildHash == null) {
-	    if (parent == null) // this is an initial state
-		wildHash = new Hashtable();
-	    else wildHash = parent.getWildHash(); 
-	}
-	errorManager.println("EDState: " + myID + " born successfully ", EDErrorManager.STATE);
     }
 
     /** Kills this state: unsubscribe and set alive to false. */
     public void kill() {
 	errorManager.println("EDState: " + myID + " being KILLED", EDErrorManager.STATE);
 	this.alive = false;
-	bus.unsubscribe(this); 
+	bus.unsubscribe(this);
     }
 
-    /** Handles siena callbacks */
-    public boolean notify(Notification n) {
-	errorManager.println("EDState " + myID + ": Received: " + n, 
+    /**
+     * Handles callbacks from the dispatcher. The statemachine is synchronized, so that states
+     * do not succeed while the mahcine is being reaped. Note that ANY notification
+     * we receive satisfies the state, since we build a precise filter in createFilter().
+     * All we need to do is register the timestamp and the wildcard values.
+     */
+    public synchronized boolean notify(Notification n) {
+	errorManager.println("EDState " + myID + ": Received: " + n,
 			     EDErrorManager.STATE);
-	synchronized(sm) {
+        synchronized(sm){
 
 	// hang on while the machine is being reaped
 	    /*if (sm.reaping) {
-	      try{ 
-	      errorManager.println("EDState " + myID + ": waiting" + n, 
+	      try{
+	      errorManager.println("EDState " + myID + ": waiting" + n,
 	      EDErrorManager.STATE);
 	      wait(); }
 	      catch(InterruptedException ex) { ; }
 	    }*/
 
-	// tell the machine we're succeeding
-	sm.addSucceedingState();
+            // register timestamp
+            ts = n.getAttribute(EDConst.TIME_ATT_NAME).longValue();
 
-	long millis = n.getAttribute("timestamp").longValue();
-	EDState parent;
-	/*synchronized (parents)*/ {
-	    for (int i = 0; i < parents.size(); i++) {
-		parent = (EDState)parents.get(i);
+            // registrer wildcard values
+            if(parents.size() > 1) wildHash = new Hashtable();
+            for(Enumeration enumeration = constraints.keys(); enumeration.hasMoreElements();){
+                String s = (String)enumeration.nextElement();
+                String s1 = ((AttributeConstraint)constraints.get(s)).value.stringValue();
 
-		/* inherit the wildHash from the candidate parent,
-		 * so we can compare wildcard values while validating.
-		 * (note that when we are born we already have a default wildHash) */
-		if (parent != null) wildHash = parent.getWildHash();
-		
-		// does the notification match us? 
-		if(validate(n, parent)) {
-		    errorManager.println("EDState " + myID + " MATCHED at time: " + millis,
-					 EDErrorManager.STATE);
-		    
-		    // yes!
-		    ts = millis; // timestamp
-		    /* lock the state machine, so that the reaper doesn't mess with it 
-		     * while there is a transition between states */
+                if(s1.startsWith("*") && !s1.startsWith("**"))
+                    wildHash.put(s1.substring(1), n.getAttribute(s));
+            }
 
-		    /*synchronized(sm)*/ { succeed(); }
-		    errorManager.println("EDState:" + myID + ": succeeded", 
-					 EDErrorManager.STATE);
+            // state machine progress
+            succeed();
 
-		    if (absorb) {
-			errorManager.println("EDState:" + myID + ": ABSORBING event", 
-					     EDErrorManager.STATE);
-			return endNotify(true);
-		    }
-		    return endNotify(false);
-		}
-	    }
-	}
-	errorManager.println("EDState:" + myID + ": REJECTED Notification", 
-			     EDErrorManager.STATE);
-	return endNotify(false); // no match, no absorb
-	}
+            if(absorb) errorManager.println("EDState:" + myID + ": ABSORBING event", 2);
+            return absorb;
+        }// synch
     }
 
-    /** Convenience mehtod to end notify. */
-    private boolean endNotify(boolean b) {
-	//sm.removeSucceedingState();
-	return b;
-    }
-
-    /** 
-     * Called when the state is matched. The state 
+    /**
+     * Called when the state is matched. The state
      * now lives the climax of its brief existence.
      */
     private void succeed() {
-	errorManager.println("EDState: " + myID + ": starting succeed()",EDErrorManager.STATE);
+	errorManager.println("EDState: " + myID + ": starting succeed()", EDErrorManager.STATE);
 
 	// the machine has started
-	sm.setStarted(); 
+	sm.setStarted();
 	// this state may be breaking the loop of its parent
-	/*synchronized (parents)*/ {
-	    for (int i = 0; i < parents.size(); i++) {
-		EDState parent = (EDState)parents.get(i);
-		if (parent != null && parent != this && parent.getCount() == -1) parent.kill();
-	    }
-	}
+        for (int i = 0; i < parents.size(); i++) {
+            EDState parent = (EDState)parents.get(i);
+            if (parent != null && parent != this && parent.getCount() == -1) parent.kill();
+        }
+
 	if (count > 1) { // counter feature
 	    if (!hasStarted) {
 		/*synchronized(parents)*/ {
@@ -535,7 +545,7 @@ public class EDState implements EDNotifiable {
 	    count --;
 
 	    errorManager.println
-		("EDState: " + myID + ": decreased count to " + count, 
+		("EDState: " + myID + ": decreased count to " + count,
 		 EDErrorManager.STATE);
 	}
 	else if (count < 0) { // loop feature
@@ -543,43 +553,42 @@ public class EDState implements EDNotifiable {
 	    /* bear children, and myself */
 	    bear(this);
 	    errorManager.println("EDState: " + myID + ": LOOP state bearing children", EDErrorManager.STATE);
-	    for (int i = 0; i < children.length; i++) 
+	    for (int i = 0; i < children.length; i++)
 		sm.getState(children[i]).bear(this);
 	    // the kids will kill me, if they make it
 	    hasStarted = true;
 	}
-	else if (count == 1) { // normal case 
+	else if (count == 1) { // normal case
 	    // 4. bear children
 	    for (int i = 0; i < children.length; i++) {
-		sm.getState(children[i]).bear(this); 
+		sm.getState(children[i]).bear(this);
 	    }
 	    // 5. tell the world we succeeded
 	    for (int i = 0; i < actions.length; i++) {
 		errorManager.println("EDState: " + myID + ": sending notification: " + actions[i],
 				     EDErrorManager.STATE);
-		sm.sendAction(actions[i], wildHash); 
+		sm.sendAction(actions[i], wildHash);
 	    }
 	    // 6. commit suicide
 	    kill();
 	}
 
-
-	errorManager.println("EDState: " + myID + ": finishing succeed()", EDErrorManager.STATE);
+	errorManager.println("EDState: " + myID + ": finishing succeed()\n", EDErrorManager.STATE);
 
 	// reap will instantiate new machine, if necessary
 	//if (sm.getSpecification().getInstantiationPolicy() == EDConst.ONE_AT_A_TIME) sm.reap();
-	// out for now, but uncomment when found why reaper sometimes hangs...
+	// out for now, would make the reaper hangs...
     }
 
-    /** 
+    /**
      * Sends out the failure notifications for this state.
      *
      * NOTE: at the moment we are using the wildhash
-     * of the first parent that matched us, to fill in the 
-     * wildcards of failure notifications. 
+     * of the first parent that matched us, to fill in the
+     * wildcards of failure notifications.
      * We may need to change
-     * this, since different parents may have different 
-     * wildcard values defined. If you fail, how do you know what 
+     * this, since different parents may have different
+     * wildcard values defined. If you fail, how do you know what
      * wildcards are the correct ones?
      */
     public void fail() {
@@ -594,14 +603,14 @@ public class EDState implements EDNotifiable {
      * @return whether this state has timed out and is now dead
      */
     boolean reap() {
-	errorManager.println("checking state for life: " + myID, EDErrorManager.REAPER);
+	//errorManager.println("checking state for life: " + myID, EDErrorManager.REAPER);
 	if (!alive) return false;
 
 	long currentTime =  sm.getSpecification().getManager().getEventDistiller().getTime();
 
 	/* we're at the end of time, we must fail...
 	 * time is set to MAX_VALUE when flushing */
-	if (currentTime == Long.MAX_VALUE) { 
+	if (currentTime == Long.MAX_VALUE) {
 	    kill();
 	    return true;
 	}
@@ -611,7 +620,7 @@ public class EDState implements EDNotifiable {
 	/* can we still be matched? check the last (most recent) parent.
 	 * NOTE: this assumes that events are processed sequentially,
 	 * else we would need to check all the parents */
-	if(validateTimebound 
+	if(validateTimebound
 	   ((EDState)parents.lastElement(), currentTime - EDConst.REAP_FUDGE)) {
 	    errorManager.println("state: " + myID + "has not timed out yet, no reap", EDErrorManager.REAPER);
    	    return false;
@@ -630,7 +639,7 @@ public class EDState implements EDNotifiable {
    * was successfully matched within the appropriate timebounds.
    *
    * BUG WARNING: If timestamp is mapped to a non-long, we will crash.
-   */
+   *
   public boolean validate(Notification n, EDState prev) {
     // Step 1. Perform timestamp validation.  If timestamp validation
     // fails, then we don't need to go further.
@@ -659,25 +668,25 @@ public class EDState implements EDNotifiable {
     }
 
     // They all passed, register any wildcard values, and return true
-    if (tempNames != null) 
-	for (int i = 0; i < tempNames.size(); i++) { 
+    if (tempNames != null)
+	for (int i = 0; i < tempNames.size(); i++) {
 	    wildHash.put(tempNames.get(i), tempValues.get(i));
 	    errorManager.println("EDState: " + myID + ": wildcard '*" + tempNames.get(i) +
 				 "' BOUND to: " + tempValues.get(i), EDErrorManager.STATE);
 	}
     return true;
-  }
+  }*/
 
   /**
    * Internal validate function - just check one attribute-value pair
    *
    * GOOD LUCK if you can understand this.  Read through a few times,
    * hopefully it'll make sense then :-)
-   */
+   *
   private boolean validate(String attr, AttributeValue internalVal,
 			   AttributeValue externalVal) {
     // Simple bounds checking
-    if(attr == null || internalVal == null || 
+    if(attr == null || internalVal == null ||
        internalVal.getType() == AttributeValue.NULL) {
       System.err.println("FATAL: Internal representation error in "+
 			 "EDState");
@@ -685,7 +694,7 @@ public class EDState implements EDNotifiable {
     }
 
     // Attribute exists externally?
-    else if(externalVal == null || 
+    else if(externalVal == null ||
 	    externalVal.getType() != internalVal.getType()) {
       // No match
       return false;
@@ -696,13 +705,13 @@ public class EDState implements EDNotifiable {
       System.err.println("EDState: comparing attribute \"" + attr +
 			 "\", internalVal = " + internalVal + ", " +
 			 "externalVal = " + externalVal);
-			 }*/
+			 }*
 
     // "**" is the escape character for "*"
     if (internalVal.getType() == AttributeValue.STRING &&
-	internalVal.stringValue().startsWith("**")) 
+	internalVal.stringValue().startsWith("**"))
 	return attrEqual(new AttributeValue(internalVal.stringValue().substring(1)), externalVal);
-    
+
     // Wildcard binding?
     else if(internalVal.getType() == AttributeValue.STRING &&
 	    internalVal.stringValue().startsWith("*")) {
@@ -723,17 +732,17 @@ public class EDState implements EDNotifiable {
 	  if(attrEqual((AttributeValue)wildHash.get(bindName),externalVal)){
 	    // YES!
 	    if(EventDistiller.DEBUG)
-		//System.err.println("EDState: wildcard already bound to \"" + 
+		//System.err.println("EDState: wildcard already bound to \"" +
 		//	 wildHash.get(bindName) + "\" and match");
 	    return true;
 	  }
 	  else {
 	    if(EventDistiller.DEBUG)
-		//System.err.println("EDState: wildcard already bound to \"" + 
+		//System.err.println("EDState: wildcard already bound to \"" +
 		//	 wildHash.get(bindName) + "\" but nomatch");
 	    return false; // Complex wildcard doesn't match
 	  }
-	} 
+	}
 	else { // Binding requested, NOT YET BOUND
 	    // remember the name and value
 	    if (tempNames == null) {
@@ -749,15 +758,15 @@ public class EDState implements EDNotifiable {
 
     // No wildcard binding, SIMPLE match
     /*if(EventDistiller.DEBUG)
-      System.err.println("EDState: performing SIMPLE match on " + 
-      externalVal + "," + internalVal);*/
+      System.err.println("EDState: performing SIMPLE match on " +
+      externalVal + "," + internalVal);*
     return attrEqual(internalVal,externalVal);
-  }
+  }*/
 
     /**
      * Compare timebound to a (previous) state.  IMPORTANT: to use this,
      * you must validate *every* state.  This is necessary because the
-     * timestamp is stored in the state, to allow for future state 
+     * timestamp is stored in the state, to allow for future state
      * comparisons.  Otherwise, if this comparison is made against an
      * unvalidated state, we will immediately return false (EXCEPTING
      * non-time-bound states - if it's not time bound, this ALWAYS
@@ -765,35 +774,21 @@ public class EDState implements EDNotifiable {
      *
      * @param prev The previous state
      * @param currentTime The current event's timestamp (UNIX time format)
-     * @return a boolean indicating if this state can occurred  
+     * @return a boolean indicating if this state can occurred
      *         'in time' from the previous state.
      */
-    public boolean validateTimebound(EDState prev, long currentTime) { 
+    public boolean validateTimebound(EDState prev, long currentTime) {
 	// No time bounds, always good
 	if(tb == -1) return true;
 	// normal case, compare
 	return (currentTime - getTimestampForState(prev) <= this.tb);
     }
 
-    /** 
-     * Convenience method for getting the relevant timestamp.
-     * Returns the timestamp of this stateMachine, if the 
-     * state's unavailable.
-     * @return the timestamp of this state, for comparison
-     */
-    private long getTimestampForState(EDState prev) {
-	/* null state or unvalidated state, validate 
-	 * against the time when the rule was created */
-	if (prev == null || prev.ts == -1) return sm.timestamp;
-	else return prev.ts;
-    }
-	
-
   /**
    * Convenience accessor method to validateTimebound.
    */
   public boolean validateTimebound(EDState s, AttributeValue t) {
-    if(t == null || t.getType() != AttributeValue.LONG) { 
+    if(t == null || t.getType() != AttributeValue.LONG) {
       // No match, do WE have a timebound
       if(tb == -1) { // OK, no timebound specified but we didn't expect one
 	return true;
@@ -801,25 +796,35 @@ public class EDState implements EDNotifiable {
       return false; // No timebound specified, we wanted one.
     }
 
-    // There was a match to timebound, let's compare    
+    // There was a match to timebound, let's compare
     return validateTimebound(s, t.longValue());
     }
 
+    /**
+     * Convenience method for getting the relevant timestamp.
+     * Returns the timestamp of this stateMachine, if the
+     * state's unavailable.
+     * @return the timestamp of this state, for comparison
+     */
+    private long getTimestampForState(EDState prev) {
+	/* null state or unvalidated state, validate
+	 * against the time when the rule was created */
+	if (prev == null || prev.ts == -1) return sm.timestamp;
+	else return prev.ts;
+    }
 
     /** @return the XML representation of this object */
     public String toXML(){
 	String s = "<state name=\"" + name + "\" timebound=\"" + tb + "\" children=\"" +
-	    arrayToList(children) + "\" actions=\"" + arrayToList(actions) + 
-	    "\" fail_actions=\"" + arrayToList(fail_actions) + "\" absorb=\"" + 
+	    arrayToList(children) + "\" actions=\"" + arrayToList(actions) +
+	    "\" fail_actions=\"" + arrayToList(fail_actions) + "\" absorb=\"" +
 	    (new Boolean(absorb)).toString() + "\" count=\"" + count + "\">\n";
-	
-	Enumeration keys = attributes.keys();
-	Enumeration objs = attributes.elements();
-	while(keys.hasMoreElements()) {
-	    String attr = (String)keys.nextElement();
-	    AttributeValue val = (AttributeValue)objs.nextElement();
-	    s = s + "\t<attribute attribute =\"" + attr + 
-		"\" value=\"" + val.stringValue() + "\"/>\n";
+
+	for(Enumeration keys = constraints.keys(); keys.hasMoreElements();) {
+	    String attName = (String)keys.nextElement();
+	    AttributeConstraint ac = (AttributeConstraint)constraints.get(attName);
+	    s = s + "\t<attribute name =\"" + attName + "\" value=\"" + ac.value + 
+		"\" op=\"" + Op.operators[ac.op] + "\" type=\"" + EDConst.TYPE_NAMES[ac.value.getType()] + "\"/>\n";
 	}
 	s += "</state>\n";
 	return s;
@@ -828,12 +833,38 @@ public class EDState implements EDNotifiable {
     /**
      * Build a Siena filter to subscribe this state.
      * If expected value begins with an asterisk "*" it will be considered a
-     * wildcard and will bind to anything. 
-     * @return the Siena filter to use to subscribe this state.  
+     * wildcard and will bind to anything.
+     * @param wc the table containing the wildcards values to insert in the subscription
+     * @param timebound the timebound within which the notification must be matched
+     * @return the siena.Filter object to use to subscribe this state
      */
-    private Filter buildSienaFilter() {
-	Filter f = new Filter();
-	// We only want events from metaparser that have the state that
+    private Filter createFilter(Hashtable wc, long timebound){
+        Filter f = new Filter();
+
+        // go through the constraints
+        for(Enumeration enumeration = constraints.keys(); enumeration.hasMoreElements();){
+            String attName = (String)enumeration.nextElement();
+            AttributeConstraint ac = (AttributeConstraint)constraints.get(attName);
+            AttributeValue attributevalue = ac.value;
+
+            // "**.." is escape char for "*..", so subscribe removing the escape char
+            if(attributevalue.stringValue().startsWith("**"))
+                f.addConstraint(attName, new AttributeConstraint(ac.op, attributevalue.stringValue().substring(1)));
+            // wildcard: do we already have a value for this?
+            else if(attributevalue.stringValue().startsWith("*")){
+                if(wc.get(attName) == null) // no value registered
+                    f.addConstraint(attName, new AttributeConstraint(Op.ANY, ""));
+                else
+                    f.addConstraint(attName, new AttributeConstraint(ac.op, (String)wc.get(attName)));
+            }
+            // normal case, add simple constraint
+            else f.addConstraint(attName, ac);
+        }
+        // set timebound
+        f.addConstraint(EDConst.TIME_ATT_NAME, new AttributeConstraint(Op.LT, timebound));
+
+	/* old version
+        // We only want events from metaparser that have the state that
 	// maches us
 	f.addConstraint("Type", "EDInput");
 	// Now enumerate through the actual attr, val pairs
@@ -849,16 +880,18 @@ public class EDState implements EDNotifiable {
 	    } else {
 		f.addConstraint(attr, new AttributeConstraint(val));
 	    }
-	}
+	}*/
+
 	return f;
-    }  
+    }
 
-    // auxiliary static methods 
+    // auxiliary static methods
 
-  /** AttributeValue isEqualTo check that WORKS. */
+  /** AttributeValue isEqualTo check that WORKS. *
   public static boolean attrEqual(AttributeValue e1, AttributeValue e2) {
-    if(e1.getType() != e2.getType()) return false;
-    
+    return Covering.apply_operator((short)1, attributevalue, attributevalue1);
+    /*if(e1.getType() != e2.getType()) return false;
+
     switch(e1.getType()) {
     case AttributeValue.BOOL:
       if(e1.booleanValue() == e2.booleanValue()) return true;
@@ -875,8 +908,8 @@ public class EDState implements EDNotifiable {
     default:
       System.err.println("EDState: Sorry, can't do attrEqual on this type!!");
       return false;
-    }
-  }
+    }*
+  }*/
 
     /**
      * Converts an array of strings into a comma-delimited list.
@@ -909,34 +942,34 @@ public class EDState implements EDNotifiable {
     }
 
     // standard methods
-	
-    /** 
+
+    /**
      * Returns the wildcard hashtable for this node.
      * If this state has multiple successors, that may
      * modify the table, we need to clone it.
-     * @return the name of this EDState 
+     * @return the name of this EDState
      */
-    Hashtable getWildHash() { 
+    Hashtable getWildHash() {
 	if (children.length > 1 && count == 1)
 	    return (Hashtable)wildHash.clone();
-	return wildHash; 
+	return wildHash;
     }
-	
+
     /** @return the name of this EDState */
     String getName(){ return name; }
-	
+
     /** @return the name of this EDState */
     long getTimebound(){ return tb; }
 
     /** @return whether this EDState is currently subscribed */
     boolean isAlive(){ return alive; }
-	
+
     /** @return the (names of the) children of this EDState */
     String[] getChildren() { return children; }
-	
+
     /** @return the (names of the) children of this EDState */
     String[] getActions() { return actions; }
-	
+
     /** @return the (names of the) children of this EDState */
     String[] getFailActions() { return fail_actions; }
 
@@ -948,7 +981,7 @@ public class EDState implements EDNotifiable {
 
     /** @return how many times this event will need to be matched. */
     int getCount() { return count; }
-	
-    /** @return the attributes */
-    Hashtable getAttributes() { return this.attributes; }
+
+    /** @return the constraints */
+    Hashtable getConstraints() { return this.constraints; }
 }

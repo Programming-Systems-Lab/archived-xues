@@ -19,7 +19,10 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.22  2001-07-03 21:36:23  eb659
+ * Revision 1.23  2001-07-24 17:12:30  eb659
+ * dddd
+ *
+ * Revision 1.22  2001/07/03 21:36:23  eb659
  * Improved problems in race conditions. The application now hangs in the subscribe()
  * method in EDBus. Run EDTestConstruct: sometimes it works impeccably, other times
  * it hangs in EDBus.subscribe. James, Janak, do you want to have a look at it?
@@ -225,19 +228,19 @@ public class EDStateMachine implements Comparable {
     /** the specification on which this machine is built. */
     private EDStateMachineSpecification specification;
 
-    /** 
+    /**
      * Whether this machine has started.
-     * When the mahcine is first instanciated, 
+     * When the mahcine is first instanciated,
      * this value is set to false, and the initial states subscribed.
-     * When one of these states is matched, a call is made to make a 
+     * When one of these states is matched, a call is made to make a
      * new instance, and the value set to true. it then remains true.
      */
     private boolean hasStarted = false;
 
     /**
      * True if the machine is in a state of transition,
-     * meaning that it is unsubscribing one state and 
-     * subscribing the children. Do not allow reaping 
+     * meaning that it is unsubscribing one state and
+     * subscribing the children. Do not allow reaping
      * when the machine is in transition.
      */
     //private boolean inTransition = false;
@@ -260,8 +263,8 @@ public class EDStateMachine implements Comparable {
     /** Whether this state machine is currently being reaped. */
     boolean reaping = false;
 
-    /** 
-     * How many states are succeeding at this point. 
+    /**
+     * How many states are succeeding at this point.
      * Only allow reaping if the number of states succeeding at this point is 0.
      */
     private int succeedingStates = 0;
@@ -271,7 +274,7 @@ public class EDStateMachine implements Comparable {
      * @param specification the specification on which this machine is constructed
      */
     public EDStateMachine(EDStateMachineSpecification specification) {
-	
+
 	this.specification = specification;
 	this.manager = specification.getManager();
 	this.timestamp = System.currentTimeMillis();
@@ -295,8 +298,7 @@ public class EDStateMachine implements Comparable {
 	keys = sourceStates.keys();
 	while(keys.hasMoreElements()){
 	    String key = keys.nextElement().toString();
-	    EDState e = new EDState((EDState)sourceStates.get(key), 
-				    this, manager.getBus());
+	    EDState e = new EDState((EDState)sourceStates.get(key), this);
 	    this.states.put(key, e);
 	}
 
@@ -308,11 +310,11 @@ public class EDStateMachine implements Comparable {
 	}
   }
 
-    /** 
-     * Reap ourselves if necessary. 
+    /**
+     * Reap ourselves if necessary.
      * The Grim Reaper (in EventDistiller) will eventually get to us by
      * calling this method.
-     * @return whether this machine is 'dead' and can be removed 
+     * @return whether this machine is 'dead' and can be removed
      */
     synchronized boolean reap() {
 	/*if (succeedingStates > 0) try { wait(); }
@@ -321,7 +323,7 @@ public class EDStateMachine implements Comparable {
 	reaping = true;
 	errorManager.println("EDStateMachine: " + myID + " attempting to reap itself", EDErrorManager.REAPER);
 
-	/* if machine has not started yet, no need to check it 
+	/* if machine has not started yet, no need to check it
 	 * may reconsider this, once we will have rules that are made on the fly,
 	 * with limited validity */
 	if(!hasStarted) return false;
@@ -346,15 +348,15 @@ public class EDStateMachine implements Comparable {
 	errorManager.println("EDStateMachine: " + myID + " about to get reaped", EDErrorManager.REAPER);
 
 	/* 1) send failure notifications for SOME state that failed */
-	if (failedStateNames.size() > 0) 
+	if (failedStateNames.size() > 0)
 	    ((EDState)states.get(failedStateNames.get(0).toString())).fail();
 
 	/* 2) instantiate new machine, if necessary. */
-	if (specification.getInstantiationPolicy() == EDConst.ONE_AT_A_TIME) 
+	if (specification.getInstantiationPolicy() == EDConst.ONE_AT_A_TIME)
 	    specification.instantiate();
 
 	/* 3) throw the state machine away */
-	return endReap(true); 
+	return endReap(true);
     }
 
     /**
@@ -371,7 +373,7 @@ public class EDStateMachine implements Comparable {
 	reaping = false;
 	return b;
     }
-	
+
 
     /** @return whether there are live states in this machine */
     private boolean containsLiveStates(){
@@ -382,8 +384,8 @@ public class EDStateMachine implements Comparable {
 	return false;
     }
 
-    /** 
-     * Kill all the states currently subscribed. 
+    /**
+     * Kill all the states currently subscribed.
      * this has the effect that the machine will be
      * reaped the next time the manager takes a look at us.
      */
@@ -405,7 +407,7 @@ public class EDStateMachine implements Comparable {
 	    specification.instantiate();
     }
 
-    /** 
+    /**
      * Sends the given notification out, after filling
      * in the required wildcards. The wildcard hashtable
      * is passed from the specific state that publishes the action,
@@ -419,7 +421,7 @@ public class EDStateMachine implements Comparable {
 	Notification action = (Notification)actions.get(actionName);
 	// Do we need to amend the Notification?  Iterate through all
 	// attribute values and fill in any wildcard hashes in.
-	Iterator i = action.attributeNamesIterator();	
+	Iterator i = action.attributeNamesIterator();
 	while(i.hasNext()) {
 	    String attr = (String)i.next();
 	    AttributeValue val = action.getAttribute(attr);
@@ -429,7 +431,7 @@ public class EDStateMachine implements Comparable {
 		AttributeValue bindVal = (AttributeValue)wildHash.get(key);
 		if(bindVal != null) { // Replace this attributeValue
 		    action.putAttribute(attr,bindVal);
-		} 
+		}
 		else { // the value is not defined - send error message
 		    String error = "wildcard '" + key + "' has not been defined; "
 			+ "incomplete action is being sent";
@@ -442,23 +444,23 @@ public class EDStateMachine implements Comparable {
 	manager.getEventDistiller().sendPublic(KXNotification.EDOutput(action));
     }
 
-    /** 
+    /**
      * Returns the action requested.
      * @param actionName the name of the action
      * @return the action with the given name
      */
-    public Notification getAction(String actionName) { 
-	return (Notification)actions.get(actionName); 
+    public Notification getAction(String actionName) {
+	return (Notification)actions.get(actionName);
     }
 
-    /** 
+    /**
      * Returns the state requested.
      * @param stateName the name of the action
      * @return the state with the given name
      */
     public EDState getState(String stateName) { return (EDState)states.get(stateName); }
 
-    /** 
+    /**
      * Sets the value for inTransition. Called by a state
      * when it is bearing children.
      * @param inTransition the new value for inTransition
@@ -482,7 +484,7 @@ public class EDStateMachine implements Comparable {
 
     // comparable interface
 
-    /** 
+    /**
      * We compare state machines to determine priorities in receiving notifs.
      * For now call indexOf() -- inefficient, but eventually store indexes
      * with the sm and sms, updating when necessary.
@@ -504,9 +506,9 @@ public class EDStateMachine implements Comparable {
 		    specification.stateMachines.indexOf(other)) return -1;
 		else return 1;
 	    }
-	    
+
 	    else { // different specifications
-		if (manager.stateMachineTemplates.indexOf(this.specification) < 
+		if (manager.stateMachineTemplates.indexOf(this.specification) <
 		    manager.stateMachineTemplates.indexOf(other.getSpecification())) return -1;
 		else return 1;
 	    }

@@ -13,35 +13,79 @@ public class EDTestConstruct implements Notifiable {
 
     /** the EventDistiller. */
     EventDistiller ed;
+
+    /** the rule to test. */
+    static String rule = "temperature";
+
+    /** whether we test the failure of the rule. */
+    static boolean fail = false;
+
+    /** whether the rules are written to output on shutdown. */
+    static boolean output = false;
   
-    /** Starts the test. */
+    /** 
+     * Starts the test. Arguments are:
+     * -r [rulename] the name of the rule to test
+     * -f if you want to test the failure for that rule
+     * -o if you want the rules to be written to output file
+     */
     public static void main(String[] args) {
+	for(int i=0; i < args.length; i++) {
+	    if(args[i].equals("-f"))
+		fail = true;
+	    else if(args[i].equals("-r"))
+		rule = args[++i];
+	    else if(args[i].equals("-o"))
+		output = true;
+	}
 	new EDTestConstruct();
     }
 
     /** Constructs a new EDTestConstruct. */
     public EDTestConstruct() {
+
 	// instantiate new ED
 	ed = new EventDistiller(this, "psl/xues/SampleRules.xml", true, true, true);
-	// give it an input...
-	// and an output -- optional
-	//ed.setOutputFile(new File("psl/xues/currentRulebase.xml"));
 
-	/* send it a couple of events, 
-	   to test spamblocker rule */
-	//for (int i = 1; i <= 10; i++) sendEvent(10 * i);
+	// and an output -- optional
+	if (output) ed.setOutputFile(new File("psl/xues/currentRulebase.xml"));
+
+	// test spamblocker rule
+	if(rule.equals("spamblocker")) {
+	    sendSpamEvent();
+	    if(!fail) { // wait beyond timebound
+		sendSpamEvent();
+	    }
+	}
+
+	//for (int i = 1; i <= 10; i++) sendSpamEvent(10 * i);
 	// use delay to simulate time-out
 	/*try { Thread.currentThread().sleep(600); }
 	  catch (Exception ex) { ; }*/
-	//sendEvent();
+	//sendSpamEvent();
 
 	
 	// test the loop rule
 	//double d = (new Random()).nextDouble();
-	int n = 10; //(int)(d * 10);
-	for (int i = 1; i < n; i++) sendLoopEvent(10 * i);
+	//int n = 10; //(int)(d * 10);
+	//for (int i = 1; i < n; i++) sendLoopEvent(10 * i);
 	//sendEndEvent(n * 10);
 	
+        // test inequality comparison in "temperature" rule
+	else if(rule.equals("temperature")) {
+	    if(fail) {
+		sendTemperatureEvent(90);
+	    }
+	    else {
+		sendTemperatureEvent(110);
+	    }
+	}
+
+	// rule not recognized
+	else {
+	    System.out.println("tester for rule '" + rule + "' not found");
+	    System.exit(0);
+	}
 
 	// let ED run for a bit...
 	try { Thread.currentThread().sleep(15000); }
@@ -52,25 +96,37 @@ public class EDTestConstruct implements Notifiable {
     }
 
     /** Sends a "spam" event, using present time for timestamp. */
-    private void sendEvent() { sendEvent(System.currentTimeMillis()); }
+    private void sendSpamEvent() { sendSpamEvent(System.currentTimeMillis()); }
 
-    /** Sends an event, with a given timestamp. */
-    private void sendEvent(long l) {
+    /** Sends a spamblock event, with a given timestamp. */
+    private void sendSpamEvent(long l) {
 	// make event
 	Notification n1 = new Notification();
-	n1.putAttribute("Source", "EventDistiller");
-	n1.putAttribute("SourceID", 12345);
+	//n1.putAttribute("Source", "EventDistiller");
+	//n1.putAttribute("SourceID", 12345);
 	n1.putAttribute("Type", "EDInput");
 	n1.putAttribute("from", "Janak");
 	n1.putAttribute("spam", "true");
-	n1.putAttribute("timestamp", l);
+	n1.putAttribute(EDConst.TIME_ATT_NAME, l);
 
 	// send it
 	ed.notify(n1);   
     }
+    
+    /** Sends a "temperature" event, using present time for timestamp. */
+    private void sendTemperatureEvent(int temp){
+        // make event
+        Notification notification = new Notification();
+        notification.putAttribute("Type", "EDInput");
+        notification.putAttribute("temperature", temp);
+        //notification.putAttribute("spam", "true");
+        notification.putAttribute(EDConst.TIME_ATT_NAME, System.currentTimeMillis());
+        // send it
+        ed.notify(notification);
+    }
 
     /** Sends a "loop" event, using present time for timestamp. */
-    private void sendLoopEvent() { sendEvent(System.currentTimeMillis()); }
+    private void sendLoopEvent() { sendLoopEvent(System.currentTimeMillis()); }
 
     /** Sends a 'loop' event.  */
     private void sendLoopEvent(long l) {
@@ -87,7 +143,7 @@ public class EDTestConstruct implements Notifiable {
     }
 
     /** Sends a "loop" event, using present time for timestamp. */
-    private void sendEndEvent() { sendEvent(System.currentTimeMillis()); }
+    private void sendEndEvent() { sendEndEvent(System.currentTimeMillis()); }
 
     /** Sends an event.  */
     private void sendEndEvent(long l) {

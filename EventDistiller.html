@@ -35,13 +35,13 @@
       </li>
       <li>-f (optional) specifies the file (stored locally) that
 	serves as the initial rulebase for the EventDistiller. If the file
-	is not specified, ED will start with an empty rulebase, in which case 
+	is not specified, ED will start with an empty rulebase, in which case
 	it will be necessary to add rules during runtime.
       </li>
       <li>-o (optional) specifies the file (stored locally) where the rulebase
         is written, when ED shuts down. If the parameter is omitted, no file will
-	be written; if the filename is the same as specified in the -f argument, 
-	the initial rulebase specification will be overwritten with the rulebase 
+	be written; if the filename is the same as specified in the -f argument,
+	the initial rulebase specification will be overwritten with the rulebase
 	that is current when ED shuts down.
       </li>
       <li>-d (optional) enables Event Distiller debugging.
@@ -84,7 +84,7 @@
 	    <strong><tt>&lt;rule name="<em>rule
 	    name</em>"&gt;</tt></strong><br> This is the top-level
 	    rule declarator, is declared within ruleBase, and is
-	    repeated at the beginning of each rule. The following parameters 
+	    repeated at the beginning of each rule. The following parameters
 	    may be supplied:
 	    <ul>
 	    <li> name (required): Rule names are
@@ -93,9 +93,9 @@
 	    </li>
 	    <li> position (optional):
               the position where this rule is inserted, starting with 0. The position specifies the
-	      priority of this rule in receiving events: higher priority rules 
+	      priority of this rule in receiving events: higher priority rules
 	      (smaller numbers) receive events first. This is useful in the case of
-	      event absorbtion on the part of a state (see the absorb attribute in state). 
+	      event absorbtion on the part of a state (see the absorb attribute in state).
 	    </li>
             <li>instantiation (optional): the cyterion for instantiating this rule.
 	      Legal values are: 0, 1, 2. '0' means the rule will only be instantiated once.
@@ -103,7 +103,7 @@
 	      as the previous succeeds or one times out.
 	      '2' means a new instance is created whenever a previous instance starts (i.e.
 	      receives its first event), so that there will always be one instance listening for the starting event(s).
-	    </li> 
+	    </li>
 	    </ul>
 	    <hr>
 	    <ul>
@@ -121,8 +121,8 @@
 		    children="<em>CSV-list of children names</em>"
 		    actions="<em>CSV-list of actions</em>"
 		    fail_actions="<em>CSV-list of actions</em>"
-		    absorb="<em>boolean value"
-		    count="integer value"
+		    absorb="<em>boolean value</em>"
+		    count="<em>integer value</em>"
 		    &gt;</tt></strong><br>
 		    This is the beginning of declarator for a single
 		    state in the state-list (pattern) to be matched
@@ -142,7 +142,7 @@
 			limit); for subsequent timebounds it is
 			<em>recommended</em>, although not required,
 			that the timebound be positive. If the first state
-			of a rule has positive timebound, it is measured against the 
+			of a rule has positive timebound, it is measured against the
 			time at which the rule is created.(Note that
 			timebound is not precise - a fudge factor
 			is present in the Event Distiller to take care
@@ -151,7 +151,7 @@
 		      <li>
 			children (optional): specifies (in a comma-delimited
 			list, no spaces) states that
-			can follow this particular state.			
+			can follow this particular state.
 		      </li>
 		      <li>
 			actions (optional): specifies the
@@ -169,8 +169,8 @@
 			different notification <em>may</em> be sent
 			out for a failure at any given point in the
 			state machine. Note that if a rule allows multiple paths between states
-			(so that at one given time multiple states are subscribed), 
-			failure notifications for one of the states that timed out will be sent, 
+			(so that at one given time multiple states are subscribed),
+			failure notifications for one of the states that timed out will be sent,
 			only if all currently subscribed states time out.
 		      </li>
 		        <li> absorb (optional): Whether this state will absorb the events that match it.
@@ -178,11 +178,11 @@
 			  will <em>not</em> be passes on to any other state cutrrently subscribed.
 			  If this field is not specified, a default value of 'false' will be used.
 			</li>
-			<li> count (optional): the number of times this event will need to be matched 
+			<li> count (optional): the number of times this event will need to be matched
 			  before it passes. A default value of '1' is used if this field is not specified.
-			  If the value specified is greatr than '1' (say, <em>n</em>, children and actions 
+			  If the value specified is greatr than '1' (say, <em>n</em>, children and actions
 			  will only apply to the <em>n</em>th time that the state is matched; while fail_actions,
-			  if specified, will apply at all times. The special value '-1' indicates that the event 
+			  if specified, will apply at all times. The special value '-1' indicates that the event
 			  may occur any number of times (within the specified timebound), until one of
 			  the children is matched, thus terminating the loop.
 			</li>
@@ -265,7 +265,7 @@
 	<strong><tt>&lt;/rulebase&gt;</tt></strong>
       </li>
     </ul>
-    <h3>Wildcard binding</h3> 
+    <h3>Wildcard binding</h3>
     <p>
       Attribute values (<em>not</em> names) may be specified as a
       wildcard that is bound on the first match in a particular rule
@@ -332,9 +332,9 @@
 	the rules in the currently-running rulebase.</li>
     </ul>
     <p>
-      These rules are currently saved on exit, if an output filename was specified. 
+      These rules are currently saved on exit, if an output filename was specified.
       If an embedded Event Distiller is being used (see below) use the
-      <tt>setOutputFile(String fileName)</tt> method to set the output file. 
+      <tt>setOutputFile(String fileName)</tt> method to set the output file.
     </p>
     <h2>Embedded Event Distillers</h2>
     <p>

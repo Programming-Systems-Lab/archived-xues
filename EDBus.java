@@ -138,7 +138,7 @@ public class EDBus {
     private void dumpSubscribers(){
 	verbosePrintln("EDBus:******Start dumping subscribers*****");
 	for(int i = 0;i<subscribers.size();i++){
-	    EDNotifiable n = ((Subscriber)subscribers.elementAt(i)).n;
+	    EDNotifiable n = ((EDSubscriber)subscribers.elementAt(i)).n;
 	    if(n instanceof EDStateManager){
 		verbosePrintln("Manager");
 	    }else if(n instanceof EDState){
@@ -196,16 +196,19 @@ public class EDBus {
      *          for dispatch
      * @param c <code>Comparable</code> for dispatch ordering
      */
-    public void subscribe(Filter f, EDNotifiable n, Comparable c){
-	println("new subscrption");
-	Subscriber s = new Subscriber(f,n,c);
-	synchronized(subscribers){
-	    subsHash.put(n,s);
-	    subscribers.add(s);
-	    Collections.sort(subscribers);
-	    dumpSubscribers();
-	}
-	println("finished subscription");
+    public void subscribe(Filter filter, EDNotifiable ednotifiable, Comparable comparable){
+        subscribe(new EDSubscriber(filter, ednotifiable, comparable));
+    }
+
+    public void subscribe(EDSubscriber edsubscriber){
+        println("new subscrption with " + edsubscriber.f);
+        synchronized(subscribers){
+            subsHash.put(edsubscriber.n, edsubscriber);
+            subscribers.add(edsubscriber);
+            Collections.sort(subscribers);
+            dumpSubscribers();
+        }
+        println("finished subscription");
     }
 
     /**
@@ -224,8 +227,8 @@ public class EDBus {
      */
     public boolean unsubscribe(EDNotifiable n){
 	synchronized(subscribers){
-	    Subscriber s = (Subscriber)subsHash.get(n);
-	    
+	    EDSubscriber s = (EDSubscriber)subsHash.get(n);
+
 	    subsHash.remove(n);
 	    boolean returnVal = subscribers.remove(s);
 	    dumpSubscribers();
@@ -252,14 +255,14 @@ public class EDBus {
      *  Shuts down the bus.
      *
      *  Before shutting down the bus, all events in the queue are flushed.
-     *  <BR>NOTE: This is more than what Siena does with the method with the 
+     *  <BR>NOTE: This is more than what Siena does with the method with the
      *  same name.
      */
     public synchronized void shutdown(){
 	flush();
 	dispatching = false;
     }
- 
+
     /**
      *
      * Flush the queue.
@@ -291,7 +294,7 @@ public class EDBus {
 		   ||
 		   ((autoflushMode==AUTOFLUSH_DISABLED)&&
 		    eventQueue.canDequeueWithLength(waitTime))){
-		    
+
 		    verbosePrintln("Dispatcher dequeuing");
 		    dispatch(eventQueue.dequeue());
 		}else{
@@ -299,7 +302,7 @@ public class EDBus {
 		    // there should be one more case for an empty queue
 		    // for which we should just wait until someone
 		    // publishes.
-		    
+
 		    // Will implement more efficient threading interaction
 		    // when I feel like it.
 
@@ -317,11 +320,11 @@ public class EDBus {
     }
 
     /**
-     * Sends an event to all qualifying <code>Subscriber</code>s, unless
+     * Sends an event to all qualifying <code>EDSubscriber</code>s, unless
      * the message is absorbed halfway.
      *
      * Sends a <code>Notification</code> to any
-     * <code>Subscriber</code> which specifies a <code>Filter</code>
+     * <code>EDSubscriber</code> which specifies a <code>Filter</code>
      * that matches this event.
      *
      * @param e  The <code>Notification</code> to be sent
@@ -331,14 +334,13 @@ public class EDBus {
 	Enumeration elements = copyOfSubscribers.elements();
 	boolean absorbed = false;
 	while(elements.hasMoreElements() && !absorbed){
-	    Subscriber thisSubscriber = 
-		(Subscriber) elements.nextElement();
+	    EDSubscriber thisSubscriber =
+		(EDSubscriber) elements.nextElement();
 	    if(thisSubscriber.acceptsNotification(e)){
 		absorbed = thisSubscriber.n.notify(e);
 	    }
 	}
     }
-
 
     public static void main(String[] args){
 	EDBusTester.main(null);
@@ -349,12 +351,12 @@ public class EDBus {
  *  Helper class to keep track of an individual subscriber of
  *  <code>EDBus</code>.
  */
-class Subscriber implements Comparable{
+class EDSubscriber implements Comparable{
     private boolean DEBUG = false;
 
     /**
-     * The <code>Filter</code> specifying the subscription of this 
-     * <code>Subscriber</code>
+     * The <code>Filter</code> specifying the subscription of this
+     * <code>EDSubscriber</code>
      */
     Filter f;
 
@@ -374,7 +376,7 @@ class Subscriber implements Comparable{
      * Constructor.
      *
      * @param filter     The <code>Filter</code> that will be used by this
-     *                   particular <code>Subscriber</code>.
+     *                   particular <code>EDSubscriber</code>.
      *
      * @param notifiable The actual <code>EDNotifiable</code> object with the
      *                   callback function(s) during a message dispatch.
@@ -383,11 +385,24 @@ class Subscriber implements Comparable{
      *                   dispatch.
      */
 
-    public Subscriber(Filter filter, EDNotifiable notifiable, Comparable comp){
+    public EDSubscriber(Filter filter, EDNotifiable notifiable, Comparable comp){
 	f = filter;
 	n = notifiable;
 	c = comp;
     }
+
+    /**
+     * Resets the timebound for this subscriber. Used by states that have counter or
+     * loop features, where the timebound may be extended, as the subscriber is matched.
+     * @param l the new timebound within which this subscriber may be matched
+     */
+    void resetTimebound(long l){
+        synchronized(f){
+            f.removeConstraints(EDConst.TIME_ATT_NAME);
+            f.addConstraint(EDConst.TIME_ATT_NAME, new AttributeConstraint(Op.LT, new AttributeValue(l)));
+        }
+    }
+
 
     /**
      * Implements the <code>Comparable</code> interface.
@@ -399,11 +414,11 @@ class Subscriber implements Comparable{
      *         object.
      */
     public int compareTo(Object o){
-	return this.c.compareTo(((Subscriber)o).c);
+	return this.c.compareTo(((EDSubscriber)o).c);
     }
 
     /** Determines whether or not a <code>Notification</code>
-     *  should be accepted by the <code>Subscriber</code>.
+     *  should be accepted by the <code>EDSubscriber</code>.
      *
      *  The following creates a wildcard:<BR><PRE>
      *	Filter f = new Filter();
@@ -415,73 +430,10 @@ class Subscriber implements Comparable{
      *
      *  @return whether or not the <code>Notification</code> will be accepted
      */
-    public boolean acceptsNotification(Notification e){
-	if(f.isEmpty()){// empty filter doesn't match any notification, right?
-	    if(DEBUG)System.out.println("Filter empty");
-	    return false;
-	}
-	Iterator names = f.constraintNamesIterator();
-	while(names.hasNext()){
-	    String constraintName = (String)names.next();
-	    Iterator constraints = f.constraintsIterator(constraintName);
-
-	    if(constraintName == null){
-		return true;
-	    }
-
-	    AttributeValue value = e.getAttribute(constraintName);
-
-	    if(value==null){
-		/*
-		System.err.println("Missing AttributeValue "+
-			       "in Notification for constraint name: "
-				   +constraintName);
-		*/
-		return false;
-	    }
-
-	    while(constraints.hasNext()){
-		AttributeConstraint constraint =
-		    (AttributeConstraint)constraints.next();
-		if(!match(constraint,value)){
-		    return false;
-		}
-	    }
-	}
-	return true;
+    public boolean acceptsNotification(Notification notification){
+        return Covering.apply(f, notification); // just use siena
     }
-
-    
-    /** A helper method for acceptsNotification.<BR><BR>
-     *
-     *  It compares the value in the <code>AttributeConstraint</code>
-     *  with <code>AttributeValue</code> using the operator specified
-     *  in the <code>AttributeConstraint</code>
-     *  
-     *  @return whether or not the value matches the constraint
-     */ 
-    private boolean match(AttributeConstraint ac, AttributeValue av){
-	if(ac.op==Op.ANY){
-	    // if you get this far, the attribute should at least exist
-	    // thus, always accept in this case
-	    // println("Matching the *ANY* rule");
-	    return true;
-	}else if(ac.op==Op.EQ){
-	    /*
-	      // hmm, I don't know what you think, but this isEqualTo method
-	      // seems fishy to me.  I'll write my own match function
-	      System.out.println("Equality test of "+ac.value+
-	      " and "+av);
-	      System.out.println("Types are "+ac.value.getType()+
-	      " and "+av.getType());
-	      return ac.value.isEqualTo(av);
-	    */
-	    return ac.value.toString().equals(av.toString());
-	}else{
-	    return true;// for fancy operators I don't understand, I let it slide
-	}
-    }
-}// Subscriber
+}// EDSubscriber
 
 
 

@@ -20,10 +20,10 @@
 <rule name="spamblocker" instantiation="2">
    <states>
       <state name="a" timebound="-1" children="b">
-        <attribute name="from" value="*1"/>
+        <attribute name="from" value="*1"/> 
 	<attribute name="spam" value="true"/>
       </state>
-      <state name="b" timebound="100" count="9" children="" actions="A,B" fail_actions="F" absorb="true">
+      <state name="b" timebound="100" count="1" children="" actions="A,B" fail_actions="F" absorb="true">
         <attribute name="from" value="*1"/>
 	<attribute name="spam" value="true"/>
       </state>
@@ -43,7 +43,6 @@
       </notification>
    </actions>
 </rule>
-
 
 <!-- The loop rule. Illustrates how you can specify that one event
      happens any number of times (by setting count="-1"), 
@@ -118,4 +117,20 @@
       </notification>
    </actions>
 </rule>
+
+<!-- The temperature rule. Fires when a temperature value is received,
+     that is above a critical value. Demonstrates inequality operators -->
+<rule name="temperature" instantiation="2">
+   <states>
+      <state name="a" timebound="-1" actions="A">
+        <attribute name="temperature" value="100" op=">" type="int"/>
+      </state>
+   </states>
+   <actions>
+      <notification name="A">
+         <attribute name="too_hot" value="true"/>
+      </notification>
+   </actions>
+</rule>
+
 </rulebase>
