@@ -6,6 +6,12 @@ import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.net.DatagramSocket;
+import java.util.Iterator;
+import java.io.InputStreamReader;
+import java.net.DatagramPacket;
+import java.io.ByteArrayInputStream;
+import javax.xml.parsers.DocumentBuilder;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -17,12 +23,7 @@ import psl.xues.ep.event.StringEvent;
 import psl.xues.util.JAXPUtil;
 
 import siena.Notification;
-import java.net.DatagramSocket;
-import java.util.Iterator;
-import java.io.InputStreamReader;
-import java.net.DatagramPacket;
-import java.io.ByteArrayInputStream;
-import javax.xml.parsers.DocumentBuilder;
+
 
 /**
  * Socket event input mechanism.  Allows EP to be a server which receives
@@ -177,8 +178,10 @@ public class SocketInput extends EPInput {
         try {
           cs = ss.accept();
         } catch(Exception e) {
-          debug.error("Could not accept connection, shutting down inputter", e);
-          shutdown();
+          if(!shutdown) {
+            debug.error("Could not accept connection, shutting down inputter", e);
+            shutdown();
+          }
           return;
         }
         

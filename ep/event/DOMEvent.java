@@ -126,6 +126,7 @@ public class DOMEvent extends EPEvent {
     
     
     // Not supported
+    debug.warn("DOMEvent can't be converted to \"" + newFormat + "\"");
     return super.convertEvent(newFormat);
   
   }

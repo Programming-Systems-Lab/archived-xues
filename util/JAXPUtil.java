@@ -8,6 +8,8 @@ import org.omg.CORBA.portable.InputStream;
 import org.w3c.dom.Element;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.Transformer;
+import org.xml.sax.InputSource;
+import java.io.StringReader;
 
 /**
  * Various JAXP utils.
@@ -68,6 +70,16 @@ public abstract class JAXPUtil {
   public synchronized static Document parse(InputStream is) {
     if(mydb != null) try {
       return mydb.parse(is);
+    } catch(Exception e) { return null; }
+    else return null;
+  }
+  
+  /**
+   * Parse a string as XML document.
+   */
+  public synchronized static Document parse(String xmlData) {
+    if(mydb != null) try {
+      return mydb.parse(new InputSource(new StringReader(xmlData)));
     } catch(Exception e) { return null; }
     else return null;
   }

@@ -7,11 +7,13 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.StringTokenizer;
 import org.w3c.dom.Element;
+
 import psl.xues.ep.event.StringEvent;
+import psl.xues.ep.event.DOMEvent;
 
 /**
  * Console interface to the Event Packager.  Primarily for administrative
- * tasks.  
+ * tasks.
  * <p>
  * <b>Notes:</b>
  * <ul>
@@ -84,17 +86,28 @@ public class ConsoleInput extends EPInput {
         break;
       } else if(command.trim().length() == 0) {
         // ignore - it's whitespace
-      } else if(isCommand(command, "help")) {
+      }
+      
+      // Help
+      else if(isCommand(command, "help")) {
         out.println("-------------------\n" +
         "Available commands:\n"+
         "- HELP: produces this output\n"+
-        "- INJECTSTRING: injects a StringEvent into EP for testing\n" +
+        "- INJECTSTRING: injects a \"quoted string\" into EP for testing\n" +
+        "- INJECTXML: injects \"quoted XML\" into EP for testing\n" +
         "- SHUTDOWN: shuts down the Event Packager cleanly\n" +
         "-------------------");
-      } else if(isCommand(command, "shutdown")) {
+      }
+      
+      // Shutdown
+      else if(isCommand(command, "shutdown")) {
         ep.shutdown();
         break;
-      } else if(isCommand(command, "injectstring")) {
+      }
+      
+      // Inject(String|XML)
+      else if(isCommand(command, "injectstring") ||
+      isCommand(command, "injectxml")) {
         // Grab the actual string from the input
         StringTokenizer tok = new StringTokenizer(command, "\"");
         String data = null;
@@ -105,10 +118,25 @@ public class ConsoleInput extends EPInput {
           out.println("Invalid format for injecting a string");
           continue;
         }
-        debug.debug("Injecting " + data);
+        // Encapsulate it into a StringEvent...
         StringEvent se = new StringEvent(getName(), data);
-        ep.injectEvent(se);
-      } else {
+        // ...and then either ship it or convert it to DOMEvent
+        if(isCommand(command, "injectstring")) {
+          debug.debug("Injecting " + se);
+          ep.injectEvent(se);
+        } else { // XML
+          DOMEvent de = (DOMEvent)se.convertEvent("DOMEvent");
+          if(de == null) {
+            out.println("Failed in parsing XML");
+            continue;
+          }
+          debug.debug("Injecting " + de);
+          ep.injectEvent(de);
+        }
+      }
+      
+      // Invalid
+      else {
         // If we're in ep-shutdown, let bygones be bygones
         if(ep.inShutdown()) break;
         else out.println("Invalid command; please try again, or try HELP.");

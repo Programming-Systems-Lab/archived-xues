@@ -1,6 +1,10 @@
 package psl.xues.ep.event;
 
 import siena.Notification;
+import org.w3c.dom.Document;
+import psl.xues.util.JAXPUtil;
+import org.xml.sax.InputSource;
+import java.io.StringReader;
 
 /**
  * String event representation.  Embeds a string.
@@ -70,4 +74,29 @@ public class StringEvent extends EPEvent {
   public String getFormat() {
     return "StringEvent";
   }
+  
+  
+  /**
+   * Convert this event to one of another form.
+   *
+   * @param newFormat The requested event format.
+   * @return The EPEvent that's actually another event form, or null if it
+   * cannot be done.
+   */
+  public EPEvent convertEvent(String newFormat) {
+    if(newFormat.equalsIgnoreCase("DOMEvent")) try {
+      // Create a new parser and parse the string into a document
+      Document d = JAXPUtil.newDocumentBuilder().
+      parse(new InputSource(new StringReader(data)));
+      return new DOMEvent(getSource(), d);
+    } catch(Exception e) {
+      debug.warn("Convert to DOM failed", e);
+      return null;
+    }
+    
+    debug.warn("Can't convert StringEvent to type \"" + newFormat + "\"");
+    return null;
+  }
+  
+  
 }
