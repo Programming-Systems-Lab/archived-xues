@@ -11,7 +11,11 @@ package psl.xues;
  * @version 0.1 (9/7/2000)
  *
  * $Log$
- * Revision 1.1  2000-09-07 19:30:49  jjp32
+ * Revision 1.2  2000-12-26 22:25:13  jjp32
+ *
+ * Updating to latest preview versions
+ *
+ * Revision 1.1  2000/09/07 19:30:49  jjp32
  *
  * Updating
  *

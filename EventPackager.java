@@ -20,7 +20,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.7  2000-09-09 18:17:14  jjp32
+ * Revision 1.8  2000-12-26 22:25:13  jjp32
+ *
+ * Updating to latest preview versions
+ *
+ * Revision 1.7  2000/09/09 18:17:14  jjp32
  *
  * Lots of bugs and fixes for demo
  *
