@@ -6,20 +6,25 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.StringTokenizer;
+
 import org.w3c.dom.Element;
 
 import psl.xues.ep.event.StringEvent;
 import psl.xues.ep.event.DOMEvent;
+import psl.xues.ep.event.SienaEvent;
+
+import siena.Notification;
 
 /**
  * Console interface to the Event Packager.  Primarily for administrative
- * tasks.
+ * tasks, but it can also be a source of human input.
  * <p>
  * <b>Notes:</b>
  * <ul>
- * <li>Note: only one of these can exist in a JVM.</li>
+ * <li>Only one of these can exist in a JVM.</li>
+ * <li>For usage, type help at the console interface.
  * </ul>
- * <b>Configuration:</b>
+ * <b>Configuration:</b> There currently isn't any.
  * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
@@ -95,6 +100,10 @@ public class ConsoleInput extends EPInput {
         "- HELP: produces this output\n"+
         "- INJECTSTRING: injects a \"quoted string\" into EP for testing\n" +
         "- INJECTXML: injects \"quoted XML\" into EP for testing\n" +
+        "- INJECTSIENA: injects a Siena notification; use\n" +
+        "  {\"a1\"=(valuetype)\"data\", ...} as the parameter; supported\n" +
+        "  valuetypes include String, boolean, double, or long.  If\n" +
+        "  valuetype is not specified, String is assumed\n" +
         "- SHUTDOWN: shuts down the Event Packager cleanly\n" +
         "-------------------");
       }
@@ -132,6 +141,47 @@ public class ConsoleInput extends EPInput {
           }
           debug.debug("Injecting " + de);
           ep.injectEvent(de);
+        }
+      }
+      
+      // InjectSiena
+      else if(isCommand(command, "injectsiena")) {
+        StringTokenizer tok = new StringTokenizer(command, "\"");
+        Notification n = new Notification();
+        String attribute = null, rawValueType = null, valueType = null,
+        data = null;
+        while(tok.hasMoreTokens()) {
+          try {
+            attribute = tok.nextToken();
+            rawValueType = tok.nextToken();
+            // Parse rawValueType.  Handle situations where there are NO
+            // tokens left for the rawValueType, i.e., there's no valueType.
+            StringTokenizer tok2 = new StringTokenizer(rawValueType, "()");
+            if(tok2.hasMoreTokens()) tok2.nextToken(); // Skip =
+            valueType = (tok2.hasMoreTokens()) ? tok2.nextToken() : null;
+            // Parse data
+            data = tok.nextToken();
+          } catch(Exception e) {
+            out.println("Parse error in InjectSiena: " + e);
+            break;
+          }
+          
+          // Now add to the notification
+          if(valueType == null || valueType.equalsIgnoreCase("String")) {
+            n.putAttribute(attribute, data);
+          } else if(valueType.equalsIgnoreCase("boolean")) {
+            n.putAttribute(attribute, Boolean.valueOf(data).booleanValue());
+          } else if(valueType.equalsIgnoreCase("double")) {
+            n.putAttribute(attribute, Double.parseDouble(data));
+          } else if(valueType.equalsIgnoreCase("long")) {
+            n.putAttribute(attribute, Integer.parseInt(data));
+          } else {
+            out.println("Invalid value type \"" + valueType + "\", try again");
+            break;
+          }
+          
+          // Now publish the notification
+          ep.injectEvent(new SienaEvent(getName(), n));
         }
       }
       

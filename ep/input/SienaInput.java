@@ -37,9 +37,15 @@ import psl.xues.util.SienaUtils;
  * If no filters are specified, this inputter will not receive any Siena
  * events.  To create a filter, embed a <b>SienaFilter</b> element within
  * the declaration of this inputter.  SienaFilter takes one or more
- * <b>SienaConstraint</b>s, which in turn support the following attributes:<ol>
- * <li>
- * 
+ * <b>SienaConstraint</b>s, which in turn support the following attributes:<ul>
+ * <li>AttributeName;</li>
+ * <li>Op;</li>
+ * <li>ValueType (which can be String, boolean, double, or long);</li>
+ * <li>Value.</li>
+ * </ul> 
+ * You can also create a "wildcard filter", which has no SienaConstraints,
+ * and which therefore subscribes to all events on the specified event bus.
+ * <p>
  * Siena control: <p>
  * If this node is enabled for control (see "Attributes" above), this Siena
  * node will, in addition to custom filters, listen for events that match
@@ -180,18 +186,15 @@ public class SienaInput extends EPInput implements Notifiable {
         try {
           if(valueType.equalsIgnoreCase("String"))
             f.addConstraint(attrName, opcode, value);
-          else if(valueType.equalsIgnoreCase("Boolean"))
+          else if(valueType.equalsIgnoreCase("boolean"))
             f.addConstraint(attrName, opcode,
             Boolean.valueOf(value).booleanValue());
           else if(valueType.equalsIgnoreCase("ByteArray"))
             debug.warn("Bytearrays not yet supported in Siena constraint, "+
             "ignoring constraint");
-          else if(valueType.equalsIgnoreCase("Double"))
+          else if(valueType.equalsIgnoreCase("double"))
             f.addConstraint(attrName, opcode, Double.parseDouble(value));
-          else if(valueType.equalsIgnoreCase("Integer") ||
-          valueType.equalsIgnoreCase("Int"))
-            f.addConstraint(attrName, opcode, Integer.parseInt(value));
-          else if(valueType.equalsIgnoreCase("Long"))
+          else if(valueType.equalsIgnoreCase("long"))
             f.addConstraint(attrName, opcode, Long.parseLong(value));
           else {
             debug.error("Failed in parsing constraint for filter \""+filterName+
