@@ -28,7 +28,7 @@ interface EDConst {
      * Reap fudge factor.  IMPORTANT to take care of non-realtime event
      * buses (can anyone say Siena?)  XXX - should be a better way to do this.
      */
-    public static final int REAP_FUDGE = 5000;
+    public static final int REAP_FUDGE = 3000;
     /** Frequency for releasing events internally - in millisec. */
     public static int EVENT_PROCESSING = 500;
     /** Frequency for releasing events internally - in millisec. */

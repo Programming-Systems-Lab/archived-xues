@@ -19,7 +19,14 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.17  2001-06-27 22:08:43  eb659
+ * Revision 1.18  2001-06-28 20:58:42  eb659
+ * Tested and debugged timeout, different instantiation policies,
+ * improved ED shutdown
+ * added functionality to sed an event that fails all events during runtime
+ *
+ * timestamp validation for loop-rules doesn't work correctly, needs revision
+ *
+ * Revision 1.17  2001/06/27 22:08:43  eb659
  * color-coded error output for ED
  *
  * Revision 1.16  2001/06/27 17:46:53  eb659
@@ -307,31 +314,6 @@ public class EDStateMachine implements Comparable {
 
 	/* 3) throw the state machine away */
 	return true; 
-
-
-	/*
-	  this test has been moved down to the state level
-
-    boolean reap = false;
-
-    // Should never happen, but easy boundary cases 
-    if(currentState == 0) reap = false;
-    else if(currentState == states.size()) reap = true;
-    
-    /* Now try calling validateTimebound, assume the current state
-     * occurs --NOW--, and if that fails, then we MUST reap.
-     *
-    else if(((EDState)states.elementAt(currentState)).
-	    validateTimebound((EDState)states.elementAt(currentState-1),
-			      System.currentTimeMillis() - 
-			      EventDistiller.reapFudgeMillis) == false) {
-      reap = true;
-    }
-    
-	// Now, shall we reap?  
-    if(reap) unsubscribe();
-
-    return reap;    */
     }
 
     /** @return whether there are live states in this machine */

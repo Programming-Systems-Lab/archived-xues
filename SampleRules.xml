@@ -17,13 +17,13 @@
      created only when the previous instance has succeeded or timed out. 
      note also that the second event is absorbed, if matched -->
 
-<rule name="spamblocker" instantiation="1">
+<rule name="spamblocker" instantiation="2">
    <states>
       <state name="a" timebound="-1" children="b">
         <attribute name="from" value="*1"/>
 	<attribute name="spam" value="true"/>
       </state>
-      <state name="b" timebound="5" children="" actions="A,B" fail_actions="F" absorb="true">
+      <state name="b" timebound="100" children="" actions="A,B" fail_actions="F" absorb="true">
         <attribute name="from" value="*1"/>
 	<attribute name="spam" value="true"/>
       </state>
@@ -54,10 +54,10 @@
       <state name="start" timebound="-1" children="loop">
         <attribute name="event" value="loop"/>
       </state>
-      <state name="loop" timebound="5" children="end" count="-1" absorb="true" fail_actions="F">
+      <state name="loop" timebound="100" children="end" count="-1" absorb="true" fail_actions="F">
         <attribute name="event" value="loop"/>
       </state>
-      <state name="end" timebound="50" actions="S" fail_actions="F"><!-- fail_actions are not sent here -->
+      <state name="end" timebound="100" actions="S" fail_actions="F"><!-- fail_actions are not sent here -->
         <attribute name="event" value="end"/>
       </state>
    </states>

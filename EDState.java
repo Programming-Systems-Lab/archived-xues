@@ -25,7 +25,14 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.19  2001-06-27 22:08:43  eb659
+ * Revision 1.20  2001-06-28 20:58:42  eb659
+ * Tested and debugged timeout, different instantiation policies,
+ * improved ED shutdown
+ * added functionality to sed an event that fails all events during runtime
+ *
+ * timestamp validation for loop-rules doesn't work correctly, needs revision
+ *
+ * Revision 1.19  2001/06/27 22:08:43  eb659
  * color-coded error output for ED
  *
  * Revision 1.18  2001/06/27 17:46:53  eb659
@@ -445,7 +452,7 @@ public class EDState implements EDNotifiable {
 	sm.setInTransition(false);
 
 	// reap will instantiate new machine, if necessary
-	if (sm.getSpecification().getInstantiationPolicy() == EDConst.ONE_AT_A_TIME) sm.reap();
+	//if (sm.getSpecification().getInstantiationPolicy() == EDConst.ONE_AT_A_TIME) sm.reap();
     }
 
     /** 
@@ -469,7 +476,8 @@ public class EDState implements EDNotifiable {
 	long millis = n.getAttribute("timestamp").longValue();
 	boolean succeeded = false;
 
-	errorManager.println("EDState " + myID + ": Received: " + n, EDErrorManager.STATE);
+	errorManager.println("EDState " + myID + ": Received: " + n, 
+			     EDErrorManager.STATE);
 	EDState parent;
 	synchronized (parents) {
 	    for (int i = 0; i < parents.size(); i++) {
@@ -482,7 +490,8 @@ public class EDState implements EDNotifiable {
 		
 		// does the notification match us? 
 		if(validate(n, parent)) {
-		    errorManager.println("EDState " + myID + " matched at time: " + millis, EDErrorManager.STATE);
+		    errorManager.println("EDState " + myID + " MATCHED at time: " + millis, 
+					 EDErrorManager.STATE);
 		    
 		    // yes!
 		    ts = millis; // timestamp
@@ -490,14 +499,16 @@ public class EDState implements EDNotifiable {
 		    succeeded = true;
 
 		    if (absorb) {
-			errorManager.println("EDState:" + myID + ": absorbing event", EDErrorManager.STATE);
+			errorManager.println("EDState:" + myID + ": ABSORBING event", 
+					     EDErrorManager.STATE);
 			return true;
 		    }
-		    else return false;
+		    return false;
 		}
 	    }
 	}
-	errorManager.println("EDState:" + myID + ": rejected Notification", EDErrorManager.STATE);
+	errorManager.println("EDState:" + myID + ": REJECTED Notification", 
+			     EDErrorManager.STATE);
 	return false; // no match, no absorb
     }
 
@@ -508,18 +519,24 @@ public class EDState implements EDNotifiable {
      * @return whether this state has timed out and is now dead
      */
     public boolean reap() {
-	errorManager.println("checking state: " + myID, EDErrorManager.REAPER);
+	errorManager.println("checking live state: " + myID, EDErrorManager.REAPER);
+	long currentTime =  sm.getSpecification().getManager().getEventDistiller().getTime();
+
+	/* we're at the end of time, we must fail...
+	 * time is set to MAX_VALUE when flushing */
+	if (currentTime == Long.MAX_VALUE) { 
+	    kill();
+	    return true;
+	}
 	/* can we still be matched? check the last (most recent) parent.
 	 * NOTE: this assumes that events are processed sequentially,
 	 * else we would need to check all the parents */
 	if(validateTimebound 
-	   ((EDState)parents.lastElement(), 
-	    sm.getSpecification().getManager().getEventDistiller().getTime() 
-	    - EDConst.REAP_FUDGE)) 
+	   ((EDState)parents.lastElement(), currentTime - EDConst.REAP_FUDGE)) 
 	    return false;
 
-	// if we're still here, all the parents have failed
-	errorManager.println("EDState: " + myID + " - timed out!", EDErrorManager.REAPER);
+	// if we're still here, timebound has failed
+	errorManager.println("EDState: " + myID + " - timed out!", EDErrorManager.STATE);
 	kill();
 	return true;
     }

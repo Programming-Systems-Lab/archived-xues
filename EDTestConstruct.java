@@ -22,27 +22,29 @@ public class EDTestConstruct implements Notifiable {
     /** Constructs a new EDTestConstruct. */
     public EDTestConstruct() {
 	// instantiate new ED
-	ed = new EventDistiller(this, "psl/xues/SampleRules.xml", false, true);
+	ed = new EventDistiller(this, "psl/xues/SampleRules.xml", false, true, false);
 	// give it an input...
 	// and an output -- optional
 	//ed.setOutputFile(new File("psl/xues/currentRulebase.xml"));
 
-	// send it a couple of events
-	sendEvent();
-	try { Thread.currentThread().sleep(600); }
-	catch (Exception ex) { ; }
-	sendEvent();
+	/* send it a couple of events, 
+	   to test spamblocker rule */
+	//sendEvent();
+	// use delay to simulate time-out
+	/*try { Thread.currentThread().sleep(600); }
+	  catch (Exception ex) { ; }*/
+	//sendEvent();
 
-	/*
+	
 	// test the loop rule
 	double d = (new Random()).nextDouble();
 	int n = (int)(d * 10);
 	for (int i = 0; i < n; i++) sendLoopEvent();
-	//sendEndEvent();
-	*/
+	sendEndEvent();
+	
 
 	// let ED run for a bit...
-	try { Thread.currentThread().sleep(15000); }
+	try { Thread.currentThread().sleep(12000); }
 	catch (Exception ex) { ; }
 	
 	// then kill it

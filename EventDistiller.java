@@ -19,7 +19,14 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.31  2001-06-27 19:43:39  eb659
+ * Revision 1.32  2001-06-28 20:58:42  eb659
+ * Tested and debugged timeout, different instantiation policies,
+ * improved ED shutdown
+ * added functionality to sed an event that fails all events during runtime
+ *
+ * timestamp validation for loop-rules doesn't work correctly, needs revision
+ *
+ * Revision 1.31  2001/06/27 19:43:39  eb659
  * momentsrily finalized EDErrorManager. Output goes there...
  *
  * Revision 1.29  2001/06/20 20:49:32  eb659
@@ -225,7 +232,7 @@ public class EventDistiller implements Runnable, Notifiable {
     private Vector eventProcessQueue = new Vector();
     
     /** My main execution context */
-    private Thread edContext = null;
+    //private Thread edContext = null;
     
     /** Reference to state machine manager. */
     EDStateManager manager;
@@ -283,7 +290,7 @@ public class EventDistiller implements Runnable, Notifiable {
     private boolean hasShutdown = false;
 
     /** Whether the output goes to a graphical window. */
-    static boolean outputToGUI = true;//false;
+    private boolean outputToGUI = false;
 
     /** The error manager where we send debug statements. */
     EDErrorManager errorManager;
@@ -291,7 +298,7 @@ public class EventDistiller implements Runnable, Notifiable {
     /** Main. */
     public static void main(String args[]) {
 	String of = null, sf = null, sh = null;
-	boolean e = true, d = false;
+	boolean e = true, d = false, gui = false;
 
 	if(args.length > 0) { // Siena host specified?
 	    for(int i=0; i < args.length; i++) {
@@ -306,7 +313,7 @@ public class EventDistiller implements Runnable, Notifiable {
 		else if (args[i].equals("-event"))
 		    e = true;
 		else if (args[i].equals("-gui"))
-		    outputToGUI = true;
+		    gui = true;
 		else
 		    usage();
 	    }
@@ -316,7 +323,7 @@ public class EventDistiller implements Runnable, Notifiable {
 	    System.exit(0);
 	}
 	else {
-	    EventDistiller ed = new EventDistiller(sh, sf, e, d);
+	    EventDistiller ed = new EventDistiller(sh, sf, e, d, gui);
 	    ed.setOutputFile(new File(of));
 	}
     }
@@ -339,11 +346,13 @@ public class EventDistiller implements Runnable, Notifiable {
      *             could be null
      * @param eventDriven the criterion for keeping time
      * @param debug whether debug statements should be printed
+     * @param outputToGUI whether error statements appear in a graphic component
      */
-    public EventDistiller(Notifiable owner, String spec, boolean eventDriven, boolean debug) { 
+    public EventDistiller(Notifiable owner, String spec, boolean eventDriven, boolean debug, boolean outputToGUI) { 
 	this.owner = owner;
 	this.stateSpecFile = spec;
 	this.eventDriven = eventDriven;
+	this.outputToGUI = outputToGUI;
 	DEBUG = debug;
 
 	init(); // finish preparing before returning
@@ -351,13 +360,7 @@ public class EventDistiller implements Runnable, Notifiable {
     }
 
     /** Constructs a new ED with an owner -- Use notifications to add rules. */
-    public EventDistiller(Notifiable owner) { this(owner, null, false, false); }
-
-    /** Constructs a new ED with an owner and spec file. */
-    public EventDistiller(Notifiable owner, String spec) { this(owner, spec, false, false); }
-
-    /** Constructs a new ED with an owner and debug statements. */
-    public EventDistiller(Notifiable owner, boolean debug) { this(owner, null, false, debug); }
+    public EventDistiller(Notifiable owner) { this(owner, null, false, false, false); }
   
     /**
      * Standard constructor, called by main.
@@ -366,10 +369,12 @@ public class EventDistiller implements Runnable, Notifiable {
      * @param specFile name of rule spedification file, could be null
      * @param eventDriven the criterion for keeping time
      * @param debug whether debug statements should be printed
+     * @param outputToGUI whether error statements appear in a graphic component
      */
-    public EventDistiller(String sienaHost, String specFile, boolean eventDriven, boolean debug) { 
+    public EventDistiller(String sienaHost, String specFile, boolean eventDriven, boolean debug, boolean outputToGUI) { 
 	this.stateSpecFile = specFile;
 	this.eventDriven = eventDriven;
+	this.outputToGUI = outputToGUI;
 	DEBUG = debug;
 
 	// Subscribe to the "master" Siena
@@ -406,12 +411,13 @@ public class EventDistiller implements Runnable, Notifiable {
 	/* Add a shutdown hook */
 	Runtime.getRuntime().addShutdownHook(new Thread() {
 		public void run() { 
-		    if (!hasShutdown) finish(); } 
+		    if (!inShutdown) shutdown();
+		}
 	    });
 	
 	// Set the current execution context, so if the callback is called
 	// it can wake up a sleeping distiller
-	edContext = Thread.currentThread();
+					     //edContext = Thread.currentThread();
 	
 	// Create internal dispatcher
 	bus = new EDBus();
@@ -437,39 +443,33 @@ public class EventDistiller implements Runnable, Notifiable {
 	// Run process injector.  NOTE: Due to parallelism of Siena, ordering
 	// is not guaranteed.  Below is a rather hacky way of ensuring a
 	// very high probability of order in the internal Siena.
-	while (true) {
-	    if (inShutdown) { // shutting down -- clean up and terminate
-		finish();
-		break;
-	    }
-	    else { // run...
-		errorManager.print("+", EDErrorManager.DISPATCHER);
+	while (!inShutdown) { // run...
+	    errorManager.print("+", EDErrorManager.DISPATCHER);
 		
-		// every 1/2 sec or so...
-		try { Thread.sleep(EDConst.EVENT_PROCESSING); } 
-		catch(InterruptedException ie) { ; }
-		
-		// process one event
-		synchronized(eventProcessQueue) {
-		    if(eventProcessQueue.size() != 0) {
-			Notification n = (Notification)eventProcessQueue.remove(0);
-			errorManager.println("EventDistiller: Publishing internally " + n, 
-					   EDErrorManager.DISPATCHER);
-			bus.publish(n);
- 
-			// advance event counter
-			processedEvents++;
-
-			// update time 
-			long l = n.getAttribute("timestamp").longValue();
-			if (eventDriven) lastEventTime = l;
-			else {
-			    // how much does this differ from the previous skew?
-			    double skew = (double)(timeSkew - (System.currentTimeMillis() - l));
-			    double weight = 1 / processedEvents;
-			    // weighted average
-			    timeSkew += (long)(skew * weight);
-			}
+	    // every 1/2 sec or so...
+	    try { Thread.sleep(EDConst.EVENT_PROCESSING); } 
+	    catch(InterruptedException ie) { ; }
+	    
+	    // process one event
+	    synchronized(eventProcessQueue) {
+		if(eventProcessQueue.size() != 0) {
+		    Notification n = (Notification)eventProcessQueue.remove(0);
+		    errorManager.println("EventDistiller: Publishing internally " + n, 
+					 EDErrorManager.DISPATCHER);
+		    bus.publish(n);
+		    
+		    // advance event counter
+		    processedEvents++;
+		    
+		    // update time 
+		    long l = n.getAttribute("timestamp").longValue();
+		    if (eventDriven) lastEventTime = l;
+		    else {
+			// how much does this differ from the previous skew?
+			double skew = (double)(timeSkew - (System.currentTimeMillis() - l));
+			double weight = 1 / processedEvents;
+			// weighted average
+			timeSkew += (long)(skew * weight);
 		    }
 		}
 	    }
@@ -477,15 +477,30 @@ public class EventDistiller implements Runnable, Notifiable {
     }
  
 
+    /**
+     * Flush all started machines, so that any failure notifications are sent.
+     * This implies that all events that are currently subscribed will fail.
+     * This is called by shutdown in the event-driven model (when this shuts down, 
+     * we assume there are no more possible); or it may be called by an event
+     * (see KXNotification.EDFailAll).
+     */
+    void failAll() {
+	// remember values, so we can resume
+	boolean previousEventDriven = eventDriven; 
+	long previousLastEventTime = lastEventTime;
+
+	// fail all states currently subscribed
+	lastEventTime = Long.MAX_VALUE;
+	manager.reap();
+
+	// revert to previous values
+	lastEventTime = previousLastEventTime;
+	eventDriven = previousEventDriven; 
+    }
+
     /** Shuts down the ED. */
     public void shutdown() {
 	inShutdown = true; 
-	// the loop will die automatically, after cleaning up
-    }
-
-    /** Shutdown hook. */
-    private void finish() {
-	hasShutdown = true;
 	errorManager.println("EventDistiller: shutting down", EDErrorManager.ERROR);
 
 	/* Shut down the dispatchers */
@@ -494,13 +509,10 @@ public class EventDistiller implements Runnable, Notifiable {
 	} catch(Exception e) { e.printStackTrace(); }
 	bus.shutdown();
 
-	/* Flush all started machines, so that any failure notifications are sent */
-	if (eventDriven) {
-	    lastEventTime = Long.MAX_VALUE;
-	    manager.reap();
-	}
+	// fail all states, if in the event-driven mode
+	if (eventDriven) failAll();
 
-	// write out the current rulebase to a file, if spedified
+	// write out the current rulebase to a file, if specified
 	if (outputFile != null) try {
 	    PrintWriter outputWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)));
 	    // start
@@ -512,7 +524,7 @@ public class EventDistiller implements Runnable, Notifiable {
 	    // end
 	    outputWriter.write("</rulebase>");
 	    outputWriter.close();
-	} 
+	}
 	catch(Exception ex) { ex.printStackTrace(); }
     }
 
@@ -523,7 +535,7 @@ public class EventDistiller implements Runnable, Notifiable {
      * event packager, and interpreted results from the metaparser.
      */
     public void notify(Notification n) {
-	errorManager.println("EventDistiller: Received notification "+ n, EDErrorManager.DISPATCHER);
+	errorManager.println("EventDistiller: Received notification ", EDErrorManager.DISPATCHER);
 
 	// if this is called directly, just take it
 	if (owner != null) queue(n);
@@ -562,7 +574,7 @@ public class EventDistiller implements Runnable, Notifiable {
 	}
 	
 	// Add the event onto the queue 
-	errorManager.println("EventDistiller: Putting event on queue"+ n, 
+	errorManager.println("EventDistiller: Putting event on queue", 
 			   EDErrorManager.DISPATCHER);
 	synchronized(eventProcessQueue) {
 	    eventProcessQueue.addElement(n);
@@ -579,8 +591,7 @@ public class EventDistiller implements Runnable, Notifiable {
      *          must be in already wrapped format
      */
     void sendPublic(Notification n) {
-	errorManager.println("YES! EventDistiller: sending event " + n, 
-			   EDErrorManager.STATE);
+	errorManager.println("SENDING " + n, EDErrorManager.STATE);
 	
 	try {
 	    /* if this is an internal notification
@@ -617,4 +628,7 @@ public class EventDistiller implements Runnable, Notifiable {
 
     /** @return the error manager, call to print out */
     EDErrorManager getErrorManager() { return this.errorManager; }
+
+    /** @return whether the ED is in shutdown */
+    boolean isInShutdown() { return this.inShutdown; }
 }

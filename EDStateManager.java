@@ -40,7 +40,14 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.23  2001-06-27 22:36:21  eb659
+ * Revision 1.24  2001-06-28 20:58:42  eb659
+ * Tested and debugged timeout, different instantiation policies,
+ * improved ED shutdown
+ * added functionality to sed an event that fails all events during runtime
+ *
+ * timestamp validation for loop-rules doesn't work correctly, needs revision
+ *
+ * Revision 1.23  2001/06/27 22:36:21  eb659
  * *** empty log message ***
  *
  * Revision 1.22  2001/06/27 19:43:39  eb659
@@ -361,19 +368,18 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 		Vector stateMachines = 
 		    ((EDStateMachineSpecification)stateMachineTemplates.get(i)).stateMachines;
 		
-		int offset = 0;	  
-		while(offset < stateMachines.size()) {
-		    EDStateMachine e = (EDStateMachine)stateMachines.elementAt(offset);
+		for (int j = 0; j < stateMachines.size(); j++) {
+		    EDStateMachine e = (EDStateMachine)stateMachines.get(j);
 		    ed.getErrorManager().println("EDStateManager: Attempting to reap " + e.myID,
 						 EDErrorManager.REAPER);
 		    
 		    if(e.reap()) {
-			ed.getErrorManager().println("EDStateManager: Reaped " + e.myID, EDErrorManager.REAPER);
+			ed.getErrorManager().println("REAPED " + e.myID, EDErrorManager.REAPER);
 			synchronized(stateMachines) {
-			    stateMachines.removeElementAt(offset);
+			    stateMachines.remove(j);
 			}
+			j--;
 		    } 
-		    else offset++;
 		}
 	    }
 	}
@@ -503,10 +509,12 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	    dynamicQueryRule(n.getAttribute("Rule").stringValue());
 	} else if(a.equals("QueryRules")) {
 	    dynamicQueryRules();
+	} else if(a.equals("FailAll")) {
+	    ed.failAll();
 	}
 	
 	/* no reason to absorb these events.
-	   also, they could be monitored by rules. */
+	 * also, they could be monitored by rules. */
 	return false;
     }
 

@@ -37,3 +37,9 @@ machine itself?)
 
 2) if the count is '-1' this is a loop state. Then the 'children' are states
 that are a valid exit from the loop
+
+Tested timeout, different instantiation policies, 
+improved ED shutdown 
+added functionality to sed an event that fails all events during runtime 
+
+timestamp validation for loop doesn't work

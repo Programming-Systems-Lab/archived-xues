@@ -15,7 +15,14 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.10  2001-06-18 20:58:36  eb659
+ * Revision 1.11  2001-06-28 20:58:42  eb659
+ * Tested and debugged timeout, different instantiation policies,
+ * improved ED shutdown
+ * added functionality to sed an event that fails all events during runtime
+ *
+ * timestamp validation for loop-rules doesn't work correctly, needs revision
+ *
+ * Revision 1.10  2001/06/18 20:58:36  eb659
  *
  * integrated version of ED. compiles, no testing done
  *
@@ -206,7 +213,7 @@ import siena.*;
 class EDStateMachineSpecification {
 
     /** our manager. */
-    private EDStateManager edsm;
+    private EDStateManager manager;
     
     /** the name of the rule represented. */
     private String name;
@@ -235,24 +242,24 @@ class EDStateMachineSpecification {
     int instantiationPolicy = EDConst.MULTIPLE;
 
   /** Basic CTOR.  Make sure to add states, and to call findInitialStates */
-  public EDStateMachineSpecification(String name, EDStateManager edsm) {
+  public EDStateMachineSpecification(String name, EDStateManager manager) {
       this.name = name;
-      this.edsm = edsm;
+      this.manager = manager;
   }
 
   /** Demo test factory, don't use otherwise 
   public static EDStateMachineSpecification buildDemoSpec(Siena siena,
-							  EDStateManager edsm)
+							  EDStateManager manager)
   { 
-    EDStateMachineSpecification edsms = 
-      new EDStateMachineSpecification("demoTest", "foo",siena,edsm);
+    EDStateMachineSpecification managers = 
+      new EDStateMachineSpecification("demoTest", "foo",siena,manager);
     // I had to give it some silly parameters, so that it constructs itself - eb659
     EDState e = new EDState("zzz", -1, "", "", "");
     e.add("temperature","60");
-    edsms.stateArray.addElement(e);
+    managers.stateArray.addElement(e);
 
-    //    edsms.subscribe();
-    return edsms;
+    //    managers.subscribe();
+    return managers;
     }*/
 
     /**
@@ -285,8 +292,8 @@ class EDStateMachineSpecification {
 	String error = "";
 	
 	// don't allow duplicate names
-	for (int i = 0; i < edsm.stateMachineTemplates.size(); i++)
-	    if (((EDStateMachineSpecification)edsm.stateMachineTemplates.get(i)).getName
+	for (int i = 0; i < manager.stateMachineTemplates.size(); i++)
+	    if (((EDStateMachineSpecification)manager.stateMachineTemplates.get(i)).getName
 		().equals(name)) error += "a rule by this name is already in use\n";
 
 	// check state representation
@@ -483,17 +490,24 @@ class EDStateMachineSpecification {
     /** @return the instantiation policy for this rule */
     public int getInstantiationPolicy() { return instantiationPolicy; }
 
-    /** Creates and subscribes a new machine with this specification. */
-    void instantiate() { 
-	synchronized (stateMachines) {
-	    stateMachines.add(new EDStateMachine(this)); 
+    /** 
+     * Creates and subscribes a new machine with this specification. 
+     * Fails to do so if ED is is shutdown, in which case it is 
+     * irrelevant to have new machines - at least for now, until
+     * retro-active rules are not envisaged.
+     */
+    void instantiate() {
+	if (!manager.getEventDistiller().isInShutdown()) {
+	    synchronized (stateMachines) {
+		stateMachines.add(new EDStateMachine(this)); 
+	    }
 	}
     }
 
     // standars methods
 
     /** @return the stateMachineManager */
-    public EDStateManager getManager(){ return this.edsm; }
+    public EDStateManager getManager(){ return this.manager; }
 
     /** @return the name of this SMSpecification */
     public String getName(){ return name; }
