@@ -191,9 +191,9 @@ public class Xmlifier extends EPTransform {
           StringTokenizer tokenizer = new StringTokenizer(path, "/");
           
           while(tokenizer.hasMoreTokens()){
-            //go through the path
-            String token = tokenizer.nextToken();
-            debug.debug("initial token: " + token);
+	      //go through the path
+	      String token = tokenizer.nextToken();
+	      debug.debug("initial token: " + token);
             if(!document.hasChildNodes()){
               //the document is brand new... create the root
               debug.debug("document is new");
@@ -207,8 +207,9 @@ public class Xmlifier extends EPTransform {
               //therefore need to check if the path given is already mapped out.
               if(parent == null){
                 //make parent=root
-                parent = document.getFirstChild();
-                debug.debug("first child = " + parent.getNodeName());
+		  //xxx parent = document.getFirstChild();
+		  parent = document.getDocumentElement();
+		  debug.debug("first child = " + parent.getNodeName());
                 token = tokenizer.nextToken();
               }
               if(parent.hasChildNodes()){
@@ -220,7 +221,7 @@ public class Xmlifier extends EPTransform {
                 boolean done = false;
                 
                 while(!done){
-                  i++;
+		    //i++;
                   //going thru the parentList to check if path exists.
                   if(i == parentListLen){
                     parentList = null;//then list is null
@@ -234,6 +235,7 @@ public class Xmlifier extends EPTransform {
                     parentList = parent.getChildNodes();
                     done = true;
                   }
+		  i++;
                 }//while
                 
                 
