@@ -4,70 +4,195 @@
     <title>Event Distiller documentation</title>
   </head>
 
-  <body>
-    <h1>Programming Systems Lab<br>KX / Xues / Event Distiller</h1>
-    <h3>(version 1.0)</h3>
+  <body bgcolor="#FFFFFF">
+    <h2>Programming Systems Lab<br>Event Distiller version 1.0<br>
+    Documentation</h2>
+    <p><i>Copyright (c) 2000-2001: The Trustees of Columbia University and the 
+    City of New York. All Rights Reserved.<br>
+    </i>Please see the <a href="LICENSE">LICENSE</a> file for licensing 
+    information.</p>
     <h2>Introduction</h2>
-    The Event Distiller is the core of the Xues module within the KX
+    The Event Distiller (ED) is the core of the XUES subsystem within the KX
     infrastructure.  It is responsible for performing event pattern
     recognition and notification in a close to real-time fashion.  It
     has several features that make it uniquely suited for the
     real-time event monitoring aspect that KX requires.
+    <h2>System requirements</h2>
+    <p>Java 1.3.X (i.e., any 1.3-based version).&nbsp; 1.2 is not supported due 
+    to the use of ShutdownHooks in the code.&nbsp; 1.4 may work, but has not yet 
+    been fully tested (we will test it as soon as 1.4 comes out of beta).</p>
+    <p>ED depends on a number of third-party packages.&nbsp; For your 
+    convenience, these are bundled in the release distribution as <b>psl-all.jar</b>.&nbsp; 
+    Make sure to include it, along with the <b>EventDistiller.jar</b>, in your 
+    CLASSPATH prior to executing ED or constructing a new one.&nbsp; These 
+    packages include:</p>
+    <ul>
+      <li><a href="http://jakarta.apache.org/log4j/docs/documentation.html">
+      Apache Log4j 1.1.3</a>.&nbsp; New versions may work but are not tested.</li>
+      <li><a href="http://xml.apache.org/xerces-j/index.html">Apache Xerces-J 
+      1.x</a>.&nbsp; v2.0 might work, but is untested.</li>
+      <li><a href="http://www.cs.colorado.edu/~carzanig/siena/index.html">Siena</a>.&nbsp; 
+      1.1.2 and 1.2.0 have been tested and work.&nbsp; 1.3.0 should work, but 
+      has not yet been extensively tested yet.</li>
+    </ul>
     <h2>Execution</h2>
     <p>
-      Please see the Xues general documentation for common requirements
+      Please see the XUES general documentation for common requirements
       and associated install instructions.
     </p>
     <p>
-      The event distiller may be executed by issuing the following
-      command:
-    </p>
+      ED may be executed in one of two ways:</p>
+    <ol>
+      <li><b>Standalone:</b> in this mode, ED runs in its own JVM, and uses 
+      Siena as its communication mechanism.<br>
+      <br>
+      To execute ED in this fashion, issue the following command:<br>
+      <br>
+      <b>java psl.xues.ed.EventDistiller &lt;-s sienaHost&gt; [-f ruleSpecFile] [-d|-df 
+      debugScript] [-o outputFileName] [-event] [-?]<br>
+&nbsp;</b></li>
+      <li><b>Embedded:</b> ED can be run in another JVM by being instantiated by 
+      a third-party launcher.&nbsp; In this mode, ED can either communicate via 
+      Siena or via direct method calls.&nbsp; Note that ED will <i>automatically</i> 
+      construct a new thread for itself to run in.<ul>
+        <li>For Siena-based communication, use the following constructor:<br>
+        <b>public EventDistiller(String sienaHost, String specFile, boolean 
+        eventDriven, String outputFile, boolean debugging, String debugFile);</b></li>
+        <li>For direct communication, use the following constructor(s).&nbsp; 
+        You must supply an implementation of siena.Notifiable to get the 
+        callbacks when a pattern is matched (or if it fails).<br>
+        <b>public EventDistiller(Notifiable owner, String spec, boolean 
+        eventDriven, String outputFile, boolean debugging, String debugFile);</b><br>
+        <b>public EventDistiller(Notifiable owner);</b> <i>(note that this one 
+        assumes defaults for the aforementioned options)</i> </li>
+      </ul>
+      </li>
+    </ol>
     <p>
-      <strong>java psl.xues.EventDistiller &lt;-s <em>Siena URL</em>&gt; &lt;-f
-	<em>Initial rulebase file</em>&gt; [-event] [-d] [-?]</strong>
-    </p>
-    <p>
-      The parameters are:
-    </p>
-    <ul>
-      <li>-s (required) specifies the location of the Siena server to
-	which the EventDistiller will attach and listen for events on.
-      </li>
-      <li>-f (optional) specifies the file (stored locally) that
-	serves as the initial rulebase for the EventDistiller. If the file
-	is not specified, ED will start with an empty rulebase, in which case
-	it will be necessary to add rules during runtime.
-      </li>
-      <li>-o (optional) specifies the file (stored locally) where the rulebase
-        is written, when ED shuts down. If the parameter is omitted, no file will
-	be written; if the filename is the same as specified in the -f argument,
-	the initial rulebase specification will be overwritten with the rulebase
-	that is current when ED shuts down.
-      </li>
-      <li>-d (optional) enables Event Distiller debugging.
-      <strong>NOTE:</strong> At this time, debugging produces copious
-      output.
-      </li>
-      <li>-event (optional): if this option is selected, time-keeping is
-        event-driven. Else, and by default, it is time-driven.
-      </li>
-      <li>-? produces a brief summary of the above.</li>
-    </ul>
+      Both mechanisms have a number of options.</p>
+    <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse" id="AutoNumber1">
+      <tr>
+        <td align="center" bgcolor="#FF9933"><b>Standalone<br>
+        option</b></td>
+        <td align="center" bgcolor="#FF9933"><b>Constructor<br>
+        field</b></td>
+        <td align="center" bgcolor="#FF9933"><b>Purpose</b></td>
+        <td align="center" bgcolor="#FF9933"><b>Required?</b></td>
+        <td align="center" bgcolor="#FF9933"><b>Default value</b></td>
+        <td align="center" bgcolor="#FF9933"><b>Description/Notes</b></td>
+      </tr>
+      <tr>
+        <td>-s</td>
+        <td>sienaHost</td>
+        <td>SENP URL to specify Siena master</td>
+        <td>Yes, for Siena communication (standalone in particular)</td>
+        <td>
+        <p align="center">(none)</td>
+        <td>Note that the ED starts up its own HierarchicalDispatcher.</td>
+      </tr>
+      <tr>
+        <td>-f</td>
+        <td>specFile</td>
+        <td>Rule specification file</td>
+        <td>No</td>
+        <td>
+        <p align="center">null</td>
+        <td>Specifies the local location of a rules file (see below for format).&nbsp; 
+        If this is omitted, rules must be dynamically supplied to ED via Siena 
+        notifications.</td>
+      </tr>
+      <tr>
+        <td>-d</td>
+        <td>debugging</td>
+        <td>Enable debugging</td>
+        <td>No</td>
+        <td>
+        <p align="center">No</td>
+        <td>If set (or true), ED prints (verbose) debugging information.&nbsp; 
+        This uses default settings; for more flexible settings, specify a debug 
+        specification file (see next option)</td>
+      </tr>
+      <tr>
+        <td>-df</td>
+        <td>debugFile</td>
+        <td>Enable debugging, specifying log4j directives</td>
+        <td>No</td>
+        <td>
+        <p align="center">null</td>
+        <td>Points to the local log configuration file.&nbsp; This must be in
+        <a href="http://jakarta.apache.org/log4j/docs/api/org/apache/log4j/PropertyConfigurator.html#doConfigure(java.lang.String,%20org.apache.log4j.spi.LoggerRepository)">
+        log4j format</a>.&nbsp; Note that you do <i>not</i> have to specify both 
+        debugging <i>and</i> a debugFile, although you may should you wish.</td>
+      </tr>
+      <tr>
+        <td>-o</td>
+        <td>outputFile</td>
+        <td>Rule specification file to be saved on exit</td>
+        <td>No</td>
+        <td>
+        <p align="center">null</td>
+        <td>ED adds a shutdownHook so that when the JVM is terminated it saves 
+        the current rulebase to disk.&nbsp; Not useful unless you have dynamic 
+        additions to the ED rulebase.</td>
+      </tr>
+      <tr>
+        <td>-event</td>
+        <td>eventDriven</td>
+        <td>Push events through when others are received?</td>
+        <td>No</td>
+        <td>
+        <p align="center">No</td>
+        <td>If this is turned on, ED will check timeouts, etc. only when new 
+        events are received.&nbsp; Otherwise, it will establish an asynchronous 
+        thread and push out results irrespective of incoming event flow.&nbsp; (<i>Needs 
+        to be verified and tested more)</i></td>
+      </tr>
+    </table>
     <p>
       Once the Event Distiller is run, it will run in the background.
       No further user interaction is required - all manipulations are
-      done over the Siena bus from this point on.  See the sections
+      done over the Siena bus (or through local notifications) from this point on.  See the sections
       "Operation" and "Configuration Files", below.
     </p>
     <h2>Operation</h2>
+    <h3>
+      Standalone and embedded Siena modes</h3>
     <p>
       Once the Event Distiller is running, it will immediately begin
       subscribing to notifications it is interested in (based on the
       rule file supplied at start-time) and listening for instances of
       these notifications.  Upon a rule match (or a partial match),
       appropriate notifications will be sent out on the same Siena
-      bus based on the rules defined in the specification file.
-    </p>
+      bus based on the rules defined in the specification file.</p>
+    <p>
+      There are two special attributes that ED pays special attention to:</p>
+    <ul>
+      <li><b>&quot;Type&quot;: </b>In order to prevent ED from listening to <i>everything</i>, 
+      the Siena subscription made by ED only listens for events of type &quot;EDInput&quot;.&nbsp; 
+      This behavior will be made more flexible in the next ED release.</li>
+      <li><b>&quot;Timestamp&quot;:</b> One of the major problems/caveats/compromises with 
+      Siena is its inability to guarantee in-order delivery given an ordering 
+      upon publication.&nbsp; The ED goes to great lengths to resolve this, <i>
+      if</i> a timestamp is stored in the event.&nbsp; If the publisher 
+      specifies a timestamp as a long (preferably the number of milliseconds 
+      since 1970, i.e., <b>System.currentTimeMillis()</b>), the ED will reorder 
+      events to make sure they're in the correct order before processing them.&nbsp; 
+      Currently, the ED uses a sliding window (a la TCP) of 1 second (this will 
+      be configurable in the next release), during which any events in its queue 
+      will be reordered.<font color="#FFFFFF">&nbsp; (Note that behavior might 
+      differ if the event driven property is turned on.)</font></li>
+    </ul>
+    <h3>
+      All embedded modes</h3>
+    <p>
+      ED will accept <i>all </i>notifications handed to it directly: use the 
+      notify() method and hand it a Siena Notification.&nbsp; As previously 
+      mentioned, in direct mode callbacks will be handed to the Notifiable 
+      specified in the constructor.</p>
+    <p><b>NOTE:</b> It is
+      strongly suggested that the <tt>shutdown()</tt> method be called during 
+    shutdown of the owner. ED runs in a separate thread, and this ensures that 
+    the thread will be killed in a safe fashion.</p>
     <h2>Configuration</h2>
     <p>
       The heart of Event Distiller configuration lies in the
@@ -97,7 +222,7 @@
 	      (smaller numbers) receive events first. This is useful in the case of
 	      event absorbtion on the part of a state (see the absorb attribute in state).
 	    </li>
-            <li>instantiation (optional): the cyterion for instantiating this rule.
+            <li>instantiation (optional): the criterion for instantiating this rule.
 	      Legal values are: 0, 1, 2. '0' means the rule will only be instantiated once.
 	      '1' means there will always be only one instance at any given time, so a new instance is created
 	      as the previous succeeds or one times out.
@@ -344,46 +469,29 @@
       If an embedded Event Distiller is being used (see below) use the
       <tt>setOutputFile(String fileName)</tt> method to set the output file.
     </p>
-    <h2>Embedded Event Distillers</h2>
-    <p>
-      There are times when an ED may be used as an internal rule
-      engine solely for one component; if this component is not
-      already Siena-enabled, it may be overkill to integrate it into a
-      new Siena infrastructure.  In these cases, it is possible to
-      instantiate an Event Distiller within another Java module -
-      simply supply the appropriate attributes.  In particular, ED
-      expects the "owner" to have an implementation of
-      <tt>siena.Notifiable</tt> handy, which it issues callbacks to
-      when rules match and a response is returned.  Once the Event
-      Distiller is instantiated, one can simply call its
-      <tt>notify</tt> method, which pushes an event into the
-      Distiller.
-    </p>
-    <p><b>NOTE:</b> It is
-      strongly suggested that the <tt>shutdown()</tt> method be called
-      during shutdown of the owner.  ED runs in a separate thread, and
-      this ensures that the thread will be killed in a safe fashion.
-    </p>
     <h2>More to come</h2>
     <p>
       ED is under active development, and we have a number of new
-      features slated for the next release of ED (to be released in
-      July 2001).
+      features slated for the next release of ED (to be released late Spring 
+      2002).
     </p>
-    <h2>Examples</h2>
+    <h2>Examples, Source Code, Javadocs</h2>
     <p>
       A number of examples are included with the Event Distiller
       distribution.  The EDTest*.java files demonstrate typical Event
       Distiller usage (in albeit simple scenarios), while the *.xml
-      files are sample rulebases.
-    </p>
+      files are sample rulebases.&nbsp; You can unjar the Event Distiller jar 
+      file to obtain this test code as well as the full Event Distiller source 
+      code.</p>
+    <p>
+      Javadoc is available <a href="javadoc/">here</a>.&nbsp; (Note that this 
+      documentation is also supplied in the jar file, and Javadocs may be 
+      generated by running javadoc on the source code.)</p>
     <hr>
-    <address><a href="mailto:jjp32@cs.columbia.edu"></a></address>
 <!-- Created: Mon May 21 22:53:20 Eastern Daylight Time 2001 -->
-<address>Janak J Parekh &lt;janak@cs.columbia.edu&gt;<br>
+<address>Janak J Parekh &lt;<a href="mailto:janak@cs.columbia.edu">janak@cs.columbia.edu</a>&gt;<br>
 <!-- hhmts start -->
-Last modified: Fri Jun 01 23:14:26 Eastern Daylight Time 2001
-<!-- hhmts end -->
-</address>
+  Last modified:
+  <!--webbot bot="Timestamp" S-Type="EDITED" S-Format="%A, %B %d, %Y %I:%M:%S %p" startspan -->Wednesday, January 23, 2002 10:03:15 PM<!--webbot bot="Timestamp" endspan i-checksum="19169" --></address>
   </body>
 </html>

@@ -1,0 +1,56 @@
+<project name="XUES" default="all">
+  <!-- Set our classpath and tell Ant to ignore the environment classpath -->
+  <property name="classpath" 
+	    value="${basedir}/../../jars/psl-all.jar"/>
+  <property name="build.sysclasspath" value="ignore" />
+  <property name="dist" value="${basedir}/dist" />
+  <property name="build.compiler" value="modern" />
+
+  <target name="all" depends="ed, ep"/>
+
+  <target name="ed" depends="common">
+    <javac srcdir="ed" classpath="${classpath}" />
+  </target>
+
+  <target name="ep" depends="common">
+    <!-- do nothing -->
+  </target>
+
+  <target name="common" depends="kx">
+    <!-- do nothing -->
+  </target>
+
+  <target name="kx">
+    <javac srcdir="${basedir}/../kx" classpath="${classpath}" 
+	   includes="KXNotification.java" />
+  </target>
+
+  <target name="ed-jar" depends="ed">
+    <jar jarfile="dist/EventDistiller.jar" basedir="${basedir}/../../" 
+	 includes="psl/kx/*, psl/xues/ed/*" />
+  </target>
+
+  <target name="ed-dist" depends="ed-jar">
+    <zip zipfile="dist/EventDistiller.zip">
+      <zipfileset dir="${basedir}/dist/"
+		  includes="EventDistiller.jar" />
+      <zipfileset dir="${basedir}/../../jars/" 
+		  includes="psl-all.jar" />
+      <zipfileset dir="${basedir}/ed/"
+		  includes="EventDistiller.html, LICENSE" />
+      <zipfileset dir="${basedir}/ed/" prefix="samples/"
+		  includes="*.xml, *.xsd" />
+    </zip>
+  </target>
+
+    <!--
+      <target name="clean">
+	<delete>
+	  <fileset dir="dist" includes="project*" casesensitive="false" />
+	  <fileset dir="." includes="retroguard.log" casesensitive="false" />
+	  <fileset dir="." includes="**/*.class, **/*~, **/#*#, **/.#*, **/%*%" 
+		   casesensitive="false" defaultexcludes="no" />
+	</delete>
+      </target>
+      -->
+</project>
