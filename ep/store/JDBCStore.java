@@ -101,14 +101,13 @@ public class JDBCStore extends EPStore {
     try {
       ResultSet tableList = conn.getMetaData().getTables(null, null, tableName,
       null);
-      if(tableList.first() == false) {
+      if(tableList.next() == false) {
         // Create the table
         debug.debug("Table \"" + tableName + "\" doesn't exist, creating");
         Statement s = conn.createStatement();
         s.executeUpdate("CREATE TABLE " + tableName +
-        " (ID BIGINT, SOURCE VARCHAR(100), TIMESTAMP TIMESTAMP, " +
-        "FORMAT VARCHAR(100), EVENT VARCHAR(" + eventSize + "), " +
-        "PRIMARY KEY ID)");
+        " (ID BIGINT PRIMARY KEY, SOURCE VARCHAR(100), TIMESTAMP TIMESTAMP, " +
+        "FORMAT VARCHAR(100), EVENT VARCHAR(" + eventSize + "))");
         s.executeUpdate("CREATE INDEX source_index ON " + tableName +
         " (SOURCE)");
         s.executeUpdate("CREATE INDEX timestamp_index ON " + tableName +
@@ -117,16 +116,18 @@ public class JDBCStore extends EPStore {
         " (LASTID BIGINT)");
         s.executeUpdate("INSERT INTO " + tableName + "metadata" +
         " (LASTID) VALUES (-1)");
+        s.close();
       } else {
         // Get the lastID from metadata
         Statement s = conn.createStatement();
         ResultSet lastIDSet = s.executeQuery("SELECT LASTID FROM " + tableName
         + "metadata");
-        if(lastIDSet.first() == false) {
+        if(lastIDSet.next() == false) {
           throw new InstantiationException("Can't determine last ID");
         }
-        lastID = lastIDSet.getLong(0);
+        lastID = lastIDSet.getLong(1);
         debug.debug("Table \"" + tableName + "\" exists, last ID is " + lastID);
+        s.close();
       }
     } catch(Exception e) {
       debug.error("Could not check/create table", e);
@@ -160,12 +161,13 @@ public class JDBCStore extends EPStore {
       Statement reqE = conn.createStatement();
       ResultSet requestedEvent = reqE.executeQuery("SELECT EVENT FROM " +
       tableName + " WHERE ID = " + reqID);
-      if(requestedEvent.first() == false) {
+      if(requestedEvent.next() == false) {
         debug.warn("requestEvent found no match for reference");
         return null;
       }
       // Extract the data
-      ret = (EPEvent)Base64.decodeToObject(requestedEvent.getString(0));
+      ret = (EPEvent)Base64.decodeToObject(requestedEvent.getString(1));
+      reqE.close();
     } catch(Exception e) {
       debug.error("Could not requestEvent", e);
       return null;
@@ -212,6 +214,7 @@ public class JDBCStore extends EPStore {
       " (ID, SOURCE, TIMESTAMP, FORMAT, EVENT) VALUES (" + (++lastID) +
       ", '" + e.getSource() + "', " + e.getTimestamp() +
       ", '" + e.getFormat() + "', '" + encoding + "')");
+      addS.close();
     } catch(SQLException ex) {
       debug.error("Could not add event", ex);
       return null;
@@ -256,7 +259,14 @@ public class JDBCStore extends EPStore {
    */
   public boolean shutdown() {
     try {
+      // Write out last ID
+      debug.debug("Shutting down...");
+      Statement s = conn.createStatement();
+      s.executeUpdate("UPDATE " + tableName + "metadata SET LASTID = "
+      + lastID);
+      s.close();
       conn.close();
+      debug.debug("Shutdown complete");
     } catch(Exception e) {
       debug.error("Could not shutdown, ignoring", e);
     }
@@ -276,8 +286,9 @@ public class JDBCStore extends EPStore {
       Statement reqE = conn.createStatement();
       ResultSet events = reqE.executeQuery(query);
       while(events.next()) { // Build our result array
-        ret.add(new Long(events.getLong(0)));
+        ret.add(new Long(events.getLong(1)));
       }
+      reqE.close();
     } catch(Exception e) {
       debug.error("Could not execute query", e);
       return null;

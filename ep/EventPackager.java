@@ -39,7 +39,7 @@ import psl.xues.ep.store.EPStoreInterface;
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-public class EventPackager implements Runnable, EPInputInterface, 
+public class EventPackager implements Runnable, EPInputInterface,
 EPOutputInterface, EPTransformInterface, EPStoreInterface {
   /** Log4j logger class */
   static Logger debug =
@@ -73,8 +73,14 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
   /** Dequeue thread */
   Thread dequeueThread = null;
   
-  /** Shutdown mode */
+  /** Has shutdown been initiated? */
   private boolean shutdown = false;
+  /** Is the dequeue thread (rule engine) still running? */
+  private boolean dequeueing = false;
+  /** Is shutdown actually proceeding? */
+  private boolean inShutdown = false;
+  /** Shutdown watchdog thread */
+  private Thread shutdownInitiator = null;
   
   /**
    * Default embedded CTOR.
@@ -134,6 +140,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     
     // Start the dequeue loop
     while(!shutdown) {
+      dequeueing = true;
       while(eventQueue.size() > 0) {
         // Dequeue the first element
         EPEvent epe = (EPEvent)eventQueue.remove(0);
@@ -148,26 +155,56 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
         }
       }
       
-      // Nothing to do, time to catch a nap
+      // Nothing to do, time to catch a nap.  XXX - handle 
+      // InterruptedExceptions better?
       try {
         Thread.currentThread().sleep(1000);
       } catch(Exception e) { ; }
     }
+    
+    // No longer in dequeue loop
+    dequeueing = false;
+    
+    // If we get here, time to actually run the shutdown
+    doShutdown();
   }
   
   /**
-   * Handle shutdown.
+   * Initiate shutdown.
    */
   public void shutdown() {
     // If we're already in shutdown, do nothing
     if(shutdown == true) return;
-
-    // Commence shutdown otherwise
-    debug.info("Shutting down EP...");
     
+    // Commence shutdown otherwise
+    debug.info("Initiating EP shutdown...");
+   
     // Stop ourselves first
     shutdown = true;
-    if(dequeueThread != null) dequeueThread.interrupt();
+    shutdownInitiator = Thread.currentThread();
+    
+    // Now, wait up to 10 seconds, and if we're not in shutdown by then,
+    // forcibly put ourselves in shutdown.
+    try {
+      Thread.currentThread().sleep(20000);
+    } catch(Exception e) { ; }
+    if(dequeueing == true && dequeueThread != null) {
+      debug.warn("Shutdown did not start yet, attempting forcible shutdown");
+      dequeueThread.interrupt();
+      dequeueing = false;
+      doShutdown();
+    }
+  }
+  
+  /**
+   * Actually handle the shutdown.
+   */
+  private void doShutdown() {
+    if(inShutdown == true) 
+      return;  // Another thread is doing it, ignore
+       
+    debug.info("Shutting down EP...");
+    inShutdown = true;
     
     // Shut down the inputters first
     synchronized(inputters) {
@@ -183,7 +220,18 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
         ((EPOutput)i.next()).shutdown();
       }
     }
+    // XXX - transforms?
     
+    // ... finally, the stores
+    synchronized(stores) {
+      Iterator i = stores.values().iterator();
+      while(i.hasNext()) {
+        ((EPStore)i.next()).shutdown();
+      }
+    }
+
+    // Kill the watchdog thread
+    shutdownInitiator.interrupt();
     debug.info("EP shutdown process complete (process may not terminate if " +
     "there are hung threads).");
   }
@@ -291,7 +339,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
   public void error(String src, String err) {
     debug.error(src + ": " + err);
   }
-
+  
   /**
    * Get a handle to an EPStore.
    *

@@ -47,8 +47,13 @@ public class ConsoleInput extends EPInput {
       return;
     }
     
+    // Wait 2 seconds to allow things to finish.  XXX - hack - better way?
+    try {
+      Thread.sleep(1000);
+    } catch(Exception e) { ; }
+    
     // Print out the welcome message
-    out.println("Event Packager v2.0");
+    out.println("\n\nEvent Packager v2.0");
     out.println("Copyright (c) 2002: The Trustees of Columbia University " +
     "in the\nCity of New York.  All Rights Reserved.");
     out.println("Type HELP for console help.");

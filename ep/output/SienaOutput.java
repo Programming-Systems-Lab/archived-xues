@@ -26,6 +26,9 @@ import siena.SienaException;
  */
 public class SienaOutput extends EPOutput {
   private String sienaHost = null;
+  /** Port for setting the HD's PacketReceiver to, if the user specifies
+   *  a custom one. */
+  private String sienaPort = null;
   private HierarchicalDispatcher hd = null;
   
   /**
@@ -34,31 +37,38 @@ public class SienaOutput extends EPOutput {
    * @exception InstantiationException is thrown if we cannot finish
    * initialization -- this is likely due to networking or parameter problems.
    */
-  public SienaOutput(EPOutputInterface ep, Element e) 
+  public SienaOutput(EPOutputInterface ep, Element el) 
   throws InstantiationException {
-    super(ep,e); // Set up debugging, etc.
+    super(ep,el); // Set up debugging, etc.
     
-    // Figure out to whom we should be publishing
-    sienaHost = e.getAttribute("SienaHost");
+    // Now parse the element and see if we can get all of the needed
+    // information.
+    sienaHost = el.getAttribute("SienaHost");
+    sienaPort = el.getAttribute("SienaReceivePort");
     if(sienaHost == null || sienaHost.length() == 0) {
-      debug.error("Siena host not specified, " +
-      "cannot continue building hd output channel");
-      sienaHost = null;
-      throw new InstantiationException("Cannot connect to specified " +
-      "Siena host");
+      sienaHost = null; // In case of the length-0 scenario
+      if(sienaPort == null || sienaPort.length() == 0) {
+        sienaPort = null; // In case of the length-0 scenario
+        debug.warn("Siena host not specified, assuming local operation");
+      } else {
+        debug.info("Siena host not specified, will run as Siena master");
+      }
+      
     }
     
-    // Now attempt to connect
+    // Now actually try and connect
     hd = new HierarchicalDispatcher();
     try {
-      hd.setReceiver(new TCPPacketReceiver(0));
-      hd.setMaster(sienaHost);
+      if(sienaPort != null) {
+        hd.setReceiver(new TCPPacketReceiver(Integer.parseInt(sienaPort)));
+      } else { // Random port number
+        hd.setReceiver(new TCPPacketReceiver(0));
+      }
+      if(sienaHost != null) hd.setMaster(sienaHost);
     } catch(Exception ex) {
-      debug.error("Cannot connect to specified Siena host", ex);
+      debug.error("Cannot establish Siena node", ex);
       hd = null;
-      sienaHost = null;
-      throw new InstantiationException("Cannot connect to specified " + 
-      "Siena host");
+      throw new InstantiationException("Cannot establish Siena node");
     }
   }
   

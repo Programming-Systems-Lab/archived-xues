@@ -31,6 +31,9 @@ import psl.xues.ep.event.SienaEvent;
  */
 public class SienaInput extends EPInput implements Notifiable {
   private String sienaHost = null;
+  /** Port for setting the HD's PacketReceiver to, if the user specifies
+   *  a custom one. */
+  private String sienaPort = null;
   private HierarchicalDispatcher hd = null;
   
   /**
@@ -42,22 +45,31 @@ public class SienaInput extends EPInput implements Notifiable {
     // Now parse the element and see if we can get all of the needed
     // information.
     sienaHost = el.getAttribute("SienaHost");
+    sienaPort = el.getAttribute("SienaReceivePort");
     if(sienaHost == null || sienaHost.length() == 0) {
-      debug.error("Siena host not specified, " +
-      "cannot continue building Siena input filter");
-      sienaHost = null;
-      throw new InstantiationException("No Siena host specified");
+      sienaHost = null; // In case of the length-0 scenario
+      if(sienaPort == null || sienaPort.length() == 0) {
+        sienaPort = null; // In case of the length-0 scenario
+        debug.warn("Siena host not specified, assuming local operation");
+      } else {
+        debug.info("Siena host not specified, will run as Siena master");
+      }
+      
     }
     
     // Now actually try and connect
     hd = new HierarchicalDispatcher();
     try {
-      hd.setReceiver(new TCPPacketReceiver(0));
-      hd.setMaster(sienaHost);
+      if(sienaPort != null) {
+        hd.setReceiver(new TCPPacketReceiver(Integer.parseInt(sienaPort)));
+      } else { // Random port number
+        hd.setReceiver(new TCPPacketReceiver(0));
+      }
+      if(sienaHost != null) hd.setMaster(sienaHost);
     } catch(Exception ex) {
-      debug.error("Cannot connect to specified Siena host", ex);
+      debug.error("Cannot establish Siena node", ex);
       hd = null;
-      throw new InstantiationException("Cannot connect to Siena host");
+      throw new InstantiationException("Cannot establish Siena node");
     }
   }
   
@@ -102,6 +114,7 @@ public class SienaInput extends EPInput implements Notifiable {
         if(op == null || op.length() == 0) {
           op = "EQ"; // Default operation in Siena as well
         }
+        debug.debug("Processing op \"" + op + "\"");
         opcode = Op.op(op);
         if(opcode == 0) { // Siena couldn't parse the op
           debug.error("Can't process op in filter \"" +

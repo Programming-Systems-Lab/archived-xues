@@ -87,8 +87,22 @@ class EPConfiguration {
       if(eventFormat != null)
         ep.eventFormats.add(eventFormat);
     }
+            
+    // Stores.  We build these first because other modules might need
+    // access to stores.
+    NodeList storesList = e.getElementsByTagName("Stores");
+    ep.stores = new HashMap();
+    if(storesList.getLength() > 0) { // No warnings if otherwise
+      NodeList stores = storesList.item(0).getChildNodes();
+      for(int i=0; i < stores.getLength(); i++) {
+        if(stores.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
+        EPStore eps = buildStore((Element)stores.item(i));
+        if(eps != null)
+          ep.stores.put(eps.getName(), eps);
+      }
+    }
     
-    // Do we have any inputters specified?  If so, load them
+    // Inputters
     NodeList inputtersList = e.getElementsByTagName("Inputters");
     ep.inputters = new HashMap();
     if(inputtersList.getLength() == 0 ||
@@ -115,19 +129,6 @@ class EPConfiguration {
         EPTransform ept = buildTransform((Element)transforms.item(i));
         if(ept != null)
           ep.transformers.put(ept.getName(), ept);
-      }
-    }
-    
-    // Stores
-    NodeList storesList = e.getElementsByTagName("Stores");
-    ep.stores = new HashMap();
-    if(storesList.getLength() > 0) { // No warnings if otherwise
-      NodeList stores = storesList.item(0).getChildNodes();
-      for(int i=0; i < stores.getLength(); i++) {
-        if(stores.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
-        EPStore eps = buildStore((Element)stores.item(i));
-        if(eps != null)
-          ep.stores.put(eps.getName(), eps);
       }
     }
     
@@ -260,7 +261,7 @@ class EPConfiguration {
       // since we're handing it to a potentially unknown constructor?
       epo = (EPOutput)Class.forName(outputterType).getConstructor(new Class[]
       { EPOutputInterface.class, Element.class }).newInstance(new Object[] 
-      { outputter });
+      { (EPOutputInterface)ep, outputter });
     } catch(Exception e) {
       debug.warn("Failed in loading outputter \"" + outputterName +
       "\", ignoring", e);
@@ -294,7 +295,7 @@ class EPConfiguration {
       // since we're handing it to a potentially unknown constructor?
       ept = (EPTransform)Class.forName(transformType).getConstructor(new Class[]
       { EPTransformInterface.class, Element.class }).newInstance(new Object[] 
-      { transform });
+      { (EPTransformInterface)ep, transform });
     } catch(Exception e) {
       debug.warn("Failed in loading transform \"" + transformName +
       "\", ignoring", e);
@@ -328,7 +329,7 @@ class EPConfiguration {
       // since we're handing it to a potentially unknown constructor?
       eps = (EPStore)Class.forName(storeType).getConstructor(new Class[]
       { EPStoreInterface.class, Element.class }).newInstance(new Object[] 
-      { store });
+      { (EPStoreInterface)ep, store });
     } catch(Exception e) {
       debug.warn("Failed in loading store \"" + storeName +
       "\", ignoring", e);
