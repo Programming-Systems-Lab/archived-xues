@@ -2,23 +2,37 @@ package psl.xues;
 
 import psl.groupspace.*;
 import java.net.*;
+import java.io.*;
 
 /** 
  * EventPackager for Xues.
  *
- * TODO: Listening on local bus.
+ * Copyright (c) 2000: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
+ *
+ * TODO: 
+ * Listening on local bus.
+ * Handling multi-line input as an event - how to delineate?  Right
+ * now, we just blindly do it on a line-by-line basis.
  *
  * @author Janak J Parekh <jjp32@cs.columbia.edu>
- * @version 0.01
+ * @version 0.01 (9/7/2000)
+ *
+ * $Log$
+ * Revision 1.2  2000-09-07 19:30:49  jjp32
+ *
+ * Updating
+ *
  */
 public class EventPackager implements GroupspaceService,
-				      GroupspaceEventListener {
+				      GroupspaceCallback {
   GroupspaceController gcRef = null;
   int listeningPort = -1;
   ServerSocket listeningSocket = null;
   String spoolFilename;
   ObjectOutputStream spoolFile;
   int srcIDCounter = 0;
+  private String roleName = "EventPackager";
 
   /**
    * Basic CTOR.  
@@ -92,11 +106,14 @@ public class EventPackager implements GroupspaceService,
   /**
    * Handle callbacks
    */
-  public void groupspaceEvent(GroupspaceEvent ge) throws
-  PropertyVetoException {
-    
+  public int callback(GroupspaceEvent ge) {
+    System.err.println("EventPackager: received GroupspaceEvent " + ge);
+    return GroupspaceCallback.CONTINUE;
   }
  
+  /**
+   * Small thread for the addShutdownHook method.
+   */
   class EPShutdownThread extends Thread {
     public void run() {      
       /* Clean up the file streams */
@@ -111,13 +128,43 @@ public class EventPackager implements GroupspaceService,
   }
 
   class EPClientThread implements Runnable {
-    public EPClientThread(int srcID, Socket clientSocket) {
+    private int srcID;
+    private Socket clientSocket;
+    private BufferedReader in;
+    //    private PrintWriter out;
 
+    public EPClientThread(int srcID, Socket clientSocket) {
+      this.srcID = srcID;
+      this.clientSocket = clientSocket;
+      /* Build the streams */
+      try {
+	this.in = new BufferedReader(new 
+	  InputStreamReader(clientSocket.getInputStream()));
+	//	this.out = new PrintWriter(clientSocket.getOutputStream(), 
+	//				   true); //autoflush
+      } catch(Exception e) {
+	gc.Log("Error establishing client connection:" + e.toString());
+	e.printStackTrace();
+      }
     }
     
     public void run() {
-
-
+      /* Wait for stuff - then write it to disk - and to the bus */
+      try {
+	String newInput = in.readLine();
+	if(spoolFile != null) spoolFile.writeObject(newInput);
+	if(gcRef != null) {
+	  /* Send the event */
+	  gcRef.groupspaceEvent(new GroupspaceEvent(newInput,
+						    "EventPackagerIncoming", 
+						    null, null, true));
+	}
+      } catch(Exception e) {
+	gc.Log("Error communicating with client:" + e.toString());
+	e.printStackTrace();
+      }
     }
   }
+
+  public String roleName() { return this.roleName; }
 }
