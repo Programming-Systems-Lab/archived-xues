@@ -13,6 +13,8 @@ import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.input.EPInput;
 import psl.xues.ep.output.EPOutput;
 import psl.xues.ep.transform.EPTransform;
+import psl.xues.ep.exception.NoSuchPluginException;
+import psl.xues.ep.exception.InvalidPluginType;
 
 /**
  * Event packager rule representation.
@@ -63,12 +65,18 @@ public class EPRule {
     if(ruleName == null || ruleName.length() == 0)
       throw new InstantiationException("Cannot instantiate rule: no rule name");
     
-    // Process the inputs first
+    // Sanity-checks first: make sure we have inputs and outputs for this rule.
+    // (Transforms, while sometimes useful, are not required.)
     NodeList inputsList = el.getElementsByTagName("Inputs");
     if(inputsList.getLength() == 0 ||
     inputsList.item(0).getChildNodes().getLength() == 0)
       throw new InstantiationException("No inputs for this rule");
+    NodeList outputsList = el.getElementsByTagName("Outputs");
+    if(outputsList.getLength() == 0 ||
+    outputsList.item(0).getChildNodes().getLength() == 0)
+      throw new InstantiationException("No outputs for this rule");
     
+    // Now parse the inputs
     NodeList inputs = inputsList.item(0).getChildNodes();
     for(int i=0; i < inputs.getLength(); i++) {
       if(inputs.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
@@ -88,13 +96,12 @@ public class EPRule {
       this.inputs.add(epi);
       
       // Notify the inputter that they have to deal with this rule.
-      // XXX - possible race condition?  Have to make sure elsewhere in 
+      // XXX - possible race condition?  Have to make sure elsewhere in
       // EPRule to wait until the right moment.
       epi.addRule(this);
     }
     
-    // ... now the transforms.  Here, unlike inputs, we accept a rule with
-    // no transforms.
+    // ... now the transforms...
     NodeList transformsList = el.getElementsByTagName("Transforms");
     if(transformsList.getLength() > 0) {
       NodeList transforms = transformsList.item(0).getChildNodes();
@@ -116,16 +123,11 @@ public class EPRule {
         
         // Add this transform to our list
         this.transforms.add(ept);
+        ept.addRule(this);
       }
     }
     
-    // ... and finally the outputs.  Much more similar to inputs: an
-    // output is required for a rule.
-    NodeList outputsList = el.getElementsByTagName("Outputs");
-    if(outputsList.getLength() == 0 ||
-    outputsList.item(0).getChildNodes().getLength() == 0)
-      throw new InstantiationException("No outputs for this rule");
-    
+    // ... and finally the outputs.
     NodeList outputs = outputsList.item(0).getChildNodes();
     for(int i=0; i < outputs.getLength(); i++) {
       if(outputs.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
@@ -143,9 +145,10 @@ public class EPRule {
       
       // Add this name to our collection
       this.outputs.add(epo);
+      epo.addRule(this);
     }
   }
-
+  
   /**
    * Get the name of this rule.
    *
@@ -157,23 +160,38 @@ public class EPRule {
    * Process some incoming data.
    *
    * @param epe The rule to be processed.
-   * @return A boolean indicating success (why?)
+   * @return A boolean indicating success.
    */
-  public boolean processRule(EPEvent epe) {
+  public synchronized boolean processRule(EPEvent epe) {
     EPEvent oldepe, newepe = epe;
+    
+    // Verify that we received this from a legitimate inputter.  If not,
+    // don't process any further and warn the console
+    EPInput epi = (EPInput)ep.inputters.get(epe.getSource());
+    if(epi == null) {
+      debug.error("Attempt to process rule for nonexistent source \"" + 
+      epe.getSource() + "\", skipping");
+      return false;
+    }
+    if(!inputs.contains(epi)) {
+      debug.error("Attempt to process rule for nonbound source \"" + 
+      epe.getSource() + "\", skipping");
+      return false;
+    }
+    
     // First attempt transforms for this rule.  XXX - synchronization issues
     // will appear if we support incremental rule changes.
     for(int i=0; i < transforms.size(); i++) {
       oldepe = newepe;
       newepe = ((EPTransform)transforms.get(i)).transform(oldepe);
       if(newepe == null) {
-        debug.warn("Could not apply transform \"" + 
+        debug.warn("Could not apply transform \"" +
         ((EPTransform)transforms.get(i)).getName() + "\", continuing");
         newepe = oldepe; // Restore
       }
       ((EPTransform)transforms.get(i)).addCount(); // Keep track of execution
     }
-
+    
     // Now do the outputs
     EPOutput epo;
     Iterator tempoutputs = outputs.iterator();
@@ -184,8 +202,53 @@ public class EPRule {
       }
       epo.addCount(); // Keep track of execution
     }
-
+    
     // Right now, we always succeed.  XXX - might want to change this behavior.
     return true;
+  }
+  
+  /**
+   * Remove a plugin reference, given its name.  <b>Warning:</b> if this rule
+   * is currently being executed, this method will block until the execution
+   * is complete.  Note that this will <b>not</b> tell the respective plugin
+   * that it has been deregistered against this rule.
+   *
+   * @param type The plugin type; use EPPlugin constants.
+   * @param name The plugin name.
+   * @return A boolean indicating whether or not this rule is now "useless".
+   * If you get "true" back, consider removing the rule from the system.
+   * @throws NoSuchPluginException if this plugin either doesn't belong in EP
+   * anymore or doesn't reference this rule
+   * @throws InvalidPluginType if an invalid plugin type is supported (runtime 
+   * exception)
+   */
+  public synchronized boolean removePlugin(short type, String name) throws
+  NoSuchPluginException {
+    switch(type) {
+      case EPPlugin.INPUT:
+        EPInput epi = (EPInput)ep.inputters.get(name);
+        if(epi == null || inputs.remove(epi) == false)
+          throw new NoSuchPluginException();
+        else {
+          // Was that the only input?
+          if(inputs.size() == 0) return true;
+          return false;
+        }
+      case EPPlugin.OUTPUT:
+        EPOutput epo = (EPOutput)ep.outputters.get(name);
+        if(epo == null || outputs.remove(epo) == false)
+          throw new NoSuchPluginException();
+        else {
+          if(outputs.size() == 0) return true;
+          return false;
+        }
+      case EPPlugin.TRANSFORM:
+        EPTransform ept = (EPTransform)ep.transformers.get(name);
+        if(ept == null || transforms.remove(ept) == false)
+          throw new NoSuchPluginException();
+        return false;
+      default:
+        throw new InvalidPluginType();
+    }
   }
 }

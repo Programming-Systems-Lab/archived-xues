@@ -1,11 +1,14 @@
 package psl.xues.ep.output;
 
+import java.util.HashMap;
+
 import org.w3c.dom.Element;
 import org.apache.log4j.Logger;
 
 import psl.xues.ep.EventPackager;
 import psl.xues.ep.EPPlugin;
 import psl.xues.ep.event.EPEvent;
+import psl.xues.ep.EPRule;
 
 /**
  * Output mechanism for EP.  Extend this class if you want to output stuff
@@ -35,6 +38,8 @@ public abstract class EPOutput implements Runnable, EPPlugin {
   protected EPOutputInterface ep = null;
   /** Number of times this has "fired" */
   private long count = 0;
+  /** List of associated rules -- not used except in deletion */
+  private HashMap runtimeRules = new HashMap();
   
   /**
    * CTOR.  You are instantiated by the Event Packager and given the XML DOM
@@ -43,7 +48,7 @@ public abstract class EPOutput implements Runnable, EPPlugin {
    * @param e The element containing useful configuration information.
    * @exception InstantiationException
    */
-  public EPOutput(EPOutputInterface ep, Element el) 
+  public EPOutput(EPOutputInterface ep, Element el)
   throws InstantiationException {
     // Attempt to identify our instance name, which we call sourceID
     this.outputID = el.getAttribute("Name");
@@ -53,7 +58,7 @@ public abstract class EPOutput implements Runnable, EPPlugin {
     
     // Set up the debugging.  We need the type for this as well.
     debug = Logger.getLogger(this.getClass() + "." + outputID);
-  
+    
     // Store reference to EP
     this.ep = ep;
   }
@@ -76,7 +81,7 @@ public abstract class EPOutput implements Runnable, EPPlugin {
   
   /**
    * Handle an event handed to you.  All EPOutputters must implement this.
-   * If you need to do something over a long period of time, consider 
+   * If you need to do something over a long period of time, consider
    * doing it in your own thread context instead.
    *
    * @param epe The EPEvent
@@ -86,7 +91,7 @@ public abstract class EPOutput implements Runnable, EPPlugin {
   
   /**
    * Default run implementation - basically, do nothing.  Change/override this
-   * if you need to do some synchronous output - it's better not to hang up 
+   * if you need to do some synchronous output - it's better not to hang up
    * the Event Packager, but rather queue the events handed to you.
    */
   public void run() {
@@ -113,7 +118,7 @@ public abstract class EPOutput implements Runnable, EPPlugin {
     }
   }
   
-    /**
+  /**
    * Mark this input as having been "fired".  Return the new count.
    *
    * @return The new count, as int.
@@ -124,11 +129,46 @@ public abstract class EPOutput implements Runnable, EPPlugin {
   
   /**
    * Get the number of times this has been "fired".
-   * 
+   *
    * @return The new count, as int.
    */
   public final long getCount() {
     return count;
   }
-
+  
+  
+  /**
+   * Add a rule reference to us.
+   */
+  public void addRule(EPRule r) {
+    synchronized(runtimeRules) {
+      runtimeRules.put(r.getName(), r);
+    }
+  }
+  
+  /**
+   * Get the rules as a snapshot.  Inefficient, but it doesn't leave the
+   * structure locked.  XXX - more efficient way to do this?
+   */
+  public EPRule[] getCurrentRules() {
+    EPRule[] ret = null;
+    synchronized(runtimeRules) {
+      ret = (EPRule[])runtimeRules.values().toArray(new EPRule[0]);
+    }
+    return ret;
+  }
+  
+  /**
+   * Remove a rule reference.
+   *
+   * @param name The name of the rule
+   * @return A boolean indicating success.
+   */
+  public boolean removeRule(String ruleName) {
+    boolean success = false;
+    synchronized(runtimeRules) {
+      success = (runtimeRules.remove(ruleName) == null ? false : true);
+    }
+    return success;
+  }
 }

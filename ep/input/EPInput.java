@@ -119,7 +119,8 @@ public abstract class EPInput implements Runnable, EPPlugin {
   }
   
   /**
-   * Get the rules as a snapshot.
+   * Get the rules as a snapshot.  Inefficient, but it doesn't leave the
+   * structure locked.  XXX - more efficient way to do this?
    */
   public EPRule[] getCurrentRules() {
     EPRule[] ret = null;
@@ -127,6 +128,20 @@ public abstract class EPInput implements Runnable, EPPlugin {
       ret = (EPRule[])runtimeRules.values().toArray(new EPRule[0]);
     }
     return ret;
+  }
+
+  /**
+   * Remove a rule reference.
+   *
+   * @param name The name of the rule
+   * @return A boolean indicating success.
+   */
+  public boolean removeRule(String ruleName) {
+    boolean success = false;
+    synchronized(runtimeRules) {
+      success = (runtimeRules.remove(ruleName) == null ? false : true);
+    }
+    return success;
   }
   
   /**

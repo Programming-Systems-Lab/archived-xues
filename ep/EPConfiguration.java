@@ -25,8 +25,7 @@ import psl.xues.ep.store.EPStore;
 import psl.xues.ep.store.EPStoreInterface;
 
 /**
- * Event packager configuration parser.  Uses JAXP to handle the XML-formatted
- * configuration file.
+ * Event packager configuration module.
  * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
@@ -41,7 +40,7 @@ import psl.xues.ep.store.EPStoreInterface;
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-class EPConfiguration {
+public class EPConfiguration {
   /** Log4j debugger */
   static Logger debug =
   Logger.getLogger(EPConfiguration.class.getName());
@@ -218,7 +217,7 @@ class EPConfiguration {
    * @param data The XML data needed to construct this plugin.
    * @return An instance of EPPlugin if successful, else null.
    */
-  private EPPlugin addPlugin(short type, Element data) {
+  public EPPlugin addPlugin(short type, Element data) {
     // Read the configuration
     String pluginName = data.getAttribute("Name");
     String pluginClass = data.getAttribute("Type");
@@ -263,7 +262,7 @@ class EPConfiguration {
     EPPlugin epp = null;
     try {
       debug.debug(pluginType + " \"" + pluginName + "\" being loaded...");
-      // XXX - Should we be making a deep copy of the element, since we're 
+      // XXX - Should we be making a deep copy of the element, since we're
       // handing it to a potentially unknown constructor?
       epp = (EPPlugin)Class.forName(pluginClass).getConstructor(new Class[]
       { epInterface, Element.class }).newInstance(new Object[]
@@ -276,7 +275,23 @@ class EPConfiguration {
     
     // Success
     debug.info(pluginType + " \"" + pluginName + "\" loaded successfully.");
-    pluginList.put(epp.getName(), epp);
+    synchronized(pluginList) {
+      pluginList.put(epp.getName(), epp);
+    }
     return epp;
   }
+  
+  /**
+   * Delete a plugin, given its type and name.  <b>Note</b>: if there are any
+   * rules bound to this plugin, they will in turn be deleted as well.
+   *
+   * @param type The type of the plugin.  Use EPPlugin constants.
+   * @param name The name of the plugin
+   * @return A boolean indicating success.
+   * @throws NoSuchPluginException if there is no such plugin.
+   */
+  public boolean deletePlugin(short type, String name) {
+    return false;
+  }
+  
 }

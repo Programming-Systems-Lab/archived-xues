@@ -1,9 +1,12 @@
 package psl.xues.ep.transform;
 
+import java.util.HashMap;
+
 import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 
 import psl.xues.ep.EPPlugin;
+import psl.xues.ep.EPRule;
 import psl.xues.ep.event.EPEvent;
 
 /**
@@ -32,7 +35,9 @@ public abstract class EPTransform implements EPPlugin {
   protected EPTransformInterface ep = null;
   /** Number of times this has "fired" */
   private long count = 0;
-  
+  /** List of associated rules -- not used except in deletion */
+  private HashMap runtimeRules = new HashMap();
+
   /**
    * CTOR.  The element is provided for any special customizations on this
    * transform.
@@ -108,4 +113,40 @@ public abstract class EPTransform implements EPPlugin {
    * needed.
    */
   public final void shutdown() { return; }
+
+
+  /**
+   * Add a rule reference to us.
+   */
+  public void addRule(EPRule r) {
+    synchronized(runtimeRules) {
+      runtimeRules.put(r.getName(), r);
+    }
+  }
+  
+  /**
+   * Get the rules as a snapshot.  Inefficient, but it doesn't leave the
+   * structure locked.  XXX - more efficient way to do this?
+   */
+  public EPRule[] getCurrentRules() {
+    EPRule[] ret = null;
+    synchronized(runtimeRules) {
+      ret = (EPRule[])runtimeRules.values().toArray(new EPRule[0]);
+    }
+    return ret;
+  }
+
+  /**
+   * Remove a rule reference.
+   *
+   * @param name The name of the rule
+   * @return A boolean indicating success.
+   */
+  public boolean removeRule(String ruleName) {
+    boolean success = false;
+    synchronized(runtimeRules) {
+      success = (runtimeRules.remove(ruleName) == null ? false : true);
+    }
+    return success;
+  }  
 }
