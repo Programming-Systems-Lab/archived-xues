@@ -92,7 +92,7 @@ public class EventDistiller implements Runnable, Notifiable {
   /** Main. */
   public static void main(String args[]) {
     String of = null, sf = null, sh = null;
-    boolean e = true, gui = false;
+    boolean e = false, gui = false;
     boolean debugging = false;
     String debugFile = null;                     // Debug properties file
     
@@ -214,15 +214,17 @@ public class EventDistiller implements Runnable, Notifiable {
     
     // Subscribe to event distiller input
     Filter generalFilter = new Filter();
-    generalFilter.addConstraint("Type","EDInput");
+    generalFilter.addConstraint(EDConst.INPUT_ATTR,EDConst.INPUT_VAL);
     try {
       publicSiena.subscribe(generalFilter, this);
     } catch(SienaException e) { 
       debug.warn("Warning: failed in incoming event subscription; " +
       "events may not be received", e);
     }
-          
-    setOutputFile(new File(outputFile));
+
+    if(outputFile != null) {
+      setOutputFile(new File(outputFile));
+    }
     init();
     run(); /* Don't need to create new thread */
   }
@@ -247,7 +249,7 @@ public class EventDistiller implements Runnable, Notifiable {
     /* Add a shutdown hook */
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        debug.info("Shutting down EP...");
+        debug.info("Shutting down ED...");
         if (!inShutdown) shutdown();
       }
     });
@@ -287,16 +289,16 @@ public class EventDistiller implements Runnable, Notifiable {
           processedEvents++;
           
           // update time
-          long l = n.getAttribute("timestamp").longValue();
+          long l = n.getAttribute(EDConst.TIME_ATT_NAME).longValue();
           if (eventDriven) lastEventTime = l;
           else {
             // for now, assume the skew of the last event is consistent
             timeSkew = System.currentTimeMillis() - l;
-                        /* // how much does this differ from the previous skew?
-                           double skew = (double)(timeSkew - (System.currentTimeMillis() - l));
-                           double weight = 1 / processedEvents;
-                           // weighted average
-                           timeSkew += (long)(skew * weight); */
+            /* // how much does this differ from the previous skew?
+               double skew = (double)(timeSkew - (System.currentTimeMillis() - l));
+               double weight = 1 / processedEvents;
+               // weighted average
+               timeSkew += (long)(skew * weight); */
           }
         }
       }
@@ -368,8 +370,8 @@ public class EventDistiller implements Runnable, Notifiable {
    */
   private void queue(Notification n) {
     // Make sure a timestamp has been set.
-    if (n.getAttribute("timestamp") == null) {
-      n.putAttribute("timestamp", System.currentTimeMillis());
+    if (n.getAttribute(EDConst.TIME_ATT_NAME) == null) {
+      n.putAttribute(EDConst.TIME_ATT_NAME, System.currentTimeMillis());
     }
     
     // Add the event onto the queue

@@ -45,11 +45,11 @@ public class EDTestConstruct implements Notifiable {
   public EDTestConstruct() {
     
     // instantiate new ED
-    ed = new EventDistiller(this, "psl/xues/ed/SampleRules.xml", true, null, 
+    ed = new EventDistiller(this, "SampleRules.xml", true, null, 
     true, null);
     
     // and an output -- optional
-    if (output) ed.setOutputFile(new File("psl/xues/ed/currentRulebase.xml"));
+    if (output) ed.setOutputFile(new File("currentRulebase.xml"));
     
     // test spamblocker rule
     if(rule.equals("spamblocker")) {
@@ -159,7 +159,7 @@ public class EDTestConstruct implements Notifiable {
     Notification n1 = new Notification();
     n1.putAttribute("Type", "EDInput");
     n1.putAttribute("event", eventName);
-    n1.putAttribute("timestamp", l);
+    n1.putAttribute(EDConst.TIME_ATT_NAME, l);
     
     // send it
     ed.notify(n1);
@@ -176,7 +176,7 @@ public class EDTestConstruct implements Notifiable {
     n1.putAttribute("SourceID", 12345);
     n1.putAttribute("Type", "EDInput");
     n1.putAttribute("event", "end");
-    n1.putAttribute("timestamp", l);
+    n1.putAttribute(EDConst.TIME_ATT_NAME, l);
     
     // send it
     ed.notify(n1);

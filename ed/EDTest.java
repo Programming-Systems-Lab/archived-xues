@@ -11,7 +11,13 @@ import siena.*;
  * @version 0.1
  *
  * $Log$
- * Revision 1.2  2002-01-23 02:25:10  jjp32
+ * Revision 1.3  2002-02-12 00:18:02  jjp32
+ *
+ * Bug fixes.
+ *
+ * IMPORTANT: it's no longer called "timestamp", but rather "Timestamp" as per the docs
+ *
+ * Revision 1.2  2002/01/23 02:25:10  jjp32
  * Fixed package designators associated with "move"
  *
  * Revision 1.1  2002/01/23 02:17:15  jjp32
@@ -99,7 +105,7 @@ public class EDTest implements Notifiable {
     n1.putAttribute("Type", "EDInput");
     n1.putAttribute("from", "Janak");
     n1.putAttribute("spam", "true");
-    n1.putAttribute("timestamp",System.currentTimeMillis());
+    n1.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis());
 
 //     Filter f = new Filter();
 //     f.addConstraint("foo","bar");

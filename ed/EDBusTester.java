@@ -38,7 +38,7 @@ public class EDBusTester {
 		
 	    };
 	Filter f0 = new Filter();
-	f0.addConstraint("timestamp",
+	f0.addConstraint(EDConst.TIME_ATT_NAME,
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
 	bus.subscribe(f0,consumer0,new Integer(2));
 
@@ -52,7 +52,7 @@ public class EDBusTester {
 		
 	    };
 	Filter f1 = new Filter();
-	f1.addConstraint("timestamp",
+	f1.addConstraint(EDConst.TIME_ATT_NAME,
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
 	bus.subscribe(f1,consumer1,new Integer(1));
 
@@ -67,7 +67,7 @@ public class EDBusTester {
 		
 	    };
 	Filter f2 = new Filter();
-	f2.addConstraint("timestamp",
+	f2.addConstraint(EDConst.TIME_ATT_NAME,
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
 	bus.subscribe(f2,consumer2,new Integer(0));
 
@@ -75,7 +75,7 @@ public class EDBusTester {
 
 	Notification e = new Notification();
 	e.putAttribute("Name","Notification1");
-	e.putAttribute("timestamp",System.currentTimeMillis());
+	e.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis());
 	bus.publish(e);
 	bus.shutdown();
 
@@ -105,7 +105,7 @@ public class EDBusTester {
 		
 	    };
 	Filter f0 = new Filter();
-	f0.addConstraint("timestamp",
+	f0.addConstraint(EDConst.TIME_ATT_NAME,
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
 	bus.subscribe(f0,consumer0,new Integer(2));
 
@@ -119,7 +119,7 @@ public class EDBusTester {
 		
 	    };
 	Filter f1 = new Filter();
-	f1.addConstraint("timestamp",
+	f1.addConstraint(EDConst.TIME_ATT_NAME,
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
 	bus.subscribe(f1,consumer1,new Integer(1));
 
@@ -134,7 +134,7 @@ public class EDBusTester {
 		
 	    };
 	Filter f2 = new Filter();
-	f2.addConstraint("timestamp",
+	f2.addConstraint(EDConst.TIME_ATT_NAME,
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
 	bus.subscribe(f2,consumer2,new Integer(0));
 
@@ -142,7 +142,7 @@ public class EDBusTester {
 
 	Notification e = new Notification();
 	e.putAttribute("Name","Notification1");
-	e.putAttribute("timestamp",System.currentTimeMillis());
+	e.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis());
 	bus.publish(e);
 	bus.shutdown();
 
@@ -172,7 +172,7 @@ public class EDBusTester {
 		
 	    };
 	Filter f0 = new Filter();
-	f0.addConstraint("timestamp",
+	f0.addConstraint(EDConst.TIME_ATT_NAME,
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
 	bus.subscribe(f0,consumer0,new Integer(2));
 
@@ -186,7 +186,7 @@ public class EDBusTester {
 		
 	    };
 	Filter f1 = new Filter();
-	f1.addConstraint("timestamp",
+	f1.addConstraint(EDConst.TIME_ATT_NAME,
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
 	bus.subscribe(f1,consumer1,new Integer(1));
 
@@ -201,7 +201,7 @@ public class EDBusTester {
 		
 	    };
 	Filter f2 = new Filter();
-	f2.addConstraint("timestamp",
+	f2.addConstraint(EDConst.TIME_ATT_NAME,
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
 	bus.subscribe(f2,consumer2,new Integer(0));
 
@@ -209,7 +209,7 @@ public class EDBusTester {
 
 	Notification e = new Notification();
 	e.putAttribute("Name","Notification1");
-	e.putAttribute("timestamp",System.currentTimeMillis());
+	e.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis());
 	bus.publish(e);
 	bus.shutdown();
 
@@ -243,7 +243,7 @@ public class EDBusTester {
 	    };
 
 	Filter f0 = new Filter();
-	f0.addConstraint("timestamp",
+	f0.addConstraint(EDConst.TIME_ATT_NAME,
 			new AttributeConstraint(Op.ANY,(AttributeValue)null));
 
 	bus.subscribe(f0,consumer0,new Integer(1));
@@ -257,7 +257,7 @@ public class EDBusTester {
 	    };
 
 	Filter f1 = new Filter();
-	f1.addConstraint("timestamp",
+	f1.addConstraint(EDConst.TIME_ATT_NAME,
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
 	f1.addConstraint("Name",
 			 new AttributeConstraint(Op.ANY,(AttributeValue)null));
@@ -279,7 +279,7 @@ public class EDBusTester {
 
 	Notification e = new Notification();
 	e.putAttribute("Name","Notification1");
-	e.putAttribute("timestamp",System.currentTimeMillis());
+	e.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis());
 	bus.publish(e);
 	try{
 	    Thread.currentThread().sleep(700);
@@ -287,7 +287,7 @@ public class EDBusTester {
 
 	e = new Notification();
 	e.putAttribute("Name","Notification0");
-	e.putAttribute("timestamp",System.currentTimeMillis()-1200);
+	e.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis()-1200);
 	bus.publish(e);
 
 
@@ -295,7 +295,7 @@ public class EDBusTester {
 
 	e = new Notification();
 	e.putAttribute("Name","Notification3");
-	e.putAttribute("timestamp",System.currentTimeMillis());
+	e.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis());
 	bus.publish(e);
 	try{
 	    Thread.currentThread().sleep(1200);
@@ -303,7 +303,7 @@ public class EDBusTester {
 
 	e = new Notification();
 	e.putAttribute("Name","Notification2");
-	e.putAttribute("timestamp",System.currentTimeMillis()-1300);
+	e.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis()-1300);
 	bus.publish(e);
 	bus.shutdown();
 	
@@ -369,14 +369,14 @@ public class EDBusTester {
 	
 	Notification e = new Notification();
 	e.putAttribute("Name","Notification0");
-	//e.putAttribute("timestamp",System.currentTimeMillis());
+	//e.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis());
 	bus.publish(e);
 	
 	bus.flush();
 	bus.unsubscribe(consumer1);
 	e = new Notification();
 	e.putAttribute("Name","Notification1");
-	//e.putAttribute("timestamp",System.currentTimeMillis());
+	//e.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis());
 	bus.publish(e);
 
 	bus.shutdown();

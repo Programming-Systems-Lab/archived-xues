@@ -27,26 +27,46 @@ public class CorrelationRulesTest {
       Notification n1 = new Notification();
       n1.putAttribute("classname", "cselt.im.server.presence.PresenceServer");
       n1.putAttribute("methodname",
-      "PresenceServer(int,int,String,String,String)");
+      "PresenceServer(int,int,String,String,String,boolean)");
       n1.putAttribute("callback", "before");
-      n1.putAttribute("ipAddr", "128.59.23.7");
-      n1.putAttribute("ipPort", "6789");
+      n1.putAttribute("serverid", "lillo:9990");
+      n1.putAttribute("masterid", "null");
+      //n1.putAttribute("ipPort", "6789");
       n1.putAttribute("Type", "EDInput");
-      n1.putAttribute("time", "10000");
-      n1.putAttribute("timestamp", 10000);
+      //n1.putAttribute("time", "10000");
+      n1.putAttribute(EDConst.TIME_ATT_NAME, "10000");
       //    n1.putAttribute(EDConst.TIME_ATT_NAME, 10000);
       hd.publish(n1);
+      
+      
+      /*
+      n1 = new Notification();
+      n1.putAttribute("classname", "cselt.im.server.presence.PresenceServer");
+      n1.putAttribute("methodname",
+      "run()");
+      n1.putAttribute("callback", "before");
+      n1.putAttribute("serverid", "lillo:9990");
+      //n1.putAttribute("ipPort", "6789");
+      n1.putAttribute("Type", "EDInput");
+      //n1.putAttribute("time", "10000");
+      n1.putAttribute(EDConst.TIME_ATT_NAME, System.currentTimeMillis());
+      //    n1.putAttribute(EDConst.TIME_ATT_NAME, 10000);
+      hd.publish(n1);
+      */
+      
+      
+      /*
       Notification n2 = new Notification();
       n2.putAttribute("classname", "cselt.im.dbexec.DBException");
       n2.putAttribute("methodname", "DBException()");
       n2.putAttribute("callback", "before");
-      n2.putAttribute("name", "DBException");
-      n2.putAttribute("ipAddr", "128.59.23.7");
-      n2.putAttribute("ipPort", "6789");
+      n2.putAttribute("serverid", "lillo:9990");
       n2.putAttribute("Type", "EDInput");
-      n2.putAttribute("timestamp", 10010);
+      n2.putAttribute(EDConst.TIME_ATT_NAME, System.currentTimeMillis());
       //    n2.putAttribute(EDConst.TIME_ATT_NAME, 10010);
       hd.publish(n2);
+      */
+      
     } catch(SienaException e) {
       e.printStackTrace();
     }

@@ -84,7 +84,7 @@ public class EDTestOR {
 	Notification n1 = new Notification();
 	n1.putAttribute("Type","EDInput");
 	n1.putAttribute("event", name);
-	n1.putAttribute("timestamp", System.currentTimeMillis());
+	n1.putAttribute(EDConst.TIME_ATT_NAME, System.currentTimeMillis());
 
 	// send it out
 	try { hd.publish(n1); }  

@@ -100,7 +100,7 @@ Comparable {
     while(!ed.inShutdown) {
       try { Thread.currentThread().sleep(EDConst.REAP_INTERVAL);  }
       catch(InterruptedException ex) { ; }
-      //reap();
+      reap();                          // Why was this commented out?
     }
     debug.info("In shutdown: no longer reaping");
   }

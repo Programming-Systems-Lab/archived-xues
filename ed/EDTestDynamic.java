@@ -89,7 +89,7 @@ public class EDTestDynamic {
 	n1.putAttribute("Type", "DirectEvent");
 	n1.putAttribute("from", "Janak");
 	n1.putAttribute("spam", "true");
-	n1.putAttribute("timestamp",System.currentTimeMillis());
+	n1.putAttribute(EDConst.TIME_ATT_NAME,System.currentTimeMillis());
 
 	// send it out
 	try { hd.publish(n1); }  
