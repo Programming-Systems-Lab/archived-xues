@@ -40,7 +40,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.22  2001-06-27 19:43:39  eb659
+ * Revision 1.23  2001-06-27 22:36:21  eb659
+ * *** empty log message ***
+ *
+ * Revision 1.22  2001/06/27 19:43:39  eb659
  * momentsrily finalized EDErrorManager. Output goes there...
  *
  * Revision 1.21  2001/06/20 20:49:32  eb659
@@ -449,7 +452,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
       throws SAXException {
 
 	if(localName.equals("rule")) {
-	    ed.getErrorManager().println("parsed rule:\n" + currentEdsms.getName(), 
+	    ed.getErrorManager().println("parsed rule: " + currentEdsms.getName(), 
 					 EDErrorManager.MANAGER);
 
 	    // is the specified rule legal?

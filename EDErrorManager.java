@@ -19,11 +19,11 @@ interface EDErrorManager {
      * NOTE: only ERROR type messages will be printed
      * if debug is set to false 
      */
-    public static final int ERROR = -1;
-    public static final int MANAGER = 0;
-    public static final int STATE = 1;
-    public static final int DISPATCHER = 2;
-    public static final int REAPER = 3;
+    public static final int ERROR = 0;
+    public static final int MANAGER = 1;
+    public static final int STATE = 2;
+    public static final int DISPATCHER = 3;
+    public static final int REAPER = 4;
 
     /**
      * Prints message to output.
@@ -69,7 +69,7 @@ class EDErrorConsole implements EDErrorManager {
      * @param type type of message
      */
     public void print(String message, int type) {
-	if (!debug && type >= 0) return;
+	if (!debug && type > 0) return;
 	System.out.print(message);
     }
 }
@@ -93,7 +93,7 @@ class EDErrorGUI extends JFrame implements EDErrorManager {
     static final String[] STYLE_NAMES = {"error", "manager", "state", "dispatcher", "reaper"};
 
     /** Colors for the styles. */
-    static final Color[] COLORS = {Color.red, Color.orange, Color.blue, Color.darkGray, Color.lightGray };
+    static final Color[] COLORS = {Color.red, Color.magenta, Color.blue, Color.darkGray, Color.lightGray };
 
     /** 
      * Constructs a new EDErrorGUI.
@@ -134,7 +134,7 @@ class EDErrorGUI extends JFrame implements EDErrorManager {
      * @param type type of message
      */
     public void print(String message, int type) {
-	if (!debug && type >= 0) return;
+	if (!debug && type > 0) return;
 	Document document = textPane.getDocument();
 
 	try { document.insertString(document.getLength(), message, textPane.getStyle(STYLE_NAMES[type])); }
