@@ -26,7 +26,12 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.16  2001-01-30 00:24:50  jjp32
+ * Revision 1.17  2001-01-30 02:39:36  jjp32
+ *
+ * Added loopback functionality so hopefully internal siena gets the msgs
+ * back
+ *
+ * Revision 1.16  2001/01/30 00:24:50  jjp32
  *
  * Bug fixes, added test class
  *
@@ -221,7 +226,7 @@ public class EventPackager implements Notifiable {
    * Print usage.
    */
   public static void usage() {
-    System.out.println("usage: java EventPackager [-s sienaHost] [-?]");
+    System.out.println("usage: java EventPackager [-s sienaHost] [-d] [-?]");
     System.exit(-1);
   }
 

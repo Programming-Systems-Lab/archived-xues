@@ -16,10 +16,15 @@ import siena.*;
  * - Multiple actions
  *
  * @author Janak J Parekh
- * @version 0.02 (1/20/2001)
+ * @version 0.9
  *
  * $Log$
- * Revision 1.13  2001-01-29 05:22:53  jjp32
+ * Revision 1.14  2001-01-30 02:39:36  jjp32
+ *
+ * Added loopback functionality so hopefully internal siena gets the msgs
+ * back
+ *
+ * Revision 1.13  2001/01/29 05:22:53  jjp32
  *
  * Reaper written - but it's probably a problem
  *
@@ -88,8 +93,11 @@ public class EventDistiller implements Notifiable {
   /** Public (KX) siena to communicate with the outside world */
   private Siena publicSiena = null;
 
+  /** Private loopback Siena */
+  private Siena loopbackSiena = null;
+
   /** Debug flag. */
-  public static final boolean DEBUG = true;
+  static boolean DEBUG = false;
 
   /** XXX - hack */
   private static String sienaHost = "senp://localhost";
@@ -112,6 +120,8 @@ public class EventDistiller implements Notifiable {
 	  sienaHost = args[++i];
 	else if(args[i].equals("-f"))
 	  stateSpecFile = args[++i];
+	else if(args[i].equals("-d"))
+	  DEBUG = true;
 	else
 	  usage();
       }
@@ -124,7 +134,7 @@ public class EventDistiller implements Notifiable {
    */
   public static void usage() {
     System.out.println("usage: java EventDistiller [-f stateSpecFile] "+
-		       "[-s sienaHost] [-?]");
+		       "[-s sienaHost] [-d] [-?]");
     System.out.println("Warning!  Omitting stateFile causes EventDistiller "+
 		       "to run in demo mode.");
     System.exit(-1);
@@ -169,6 +179,15 @@ public class EventDistiller implements Notifiable {
 	setReceiver(new TCPPacketReceiver(61979));
     } catch(Exception e) { e.printStackTrace(); }
     
+    // Create private loopback siena
+    loopbackSiena = new HierarchicalDispatcher();
+    try {
+      ((HierarchicalDispatcher)loopbackSiena).
+	setReceiver(new TCPPacketReceiver(61980));
+      // Now start a loopback class
+      EDLoopback edlb = new EDLoopback(loopbackSiena);
+    } catch(Exception e) { e.printStackTrace(); }
+
     // Initialize state machine manager.  Hand it the private siena.
     EDStateManager edsm = new EDStateManager(privateSiena, this, 
 					     stateSpecFile);
@@ -188,16 +207,28 @@ public class EventDistiller implements Notifiable {
 
     // Run
     while(true) {
+      if(EventDistiller.DEBUG)
+	System.err.println("EventDistiller: Checking process queue");
+
       // Poll for events to process
-      if(eventProcessQueue.size() == 0) {
+      int size;
+      synchronized(eventProcessQueue) {
+	size = eventProcessQueue.size();
+      }
+
+      if(size == 0) {
+	if(EventDistiller.DEBUG)
+	  System.err.println("EventDistiller: Queue empty, sleeping");
 	try {
-	  Thread.sleep(1000);
+	  Thread.sleep(10000);
 	} catch(InterruptedException ie) { ; }
 	continue;
       } else {
 	// Otherwise pull them off
 	synchronized(eventProcessQueue) {
 	  Notification n = (Notification)eventProcessQueue.remove(0);
+	  if(EventDistiller.DEBUG)
+	    System.err.println("EventDistiller: Processing " + n);
 	  // Feed it to our internal Siena
 	  try {
 	    privateSiena.publish(n);
@@ -212,24 +243,26 @@ public class EventDistiller implements Notifiable {
    * event packager, and interpreted results from the metaparser.
    */
   public void notify(Notification n) {
-    if(DEBUG) System.out.println("[EventDistiller] Received notification " +
-				 n.toString());
+    if(DEBUG) System.out.println("EventDistiller: Received notification "+n);
     // What kind of notification is it?
     if(n.getAttribute("Type").stringValue().equals("PackagedEvent")) {
       // Just wrap it up and send it out to the metaparser, for now.
       try {
-	publicSiena.
-	  publish(KXNotification.
-		  EventDistillerKXNotification(12345,
-					       (int)n.
-					       getAttribute("DataSourceID").
-					       longValue(),
-					       (String)null, //dataSourceURL
-					       n.getAttribute("SmartEvent").
-					       stringValue()));
+	Notification mpN = KXNotification.
+	  EventDistillerKXNotification(12345,
+				       (int)n.
+				       getAttribute("DataSourceID").
+				       longValue(),
+				       (String)null, //dataSourceURL
+				       n.getAttribute("SmartEvent").
+				       stringValue());
+	if(DEBUG) System.err.println("EventDistiller: Sending notification to Metaparser" + mpN);
+	publicSiena.publish(mpN);
       } catch(SienaException e) { e.printStackTrace(); }
-    } else if(n.getAttribute("Type").stringValue().equals("ParsedEvent")) {
+    } else if(n.getAttribute("Type").stringValue().equals("ParsedEvent") ||
+	      n.getAttribute("Type").stringValue().equals("EDInput")) {
       // Add the event onto the queue and then wake up the engine
+      if(DEBUG) System.err.println("EventDistiller: Putting event on queue");
       synchronized(eventProcessQueue) {
 	eventProcessQueue.addElement(n);
       }
@@ -244,6 +277,8 @@ public class EventDistiller implements Notifiable {
    * Send out to the world.  Used for the state machine.
    */
   void sendPublic(Notification n) {
+    if(EventDistiller.DEBUG)
+      System.err.println("EventDistiller: sending event " + n);
     try {
       publicSiena.publish(n);
     } catch(SienaException e) { e.printStackTrace(); }

@@ -16,7 +16,12 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.4  2001-01-29 04:58:55  jjp32
+ * Revision 1.5  2001-01-30 02:39:36  jjp32
+ *
+ * Added loopback functionality so hopefully internal siena gets the msgs
+ * back
+ *
+ * Revision 1.4  2001/01/29 04:58:55  jjp32
  *
  * Each rule can now have multiple attr/value pairs.
  *
@@ -60,6 +65,7 @@ public class EDState {
   public EDState(int tb) {
     this.tb = tb;
     this.ts = -1;  // Unvalidated state.
+    this.attributes = new Hashtable();
   }
 
   /**

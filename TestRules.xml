@@ -56,4 +56,18 @@
       </notification>
    </actions>
 </rule>
+
+<rule name="test">
+  <states>
+    <state timebound="-1">
+      <attribute name="foo" value="bar"/>
+    </state>
+  </states>
+  <actions>
+    <notification>
+      <attribute name="bar" value="baz"/>
+    </notification>
+  </actions>
+</rule> 
+
 </rulebase>

@@ -15,7 +15,12 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.3  2001-01-29 04:58:55  jjp32
+ * Revision 1.4  2001-01-30 02:39:36  jjp32
+ *
+ * Added loopback functionality so hopefully internal siena gets the msgs
+ * back
+ *
+ * Revision 1.3  2001/01/29 04:58:55  jjp32
  *
  * Each rule can now have multiple attr/value pairs.
  *
@@ -97,8 +102,10 @@ class EDStateMachineSpecification implements Notifiable {
    */
   public void subscribe() {
     try {
-      siena.subscribe(((EDState)stateArray.elementAt(0)).buildSienaFilter(),
-		      this);
+      Filter f = ((EDState)stateArray.elementAt(0)).buildSienaFilter();
+      if(EventDistiller.DEBUG)
+	System.err.println("EDStateMachSpec: Subscribing with filter " + f);
+      siena.subscribe(f,this);
     } catch(SienaException e) {
       e.printStackTrace();
     }
@@ -106,7 +113,7 @@ class EDStateMachineSpecification implements Notifiable {
 
   public void notify(Notification n) {
     if(EventDistiller.DEBUG) 
-      System.err.println("[EDStateManagerSpecification] Received notification " + n);
+      System.err.println("EDStateManagerSpecification: Received notification " + n);
     // Create the appropriate state machine(s).  We assume the state
     // machine will register itself with the manager.
     EDStateMachine sm = new EDStateMachine(siena, edsm, stateArray, 1,

@@ -9,7 +9,12 @@ import siena.*;
   * One argument: xml message to include.
   *
   * $Log$
-  * Revision 1.1  2001-01-30 00:24:50  jjp32
+  * Revision 1.2  2001-01-30 02:39:36  jjp32
+  *
+  * Added loopback functionality so hopefully internal siena gets the msgs
+  * back
+  *
+  * Revision 1.1  2001/01/30 00:24:50  jjp32
   *
   * Bug fixes, added test class
   *
@@ -30,7 +35,7 @@ public class SienaTest {
     
     HierarchicalDispatcher hd = new HierarchicalDispatcher();
     try {
-      hd.setReceiver(new TCPPacketReceiver(61980));
+      hd.setReceiver(new TCPPacketReceiver(61981));
       hd.setMaster("senp://canal.psl.cs.columbia.edu:4321");
     } catch (InvalidSenderException ise) {
       System.err.println("Invalid Sender:" + ise);
@@ -45,6 +50,10 @@ public class SienaTest {
     n.putAttribute("SourceID", 12345);
     n.putAttribute("Type", "DirectEvent");
     n.putAttribute("foo", "bar");
+
+    Filter f = new Filter();
+    f.addConstraint("foo","bar");
+    System.err.println(f);
 
     try {
       hd.publish(n);

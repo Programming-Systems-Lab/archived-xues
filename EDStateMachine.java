@@ -19,7 +19,12 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.4  2001-01-29 05:22:53  jjp32
+ * Revision 1.5  2001-01-30 02:39:36  jjp32
+ *
+ * Added loopback functionality so hopefully internal siena gets the msgs
+ * back
+ *
+ * Revision 1.4  2001/01/29 05:22:53  jjp32
  *
  * Reaper written - but it's probably a problem
  *
@@ -116,7 +121,7 @@ public class EDStateMachine implements Notifiable {
     
   public void notify(Notification n) {
     if(EventDistiller.DEBUG) 
-      System.err.println("[EDStateMachine] Received notification " + n);
+      System.err.println("EDStateMachine: Received notification " + n);
     // Check it against the current state - but to do this, we need
     // the prev state
     EDState prevState = (currentState == 0 ? null : 
