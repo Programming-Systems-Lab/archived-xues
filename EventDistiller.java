@@ -19,8 +19,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.28  2001-06-20 20:07:21  eb659
- * time-based and event-based timekeeping
+ * Revision 1.29  2001-06-20 20:49:32  eb659
+ * two options: time-driven, or event-driven
+ * a. options interface
+ * b. flush event in shutdown when using event-based time
+ * c. documentation (for now summarily in html, more thorough in code)
  *
  * Revision 1.26  2001/06/18 20:58:36  eb659
  *
@@ -222,7 +225,7 @@ public class EventDistiller implements Runnable, Notifiable {
     private Thread edContext = null;
     
     /** Reference to state machine manager. */
-    EDStateManager edsm;
+    EDStateManager manager;
     
     /** Internal event dispatcher. */
     //private Siena privateSiena = null;
@@ -240,8 +243,9 @@ public class EventDistiller implements Runnable, Notifiable {
 
     /** 
      * The timestamp of the last event processed internally.
-     * We use this for reaping, so this value is the least recent
-     * event we can possibliy receive - assuming we receve events sequentially
+     * We use this for time-keeping in the event-driven version, 
+     * (when eventDriven is set to true) This value is the least recent
+     * event we can possibliy receive - assuming we receve events sequentially.
      */
     private long lastEventTime = 0;
 
@@ -412,7 +416,7 @@ public class EventDistiller implements Runnable, Notifiable {
 	    }*/
 	
 	// Initialize state machine manager.
-	edsm = new EDStateManager(this);
+	manager = new EDStateManager(this);
     }
 	
     /** Start execution of the new EventDistiller. */
@@ -459,6 +463,7 @@ public class EventDistiller implements Runnable, Notifiable {
 	    }
 	}
     }
+ 
 
     /** Shuts down the ED. */
     public void shutdown() {
@@ -469,14 +474,20 @@ public class EventDistiller implements Runnable, Notifiable {
     /** Shutdown hook. */
     private void finish() {
 	hasShutdown = true;
-	/* Shut down the hierarchical dispatchers */
 	System.err.println("EventDistiller: shutting down");
-	try {
-	    if (owner == null) ((HierarchicalDispatcher)publicSiena).shutdown();
-	    bus.shutdown();
-	    //((HierarchicalDispatcher)loopbackSiena).shutdown();
+
+	/* Shut down the dispatchers */
+	if (owner == null) try {
+	    ((HierarchicalDispatcher)publicSiena).shutdown();
 	} catch(Exception e) { e.printStackTrace(); }
-	
+	bus.shutdown();
+
+	/* Flush all started machines, so that any failure notifications are sent */
+	if (eventDriven) {
+	    lastEventTime = Long.MAX_VALUE;
+	    manager.reap();
+	}
+
 	// write out the current rulebase to a file, if spedified
 	if (outputFile != null) try {
 	    PrintWriter outputWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)));
@@ -484,8 +495,8 @@ public class EventDistiller implements Runnable, Notifiable {
 	    outputWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
 			       + "<rulebase xmlns=\"http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd\">");
 	    // the rules
-	    for (int i = 0; i < edsm.stateMachineTemplates.size(); i++) 
-		outputWriter.write(((EDStateMachineSpecification)edsm.stateMachineTemplates.get(i)).toXML());
+	    for (int i = 0; i < manager.stateMachineTemplates.size(); i++) 
+		outputWriter.write(((EDStateMachineSpecification)manager.stateMachineTemplates.get(i)).toXML());
 	    // end
 	    outputWriter.write("</rulebase>");
 	    outputWriter.close();

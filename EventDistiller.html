@@ -24,7 +24,7 @@
     </p>
     <p>
       <strong>java psl.xues.EventDistiller &lt;-s <em>Siena URL</em>&gt; &lt;-f
-	<em>Initial rulebase file</em>&gt; [-d] [-?]</strong>
+	<em>Initial rulebase file</em>&gt; [-event] [-d] [-?]</strong>
     </p>
     <p>
       The parameters are:
@@ -47,6 +47,9 @@
       <li>-d (optional) enables Event Distiller debugging.
       <strong>NOTE:</strong> At this time, debugging produces copious
       output.
+      </li>
+      <li>-event (optional): if this option is selected, time-keeping is
+        event-driven. Else, and by default, it is time-driven.
       </li>
       <li>-? produces a brief summary of the above.</li>
     </ul>

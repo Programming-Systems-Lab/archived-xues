@@ -40,7 +40,13 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.20  2001-06-20 18:54:44  eb659
+ * Revision 1.21  2001-06-20 20:49:32  eb659
+ * two options: time-driven, or event-driven
+ * a. options interface
+ * b. flush event in shutdown when using event-based time
+ * c. documentation (for now summarily in html, more thorough in code)
+ *
+ * Revision 1.20  2001/06/20 18:54:44  eb659
  * handle self-comparison
  *
  * Revision 1.19  2001/06/18 20:58:36  eb659
@@ -365,16 +371,20 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
       while(!ed.inShutdown) {
 	  try { Thread.currentThread().sleep(EDConst.REAP_INTERVAL);  }
 	  catch(InterruptedException ex) { ; }
-	  // Reap!
-	  if(EventDistiller.DEBUG) System.err.print("%");
-	  
-	  synchronized(stateMachineTemplates) {
-	      for (int i = 0; i < stateMachineTemplates.size(); i++) {
-		  Vector stateMachines = 
-		      ((EDStateMachineSpecification)stateMachineTemplates.get(i)).stateMachines;
-		  
-		  int offset = 0;	  
-		  while(offset < stateMachines.size()) {
+	  reap();
+      }
+  }
+
+    void reap() { 
+	if(EventDistiller.DEBUG) System.err.print("%");
+	
+	synchronized(stateMachineTemplates) {
+	    for (int i = 0; i < stateMachineTemplates.size(); i++) {
+		Vector stateMachines = 
+		    ((EDStateMachineSpecification)stateMachineTemplates.get(i)).stateMachines;
+		
+		int offset = 0;	  
+		while(offset < stateMachines.size()) {
 		      EDStateMachine e = (EDStateMachine)stateMachines.elementAt(offset);
 		      if(EventDistiller.DEBUG)
 			  System.err.println("EDStateManager: Attempting to reap " + e.myID);
@@ -384,11 +394,10 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 			      System.err.println("EDStateManager: Reaped." + e.myID);
 			  stateMachines.removeElementAt(offset);
 		      } else offset++;
-		  }
-	      }
-	  }
-      }
-  }
+		}
+	    }
+	}
+    }
       
   /* We don't hav ethis any more... now states handle their own notifications
    * and when all states are dead, the machine is reaped
