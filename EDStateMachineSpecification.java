@@ -15,8 +15,79 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.8  2001-05-21 00:43:04  jjp32
- * Rolled in Enrico's changes to main Xues trunk
+ * Revision 1.9  2001-06-18 17:44:51  jjp32
+ *
+ * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
+ * trunk is now development again, and the aforementioned branches are
+ * hereby closed.
+ *
+ * Revision 1.5.4.16  2001/06/05 00:16:30  eb659
+ *
+ * wildHash handling corrected - (but slightly different than stable version)
+ * timestamp handling corrected. Requests that all notifications be timestamped
+ * reap based on last event processed internally
+ * improved state reaper
+ *
+ * Revision 1.5.4.15  2001/06/01 22:31:19  eb659
+ *
+ * counter feature implemented and tested
+ *
+ * Revision 1.5.4.14  2001/06/01 19:46:07  eb659
+ *
+ * implemented 'instantiation policy' for state machines.
+ * options are documented in xsd.
+ * For 'ome at any time' machines, I don't think we need 'terminal' states:
+ * we just wait for one to dye, then instantiate the next one. Ok?
+ *
+ * Revision 1.5.4.13  2001/05/31 22:36:39  eb659
+ *
+ * revision of timebound check: initial states can now have a specified bound.
+ * allow values starting with '*'. Add an initial '*' as escape character...
+ * preparing the ground for single-instance rules, and countable states
+ *
+ * Revision 1.5.4.12  2001/05/30 21:34:52  eb659
+ *
+ * rule consistency check: the following are implemented and thoroughly
+ * tested (You don't need a source file to test: just mess up the spec file):
+ * - specification of non-defined actions/fail_actions
+ * - specification of non-defined children
+ * - specification of non-defined wildcards
+ * Also, fixed potential bug in wildcard binding...
+ *
+ * Revision 1.5.4.11  2001/05/28 22:22:14  eb659
+ *
+ * added EDTestConstruct to test embedded constructor. Can construct ED using
+ * a Notifiable owner, and optionally, a spec file and/or a debug flag.
+ * There's a bug having to do with the wildcard binding, I'll look at that
+ * in more detail tomorrow.
+ *
+ * Revision 1.5.4.10  2001/05/25 20:13:36  eb659
+ *
+ * allow ordering of rules;  (XMLspec needs update)
+ * stateMachine instances are within the specification
+ * StateMachineSpecification implement Comparable interface:
+ * (higher priority objects appear smaller)
+ * added EDNotifiable interface
+ *
+ * Revision 1.5.4.9  2001/05/24 21:01:12  eb659
+ *
+ * finished rule consistency check (all points psecified in the todo list)
+ * current rulebase is written to a file, on shutdown
+ * compiles, not tested
+ *
+ * Revision 1.5.4.8  2001/05/23 21:40:42  eb659
+ *
+ *
+ * DONE Direct (non-Siena) interface: new constructor taking a notifialbe object
+ * DONE 2) allow states to absorb events - but waiting for the bus and XML
+ *
+ * ADDED rule consistency check, and error handling:
+ * DONE checkConsistency() method in edsms
+ * DONE KXNotification for EDError
+ * DONE 1) no duplicate rules - checks against duplicate names
+ * DONE 2) What happens if state parameters are missing, e.g., fail_actions?
+ * DONE 3) check that all children and actions specified in the states are specified in the rule
+ * more checks to be done - wildcards, etc.
  *
  * Revision 1.5.4.7  2001/05/06 05:31:07  eb659
  *
@@ -130,6 +201,8 @@ import siena.*;
  */
 class EDStateMachineSpecification {
     private Siena siena;
+
+    /** our manager. */
     private EDStateManager edsm;
     
     /** the name of the rule represented. */
@@ -151,9 +224,15 @@ class EDStateMachineSpecification {
 	when a machine is first instantiated. */
     String[] initialStates;
 
+    /** State machines with this specification. */
+    Vector stateMachines = new Vector();
+
+    /** The instantiation policy for this rule. 
+     *  See EDConst for legal values. */
+    int instantiationPolicy = EDConst.MULTIPLE;
+
   /** Basic CTOR.  Make sure to add states, and to call findInitialStates */
-  public EDStateMachineSpecification(String name, String myID,
-				     Siena siena, EDStateManager edsm) {
+  public EDStateMachineSpecification(String name, Siena siena, EDStateManager edsm) {
       this.name = name;
       //this.myID = myID;
       this.siena = siena;
@@ -175,17 +254,17 @@ class EDStateMachineSpecification {
     return edsms;
     }*/
 
-  /**
-   * Add a state.
-   *
-   * NOTE! For this specification to become active, you must subscribe() 
-   * AFTER adding states.
-   *
-   * @param e The state.
-   */
-  public void addState(EDState e) {
-    states.put(e.getName(), e);
-  }
+    /**
+     * Add a state.
+     *
+     * NOTE! For this specification to become active, you must subscribe() 
+     * AFTER adding states.
+     *
+     * @param e The state.
+     */
+    public void addState(EDState e) {
+	states.put(e.getName(), e);
+    }
 
     /** 
      * Add an Action
@@ -195,13 +274,96 @@ class EDStateMachineSpecification {
     public void addAction(String name, Notification action) {
 	actions.put(name, action);
     }
+	
+    /** 
+     * Performs various checks for consistency on this specification.
+     * @return a string representing what error prevents this rule from proper 
+     *         functioning, or null if the rule is legal
+     */
+    String checkConsistency() {
+	String error = "";
+	
+	// don't allow duplicate names
+	for (int i = 0; i < edsm.stateMachineTemplates.size(); i++)
+	    if (((EDStateMachineSpecification)edsm.stateMachineTemplates.get(i)).getName
+		().equals(name)) error += "a rule by this name is already in use\n";
+
+	// check state representation
+	Vector wildcards = new Vector();
+	Enumeration keys = states.keys();
+	while (keys.hasMoreElements()) {
+	    EDState checkState = ((EDState)states.get(keys.nextElement()));
+	    String checkName = checkState.getName();
+
+	    // do all specified children exist?
+	    String[] children = checkState.getChildren();
+	    for (int i = 0; i < children.length; i++) 
+		if (states.get(children[i]) == null)
+		    error = error + "state '" + children[i] + "' - definded as child of '"
+			+ checkName + "' - is not defined in specification\n";
+
+	    // do all specified actions exist?
+	    String[] checkAct = checkState.getActions();
+	    for (int i = 0; i < checkAct.length; i++) 
+		if (actions.get(checkAct[i]) == null)
+		    error = error + "action '" + checkAct[i] + "' sent by state '" 
+			+ checkName + "' - is not defined in specification\n";
+
+	    // do all specified fail_actions exist?
+	    String[] checkFail = checkState.getFailActions();
+	    for (int i = 0; i < checkFail.length; i++) 
+		if (actions.get(checkFail[i]) == null)
+		    error = error + "fail_action '" + checkFail[i] + "' - sent by state '"
+			+  checkName + "' - is not defined in specification\n";
+
+	    // sample all defined wildcards
+	    Vector wc = getWildcards(checkState);
+	    for (int i = 0; i < wc.size(); i++)
+		if (!wildcards.contains(wc.get(i))) 
+		    wildcards.add(wc.get(i));
+	    //if (EventDistiller.DEBUG) 
+	    //System.out.println("state "+ checkState.getName() + " contains wildcards " + wc);
+	}
+
+	// check actions representation
+	// are wildcards in all actions defined somewhere? -- this doesn't work right now!
+	keys = actions.keys();
+	while (keys.hasMoreElements()) { 
+	    String key = keys.nextElement().toString(); 
+	    Notification act = (Notification)actions.get(key); 
+	    Vector wc = getWildcards(act);
+	    
+	    //if (EventDistiller.DEBUG) 
+	    //System.out.println("action "+ key + " requests wildcards " + wc);
+	    
+	    for (int i = 0; i < wc.size(); i++) {
+		if (wc.get(i).toString().equals("*")) 
+		    error = error + "cannot specify value '*' in action '" + key; 
+		else if (!wildcards.contains(wc.get(i)))  
+		    error = error + "wildcard '*" + wc.get(i) + "' in action '"  
+			+ key + "' is not defined in any state\n"; 
+	    }
+	}
+		    
+	if (error.equals("")) return null;
+	return error;
+    }
+
+    /**
+     * Initializes this specification, by finding the initial states, 
+     * and subscribing the first instance of this specification.
+     */
+    void init() {
+	findInitialStates();
+	stateMachines.add(new EDStateMachine(this));
+    }
 
     /**
      * Finds the initial states of this machine.
      * We do this by seeing which states don't
      * have any incoming edges.
      */
-    public void findInitialStates() {
+    private void findInitialStates() {
 	Enumeration keys = states.keys();
 	Vector names = new Vector();
 	while (keys.hasMoreElements()) 
@@ -230,92 +392,13 @@ class EDStateMachineSpecification {
 		initialStates[++n] = names.get(i).toString(); 
     }
 
-    /*
-     * Add an attribute to an action.
-     * We use this when parsing, so we just take the last action 
-     * in the list, which is the one being constructed.
-     *
-    public void addActionAttribute(String attr, AttributeValue val) {
-	((Notification)actions.lastElement()).putAttribute(attr,val);
-	}*/
-
-  /**
-   * (Re)set the action.
-   * I don't know where this is used, but we have to add
-   * a parameter to specify which action we are resetting
-   *
-  public void setAction(String attr, String val) {
-    action = null;
-    addAction(attr,new AttributeValue(val));
-    }*/
- 
-  /* we don't use these two anymore. instead, we make a new machine to begin with,
-   * which subscribes itself. and any time a machine starts up (the first state is 
-   * matched) it calls the manager saying to make a new instance, based on us (the specification)
-   *
-   * Subscribe based on the first state.  This way, we can create
-   * instances when necessary.
-   *
-   * change this. now states subscribe themselves when they are born.
-   * so just bear all states, as they come in, if they are initial states.
-   * Also, we may have many initial states, so we cannot start with any specification...
-  public void subscribe() {
-    try {
-      Filter f = ((EDState)stateArray.elementAt(0)).buildSienaFilter();
-      if(EventDistiller.DEBUG)
-	System.err.println("EDStateMachSpec: Subscribing with filter " + f);
-      siena.subscribe(f,this);
-    } catch(SienaException e) {
-      e.printStackTrace();
-    }
-  }
-
-  public void notify(Notification n) {
-    if(EventDistiller.DEBUG) 
-      System.err.println("EDStateManagerSpecification: Received notification " + n);
-    // Create the appropriate state machine(s).  We assume the state
-    // machine will register itself with the manager.
-    EDStateMachine sm = new EDStateMachine(this, myID + ":" + (counter++),
-					   siena, edsm, stateArray, n,
-					   actions);
-					   }
-
-    /** Unused Siena construct. 
-    public void notify(Notification[] s) { ; }
-
-    /** Unsubscribe from siena. 
-    public void unsubscribe(){
-	try { siena.unsubscribe(this); } 
-	catch(SienaException e) { e.printStackTrace(); }
-	}*/
-
-    // standars methods
-
-    /** @return the stateMachineManager */
-    public EDStateManager getManager(){ return this.edsm; }
-
-    /** @return the name of this SMSpecification */
-    public String getName(){ return name; }
-
-    /** @return the actions for this machine */
-    public Hashtable getActions(){ return this.actions; }
-
-    /** @return the states for this machine */
-    public Hashtable getStates(){ return this.states; }
-
-    /** @return an index - called by new instances of this specification */
-    String getNewID(){ return "" + (++counter); }
-
-    /** @return the names pf the states to subscribe initially */
-    String[] getInitialStates() { return initialStates; }
-
 
     // XML representation
 
     /** @return the XML representation of this object */
     public String toXML(){
 	// start
-	String s = "<rule name=\"" + name + "\">\n";
+	String s = "<rule name=\"" + name + "\" instantiation=\"" + instantiationPolicy + "\">\n";
 	
 	// the states
 	s += "<states>\n";
@@ -337,7 +420,6 @@ class EDStateMachineSpecification {
 
 	// end
 	s += "</rule>\n";
-	if (EventDistiller.DEBUG) System.out.println(s);
 	return s;
     }
 
@@ -358,4 +440,83 @@ class EDStateMachineSpecification {
 	s += "</notification>\n";
 	return s;
     }
+
+    /**
+     * Returns all the wildcards defined in a given state.
+     * @param checkState the state whose wildcards 
+     * @return the wildcards (without the initial *)
+     */
+    public static Vector getWildcards(EDState checkState) {
+	Vector v = new Vector();
+	Hashtable ht = checkState.getAttributes();
+	Enumeration elements = ht.elements();
+	while (elements.hasMoreElements()) {
+	    String s = ((AttributeValue)elements.nextElement()).stringValue();
+	    if (s.startsWith("*") && s.length() > 1) v.add(s.substring(1));
+	}
+	return v;
+    }
+
+    /**
+     * Returns all the wildcards defined in a given notification.
+     * @param checkNotif the notification whose wildcards 
+     * @return the wildcards (without the initial *)
+     */
+    public static Vector getWildcards(Notification checkNotif) {
+	Vector v = new Vector();
+	Iterator iter = checkNotif.attributeNamesIterator();
+	while (iter.hasNext()) {
+	    String s = checkNotif.getAttribute(iter.next().toString()).stringValue();
+	    if (s.startsWith("*") && s.length() > 1) v.add(s.substring(1));
+	}
+	return v;
+    }
+
+    /** @param instantiationPolicy the instantiation policy for this rule */
+    public void setInstantiationPolicy(int i) throws IllegalArgumentException {
+	if (i < 0 || 2 < i) throw new IllegalArgumentException
+	    ("encountered invalid value for instantiationPolicy");
+	else this.instantiationPolicy = i;
+    }
+
+    /** @return the instantiation policy for this rule */
+    public int getInstantiationPolicy() { return instantiationPolicy; }
+
+    /** Creates and subscribes a new machine with this specification. */
+    void instantiate() { 
+	synchronized (stateMachines) {
+	    stateMachines.add(new EDStateMachine(this)); 
+	}
+    }
+
+    // standars methods
+
+    /** @return the stateMachineManager */
+    public EDStateManager getManager(){ return this.edsm; }
+
+    /** @return the name of this SMSpecification */
+    public String getName(){ return name; }
+
+    /** @return the actions for this machine */
+    public Hashtable getActions(){ return this.actions; }
+
+    /** @return the states for this machine */
+    public Hashtable getStates(){ return this.states; }
+
+    /** @return an index - called by new instances of this specification */
+    String getNewID(){ return "" + (++counter); }
+
+    /** @return the names pf the states to subscribe initially */
+    String[] getInitialStates() { return initialStates; }
 }
+
+
+
+
+
+
+
+
+
+
+

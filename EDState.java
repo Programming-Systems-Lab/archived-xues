@@ -25,16 +25,83 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.12  2001-06-03 01:11:13  jjp32
+ * Revision 1.13  2001-06-18 17:44:51  jjp32
  *
- * Updates, tweaks, hacks for demo.  Also now makes sanity check on command line params
+ * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
+ * trunk is now development again, and the aforementioned branches are
+ * hereby closed.
  *
- * Revision 1.11  2001/06/02 18:22:56  jjp32
+ * Revision 1.7.4.15  2001/06/06 19:52:09  eb659
+ * tested loop feature. Works, but identified other issues, to do with new
+ * implementation of timestamp validation:
+ * - keeping the time based on last received event has the inconvenience that we
+ * do not send failure notifs if we do not get events (i.e. time stops moving)
+ * - should there be different scenarios for real-time and non-realtime?
  *
- * Fixed bug where wildHash would not get assigned if derivative state never got a notification
+ * Revision 1.7.4.14  2001/06/05 00:16:30  eb659
  *
- * Revision 1.10  2001/05/21 00:43:04  jjp32
- * Rolled in Enrico's changes to main Xues trunk
+ * wildHash handling corrected - (but slightly different than stable version)
+ * timestamp handling corrected. Requests that all notifications be timestamped
+ * reap based on last event processed internally
+ * improved state reaper
+ *
+ * Revision 1.7.4.13  2001/06/01 22:31:19  eb659
+ *
+ * counter feature implemented and tested
+ *
+ * Revision 1.7.4.12  2001/05/31 22:36:38  eb659
+ *
+ * revision of timebound check: initial states can now have a specified bound.
+ * allow values starting with '*'. Add an initial '*' as escape character...
+ * preparing the ground for single-instance rules, and countable states
+ *
+ * Revision 1.7.4.11  2001/05/30 21:34:52  eb659
+ *
+ * rule consistency check: the following are implemented and thoroughly
+ * tested (You don't need a source file to test: just mess up the spec file):
+ * - specification of non-defined actions/fail_actions
+ * - specification of non-defined children
+ * - specification of non-defined wildcards
+ * Also, fixed potential bug in wildcard binding...
+ *
+ * Revision 1.7.4.10  2001/05/29 20:47:07  eb659
+ *
+ * various fixes. embedded constructor thoroughly tested,
+ * in particular the following features:
+ * - standard constructor
+ * - specification-less constructor
+ * - sending events
+ * - recieving notifications
+ * - shutdown features (when shutdown() is called and when it is not)
+ *
+ * ED looks for a free address to place private siena.
+ *
+ * Revision 1.7.4.9  2001/05/28 22:22:14  eb659
+ *
+ * added EDTestConstruct to test embedded constructor. Can construct ED using
+ * a Notifiable owner, and optionally, a spec file and/or a debug flag.
+ * There's a bug having to do with the wildcard binding, I'll look at that
+ * in more detail tomorrow.
+ *
+ * Revision 1.7.4.8  2001/05/24 21:01:12  eb659
+ *
+ * finished rule consistency check (all points psecified in the todo list)
+ * current rulebase is written to a file, on shutdown
+ * compiles, not tested
+ *
+ * Revision 1.7.4.7  2001/05/23 21:40:41  eb659
+ *
+ *
+ * DONE Direct (non-Siena) interface: new constructor taking a notifialbe object
+ * DONE 2) allow states to absorb events - but waiting for the bus and XML
+ *
+ * ADDED rule consistency check, and error handling:
+ * DONE checkConsistency() method in edsms
+ * DONE KXNotification for EDError
+ * DONE 1) no duplicate rules - checks against duplicate names
+ * DONE 2) What happens if state parameters are missing, e.g., fail_actions?
+ * DONE 3) check that all children and actions specified in the states are specified in the rule
+ * more checks to be done - wildcards, etc.
  *
  * Revision 1.7.4.6  2001/05/06 03:54:27  eb659
  *
@@ -159,11 +226,14 @@ public class EDState implements Notifiable{
     /** The list of (names of) notifications we will send if we fail to be matched. */
     private String[] fail_actions;
 
-    /* Hash of attribute/value pairs relevant to this state */
+    /** Hash of attribute/value pairs relevant to this state */
     private Hashtable attributes;
 
     /** Whether this state is currently subscribed and waiting to be matched */
     private boolean alive = false;
+
+    /** Whether this state absorbs the event that it is notified of */
+    private boolean absorb;
 
     /** 
      * Timestamp this state has fired in.  Created and used during
@@ -184,13 +254,26 @@ public class EDState implements Notifiable{
      * access, but if a state needs to inherit its parent's wildHash, use
      * getWildHash(), which checks whether it is necessary to copy the table.
      */ 
-    Hashtable wildHash;
+    private Hashtable wildHash;
 
     /** the Siena bus; this is passed to us by our parent, when this state is subscribed */
     private Siena siena = null;
     
     /** The state machine that "ownes" us. */
     private EDStateMachine sm = null;
+
+    /** 
+     * Stores names and values for wildcard values temporarily,
+     * while the state checks that all attributes are matched
+     */
+    private Vector tempNames, tempValues;
+
+    /** How many times this event will be matched, before it passes. */
+    private int count = 1;
+
+    /** Whether this event has started. Only used for events that loop:
+     *  i.e. that can occur an indefinite number of times. */
+    private boolean hasStarted = false;
 
     /**
      * Constructs a new EDState. This constructor is used in the definition
@@ -218,10 +301,6 @@ public class EDState implements Notifiable{
 	children = listToArray(childrenList);
 	actions = listToArray(actionsList);
 	fail_actions = listToArray(failActionsList);
-
-	if (EventDistiller.DEBUG) 
-	    System.out.println("/nconstructed state '" 
-			       + name + ":'\n" + toXML());
     }
 
     /** are we sing this anywere?
@@ -251,6 +330,7 @@ public class EDState implements Notifiable{
 	this.tb = e.tb;
 	this.ts = e.ts;
 	this.name = e.name;
+	this.count = e.count;
 	this.sm = sm;
 	this.myID = sm.myID + ":" + name;
 	this.siena = siena;
@@ -258,52 +338,45 @@ public class EDState implements Notifiable{
 	this.children = e.children;
 	this.actions = e.actions;
 	this.fail_actions = e.fail_actions;
-	}
+    }
+
+    /**
+     * Add an attribute/value pair.
+     * XXX - We should probably check to prevent overwriting, but heck.
+     */
+    public void putAttribute(String attr, AttributeValue val) {
+	attributes.put(attr, val);
+    }
 
     /**
      * Gives life to this state. Assigns the owner state machine, 
      * the parent state, and state machine, and the siena to subscribe to.
-     * @param parent the parent node, against whom we validate our timestamp
+     * @param parent the parent node, against whom we validate our timestamp,
+     *               or null, if this is an initial state
      */
     public void bear(EDState parent) {
 	if (!alive) {
 	    parents = new Vector();
-	    
+    
 	    //subscribe
-	    Filter f = buildSienaFilter();
-	    try { siena.subscribe(f, this); } 
+	    try { siena.subscribe(buildSienaFilter(), this); } 
 	    catch(SienaException e) { e.printStackTrace(); }
 
 	    if(EventDistiller.DEBUG) 
-		System.out.println("EDState: subscribing state: " + myID + " with " + f);
+		System.out.println("EDState: subscribing state: " + myID);
 	}
 
-	/* add it at the beginning, so when we search
-	 * we find the more recent events first */
-	parents.add(0, parent);
+	// live!
+	synchronized (parents) { parents.add(parent); }
+	this.alive = true;
 
-	/* [janak] Build the wildHash NOW in case we never get a
-	 * notification.  I presume Enrico goes through the list to
-	 * find the last guy with the wildHash, although we don't need
-	 * that anymore, so it's commented out.
-	 */
-
-	/* inherit the wildHash from the candidate parent,
-	 * so we can compare wildcard values while validating  */
-	//	EDState parent;
-	// 	for (int i = 0; i < parents.size(); i++) {
-	// 	  parent = (EDState)parents.get(i);
-	if (parent == null) {
-	  if(EventDistiller.DEBUG)
-	    System.out.println("EDState " + myID + " creating NEW wildHash");
-	  wildHash = new Hashtable();
-	} else {
-	  if(EventDistiller.DEBUG)
-	    System.out.println("EDState " + myID + " inheriting wildHash");
-	  wildHash = parent.getWildHash();
-	}
-
-	this.alive = true; // don't move up...
+	/* make sure there is a hashtable defined at any time,
+	 * for handling wildcards in failure notifications.
+	 * Also see note in fail() */
+	if (parent == null) // this is an initial state
+	    wildHash = new Hashtable();
+	else if (parents.size() == 1) 
+	    wildHash = parent.getWildHash(); 
     }
 
     /** Kills this state: unsubscribe and set alive to false */
@@ -318,30 +391,64 @@ public class EDState implements Notifiable{
      * now lives the climax of its brief existence.
      */
     private void succeed() {
-	if (EventDistiller.DEBUG) 
-	    System.out.println("EDState: " + myID + " succeded");
-	
 	// 1. machine is in transition
 	sm.setInTransition(true);
 	// 2. the machine has started
 	sm.setStarted(); 
-	// 3. state is indelebly stamped
-	ts = System.currentTimeMillis();
-	// 4. bear children
-	for (int i = 0; i < children.length; i++) {
-	    sm.getState(children[i]).bear(this); 
+	// 3. this state may be breaking the loop of its parent
+	synchronized (parents) {
+	    for (int i = 0; i < parents.size(); i++) {
+		EDState parent = (EDState)parents.get(i);
+		if (parent != null && parent.getCount() == -1) parent.kill();
+	    }
 	}
-	// 5. tell the world we succeeded
-	for (int i = 0; i < actions.length; i++) {
-	    sm.sendAction(actions[i], wildHash); 
+
+	if (count > 1) { // counter feature
+	    parents.removeAllElements();
+	    parents.add(this);
+	    count --;
 	}
-	// 6. commit suicide
-	kill(); 
+	else if (count < 0) { // loop feature
+	    if (!hasStarted) {
+		/* only bear children (including myself) once, 
+		 * timestamp of this will be updates as we go along */
+		parents.add(this);
+		for (int i = 0; i < children.length; i++) {
+		    sm.getState(children[i]).bear(this);
+		    // tell the kids to kill me if they make it
+		    //...
+		    hasStarted = true;
+		}
+	    }
+	}
+	else { // if (count == 1) -- normal case 
+	    // 4. bear children
+	    for (int i = 0; i < children.length; i++) {
+		sm.getState(children[i]).bear(this); 
+	    }
+	    // 5. tell the world we succeeded
+	    if (EventDistiller.DEBUG) 
+		System.out.println("Mathced state will send notifs: " + arrayToList(actions));
+	    for (int i = 0; i < actions.length; i++) {
+		if (EventDistiller.DEBUG) 
+		    System.out.println("EDState: " + myID + ": sending notification: " + actions[i]);
+		sm.sendAction(actions[i], wildHash); 
+	    }
+	    // 6. commit suicide
+	    kill(); 
+	}
 	// 7. end of transition
 	sm.setInTransition(false);
     }
 
-    /** Sends out the failure notifications for this state. */
+    /** 
+     * Sends out the failure notifications for this state.
+     *
+     * NOTE: at the moment we are using the wildhash
+     * of the first parent that matched us. We may need to change
+     * this, since different parents may have different 
+     * wildcard values defined.
+     */
     public void fail() {
 	for (int i = 0; i < fail_actions.length; i++)
 	    sm.sendAction(fail_actions[i], wildHash);
@@ -349,45 +456,45 @@ public class EDState implements Notifiable{
 
     /** Handles siena callbacks */
     public void notify(Notification n) {
-      //	long millis = System.currentTimeMillis();
-      // Log by received timestamp instead
-      long millis = n.getAttribute("timestamp").longValue();
+	long millis = n.getAttribute("timestamp").longValue();
+	boolean succeeded = false;
 
 	if(EventDistiller.DEBUG) 
 	    System.err.println("EDState " + myID +
-			 ": Received notification " + n + 
-			 "/nat time " + millis);
-
+			       ": Received: " + n);
 	EDState parent;
-	for (int i = 0; i < parents.size(); i++) {
-	parent = (EDState)parents.get(i);
+	synchronized (parents) {
+	    for (int i = 0; i < parents.size(); i++) {
+		parent = (EDState)parents.get(i);
 
-	    // does the notification match us? 
-	    if(validate(n, parent)) {
-		if(EventDistiller.DEBUG)
-		    System.err.println("EDState " + myID + " matched at time: " + millis);
+		/* inherit the wildHash from the candidate parent,
+		 * so we can compare wildcard values while validating  */
+		if (parent == null) wildHash = new Hashtable();
+		else wildHash = parent.getWildHash();
 		
-		// yes!
-		succeed();
+		// does the notification match us? 
+		if(validate(n, parent)) {
+		    if(EventDistiller.DEBUG)
+			System.err.println("EDState " + myID + " matched at time: " + millis);
+		    
+		    // yes!
+		    ts = millis; // timestamp
+		    succeed();
+		    succeeded = true;
+		    return;
+		    /* when we have a real bus... this also breaks
+		       if (absorb) return true; 
+		       else return false */
+		}
 	    }
-	    }
-	if (alive && EventDistiller.DEBUG) 
-	    System.err.println("EDState/" + myID +
-			       ": rejected Notification " + millis);
-	
+	}
+	if (EventDistiller.DEBUG)  
+	    System.err.println("EDState:" + myID + ": rejected Notification");
+	// return false; // no match, no absorb
     }
 
     /** Unused Siena construct. */
     public void notify(Notification[] s) { ; }
-
-  /**
-   * Add an attribute/value pair.
-   *
-   * XXX - We should probably check to prevent overwriting, but heck.
-   */
-  public void putAttribute(String attr, AttributeValue val) {
-    attributes.put(attr,val);
-  }
   
   /** do we need this?
    * Add an attribute/value pair (strings).  This is accomplished by
@@ -406,22 +513,14 @@ public class EDState implements Notifiable{
     public boolean reap() {
 	if (EventDistiller.DEBUG)
 	    System.out.println("checking state: " + myID);
-	EDState parent;
-	for (int i = 0; i < parents.size(); i++) {
-	parent = (EDState)parents.get(i);
-	    if (parent != null && EventDistiller.DEBUG)
-		System.out.println("EDState:" + myID + ":checking parent: " +
-				   parent.getName());
-	    // can we still be matched ?
-	    if(validateTimebound 
-	       (parent, System.currentTimeMillis() - EventDistiller.reapFudgeMillis)) {
-		return false;
-	    }
-	    else { // we can get rid of it...
-		parents.remove(i); 
-		i--;
-	    }
-    }	
+	/* can we still be matched? check the last (most recent) parent.
+	 * NOTE: this assumes that events are processed sequentially,
+	 * else we would need to check all the parents */
+	if(validateTimebound 
+	   ((EDState)parents.lastElement(), 
+	    sm.getSpecification().getManager().getEventDistiller().getLastEventTime() 
+	    - EDConst.REAP_FUDGE)) 
+	    return false;
 
 	// if we're still here, all the parents have failed
 	if (EventDistiller.DEBUG)
@@ -440,10 +539,13 @@ public class EDState implements Notifiable{
     // Step 1. Perform timestamp validation.  If timestamp validation
     // fails, then we don't need to go further.
     AttributeValue timestamp = n.getAttribute("timestamp");
-    if(validateTimebound(prev,timestamp/*.longValue()*/) == false) {
-      if(EventDistiller.DEBUG) System.out.println("EDState " + myID + ": validate timebound FAILED");
+    if(!validateTimebound(prev, timestamp)) {
+	if (EventDistiller.DEBUG) 
+	    System.out.println("EDState: " + myID + 
+			       ": timestamp validation failed");
       return false;
     }
+
     // Step 2. Now try and compare the attributes in the state's
     // notification.  This notification may have other attributes, but
     // we ignore them.
@@ -452,12 +554,24 @@ public class EDState implements Notifiable{
     while(keys.hasMoreElements()) {
       String attr = (String)keys.nextElement();
       AttributeValue val = (AttributeValue)objs.nextElement();
-      if(validate(attr, val, n.getAttribute(attr)) == false) {
-	return false;
+      if(!validate(attr, val, n.getAttribute(attr))) {
+	  // forget any possible registered wildcard values
+	  if (tempNames != null) {
+	      tempNames = null;
+	      tempValues = null;
+	  }
+	  return false;
       } // else continue
     }
 
-    // They all passed, return true
+    // They all passed, register any wildcard values, and return true
+    if (tempNames != null) 
+	for (int i = 0; i < tempNames.size(); i++) { 
+	    wildHash.put(tempNames.get(i), tempValues.get(i));
+	    if (EventDistiller.DEBUG)
+		System.out.println("EDState: " + myID + ": wildcard '*" + tempNames.get(i) +
+				   "' BOUND to: " + tempValues.get(i));
+	}
     return true;
   }
 
@@ -491,8 +605,13 @@ public class EDState implements Notifiable{
 			 "externalVal = " + externalVal);
     }
 
+    // "**" is the escape character for "*"
+    if (internalVal.getType() == AttributeValue.STRING &&
+	internalVal.stringValue().startsWith("**")) 
+	return attrEqual(new AttributeValue(internalVal.stringValue().substring(1)), externalVal);
+    
     // Wildcard binding?
-    if(internalVal.getType() == AttributeValue.STRING &&
+    else if(internalVal.getType() == AttributeValue.STRING &&
 	    internalVal.stringValue().startsWith("*")) {
       // Is this one previously bound?
       String bindName = internalVal.stringValue().substring(1);
@@ -521,10 +640,15 @@ public class EDState implements Notifiable{
 				 wildHash.get(bindName) + "\" but nomatch");
 	    return false; // Complex wildcard doesn't match
 	  }
-	} else { // Binding requested, NOT YET BOUND, bind and return true
-	  wildHash.put(bindName, externalVal);
-	  if(EventDistiller.DEBUG)
-	    System.err.println("EDState: wildcard BOUND to " + externalVal);
+	} 
+	else { // Binding requested, NOT YET BOUND
+	    // remember the name and value
+	    if (tempNames == null) {
+		tempNames = new Vector();
+		tempValues = new Vector();
+	    }
+	    tempNames.add(bindName);
+	    tempValues.add(externalVal);
 	  return true;
 	}
       }
@@ -534,18 +658,7 @@ public class EDState implements Notifiable{
     if(EventDistiller.DEBUG)
       System.err.println("EDState: performing SIMPLE match on " + 
 			 externalVal + "," + internalVal);
-    
-    if(attrEqual(internalVal,externalVal)) {
-      if(EventDistiller.DEBUG) {	
-	System.err.println("EDState: not wildcard, compare succeeded");
-      }
-      return true;
-    }
-
-    // Not our event
-    if(EventDistiller.DEBUG)
-      System.err.println("EDState: not wildcard, compare failed");
-    return false;
+    return attrEqual(internalVal,externalVal);
   }
 
   /**
@@ -557,21 +670,25 @@ public class EDState implements Notifiable{
    * non-time-bound states - if it's not time bound, this ALWAYS
    * returns true).
    *
-   * @param s The previous state
+   * @param prev The previous state
    * @param t The current event's timestamp (UNIX time format)
-   * @return a boolean indicating if this state has occurred  
+   * @return a boolean indicating if this state can occurred  
    *         'in time' from the previous state.
    */
-  public boolean validateTimebound(EDState prev, long t) { 
-    if(tb == -1) { // No time bounds
-      return true;
+    public boolean validateTimebound(EDState prev, long t) { 
+	// No time bounds, always good
+	if(tb == -1) return true;
+    
+	/* this is an initial state, we validate 
+	 * against the time when the rule was created */
+	if (prev == null) return (t - sm.timestamp <= this.tb);
+	
+	// Prev state never validated
+	if (prev.ts == -1)  return false;
+    
+	// normal case, compare against the timestamp of the parent
+	return (t - prev.ts <= this.tb);
     }
-    if(prev.ts == -1) { // Prev state never validated
-      return false;
-    }
-    if(t - prev.ts <= this.tb) return true;
-    else return false;
-  }
 
   /**
    * Convenience accessor method to validateTimebound.
@@ -594,7 +711,8 @@ public class EDState implements Notifiable{
     public String toXML(){
 	String s = "<state name=\"" + name + "\" timebound=\"" + tb + "\" children=\"" +
 	    arrayToList(children) + "\" actions=\"" + arrayToList(actions) + 
-	    "\" fail_actions=\"" + arrayToList(fail_actions) + "\">\n";
+	    "\" fail_actions=\"" + arrayToList(fail_actions) + "\" absorb=\"" + 
+	    (new Boolean(absorb)).toString() + "\" count=\"" + count + "\">\n";
 	
 	Enumeration keys = attributes.keys();
 	Enumeration objs = attributes.elements();
@@ -679,6 +797,8 @@ public class EDState implements Notifiable{
      * @return an array containing the tokens of the list
      */
     public static String[] listToArray(String s){
+	if (s == null) return new String[0];
+
 	StringTokenizer st = new StringTokenizer(s, ",");
 	String[] a = new String[st.countTokens()];
 	int i = 0;
@@ -698,7 +818,7 @@ public class EDState implements Notifiable{
      * @return the name of this EDState 
      */
     public Hashtable getWildHash() { 
-	if (children.length > 1)
+	if (children.length > 1 && count == 1)
 	    return (Hashtable)wildHash.clone();
 	return wildHash; 
     }
@@ -714,4 +834,22 @@ public class EDState implements Notifiable{
 	
     /** @return the (names of the) children of this EDState */
     String[] getChildren() { return children; }
+	
+    /** @return the (names of the) children of this EDState */
+    String[] getActions() { return actions; }
+	
+    /** @return the (names of the) children of this EDState */
+    String[] getFailActions() { return fail_actions; }
+
+    /** @param absorb the new value for absorb */
+    void setAbsorb(boolean absorb) { this.absorb = absorb; }
+
+    /** @param count how many times this event will need to be matched. */
+    void setCount(int count) { this.count = count; }
+
+    /** @return how many times this event will need to be matched. */
+    int getCount() { return count; }
+	
+    /** @return the attributes */
+    Hashtable getAttributes() { return this.attributes; }
 }

@@ -19,12 +19,57 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.11  2001-06-02 18:22:56  jjp32
+ * Revision 1.12  2001-06-18 17:44:51  jjp32
  *
- * Fixed bug where wildHash would not get assigned if derivative state never got a notification
+ * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
+ * trunk is now development again, and the aforementioned branches are
+ * hereby closed.
  *
- * Revision 1.10  2001/05/21 00:43:04  jjp32
- * Rolled in Enrico's changes to main Xues trunk
+ * Revision 1.7.4.12  2001/06/05 00:16:30  eb659
+ *
+ * wildHash handling corrected - (but slightly different than stable version)
+ * timestamp handling corrected. Requests that all notifications be timestamped
+ * reap based on last event processed internally
+ * improved state reaper
+ *
+ * Revision 1.7.4.11  2001/06/01 19:46:07  eb659
+ *
+ * implemented 'instantiation policy' for state machines.
+ * options are documented in xsd.
+ * For 'ome at any time' machines, I don't think we need 'terminal' states:
+ * we just wait for one to dye, then instantiate the next one. Ok?
+ *
+ * Revision 1.7.4.10  2001/05/31 22:36:38  eb659
+ *
+ * revision of timebound check: initial states can now have a specified bound.
+ * allow values starting with '*'. Add an initial '*' as escape character...
+ * preparing the ground for single-instance rules, and countable states
+ *
+ * Revision 1.7.4.9  2001/05/29 20:47:07  eb659
+ *
+ * various fixes. embedded constructor thoroughly tested,
+ * in particular the following features:
+ * - standard constructor
+ * - specification-less constructor
+ * - sending events
+ * - recieving notifications
+ * - shutdown features (when shutdown() is called and when it is not)
+ *
+ * ED looks for a free address to place private siena.
+ *
+ * Revision 1.7.4.8  2001/05/25 20:13:35  eb659
+ *
+ * allow ordering of rules;  (XMLspec needs update)
+ * stateMachine instances are within the specification
+ * StateMachineSpecification implement Comparable interface:
+ * (higher priority objects appear smaller)
+ * added EDNotifiable interface
+ *
+ * Revision 1.7.4.7  2001/05/24 21:01:12  eb659
+ *
+ * finished rule consistency check (all points psecified in the todo list)
+ * current rulebase is written to a file, on shutdown
+ * compiles, not tested
  *
  * Revision 1.7.4.6  2001/05/06 03:54:27  eb659
  *
@@ -164,6 +209,9 @@ public class EDStateMachine {
     /** the notifications we send, when the states call them. */
     private Hashtable actions = new Hashtable();
 
+    /** timestamp registered when machine is instantiated. */
+    long timestamp;
+
     /** no! percolated down to the state level, so we can really have multiple paths
      * with independent wildcard values
      * Wildcard binding hashtable.  If there are wildcards in states that must
@@ -180,6 +228,7 @@ public class EDStateMachine {
 	
 	this.specification = specification;
 	this.manager = specification.getManager();
+	this.timestamp = System.currentTimeMillis();
 	//this.siena = manager.getSiena();
 
 	/* get an ID - for debugging
@@ -208,8 +257,10 @@ public class EDStateMachine {
 
 	// subscribe initial states
 	String[] initialStates = specification.getInitialStates();
-	for (int i = 0; i < initialStates.length; i++)
-	    ((EDState)states.get(initialStates[i])).bear(null);
+	for (int i = 0; i < initialStates.length; i++) {
+	    EDState state = (EDState)states.get(initialStates[i]);
+	    state.bear(null);
+	}
   }
     
   /* do we need this?
@@ -332,7 +383,10 @@ public class EDStateMachine {
 	 * 1) send failure notifications for SOME state that failed */
 	if (failedStateNames.size() > 0) 
 	    ((EDState)states.get(failedStateNames.get(0).toString())).fail();
-	/* 2) throw the state amchine away */
+	/* 2) instantiate new machine, if necessary */
+	if (specification.getInstantiationPolicy() == EDConst.ONE_AT_A_TIME)
+	    specification.instantiate();
+	/* 3) throw the state amchine away */
 	if (EventDistiller.DEBUG) 
 	    System.out.println("EDStateMachine: " + myID + " about to get reaped");
 	return true; 
@@ -386,18 +440,13 @@ public class EDStateMachine {
 	}
     }
 
-    /** @return the specification for this machine */
-    public EDStateMachineSpecification getSpecification(){ return specification;  }
-
-    /** @return whether this machine has started receiving notifications */
-    public boolean hasStarted(){ return this.hasStarted; }
-
     /** Called when a state has been matched. So now we know we've started */
     public void setStarted(){
 	if(hasStarted) return;
 	hasStarted = true;
-	// ask the manager to put a new 'clear' machine on the list
-	manager.addStateMachine(specification);
+	// put a new 'clear' machine on the list, if allowed
+	if (specification.getInstantiationPolicy() == EDConst.MULTIPLE)
+	    specification.instantiate();
     }
 
     /** 
@@ -412,32 +461,31 @@ public class EDStateMachine {
      */
     public void sendAction(String actionName, Hashtable wildHash) {
 	Notification action = (Notification)actions.get(actionName);
-	if (action != null) {
-	    // Do we need to amend the Notification?  Iterate through all
-	    // attribute values and fill in any wildcard hashes in.
-	    Iterator i = action.attributeNamesIterator();	
-	    while(i.hasNext()) {
-		String attr = (String)i.next();
-		AttributeValue val = action.getAttribute(attr);
-		if(val.getType() == AttributeValue.STRING &&
-		   val.stringValue().startsWith("*")) {
-		    String key = val.stringValue().substring(1);
-		    if(EventDistiller.DEBUG)
-		      System.err.println("EDStateMachine: wildHash.get(" + key + ")");
-		    AttributeValue bindVal = (AttributeValue)wildHash.get(key);
-		    if(bindVal != null) {
-			// Replace this attributeValue
-			action.putAttribute(attr,bindVal);
-		    }
+	// Do we need to amend the Notification?  Iterate through all
+	// attribute values and fill in any wildcard hashes in.
+	Iterator i = action.attributeNamesIterator();	
+	while(i.hasNext()) {
+	    String attr = (String)i.next();
+	    AttributeValue val = action.getAttribute(attr);
+	    if(val.getType() == AttributeValue.STRING &&
+	       val.stringValue().startsWith("*")) {
+		String key = val.stringValue().substring(1);
+		AttributeValue bindVal = (AttributeValue)wildHash.get(key);
+		if(bindVal != null) { // Replace this attributeValue
+		    action.putAttribute(attr,bindVal);
+		} 
+		else { // the value is not defined - send error message
+		    String error = "wildcard '" + key + "' has not been defined; "
+			+ "incomplete action is being sent";
+		    System.err.println("ERROR: " + error);
+		    manager.getEventDistiller().sendPublic
+			(KXNotification.EDError(KXNotification.EDERROR_WILDCARD, error));
 		}
 	    }
-	    if (EventDistiller.DEBUG)
-		System.out.println("EDStateMachine: " + specification.getName() 
-				   + ":" +  myID + " sending notification...");
-	    manager.getEventDistiller().sendPublic(action);
 	}
-	else System.err.println
-		 ("ERROR: could find no action with name: " + actionName);
+	if (EventDistiller.DEBUG)
+	    System.out.println("EDStateMachine: "+ myID + " sending notification: " + actionName);
+	manager.getEventDistiller().sendPublic(KXNotification.EDOutput(action));
     }
 
     /** 
@@ -445,8 +493,8 @@ public class EDStateMachine {
      * @param actionName the name of the action
      * @return the action with the given name
      */
-    public Notification getAction(String actionName) {
-	return (Notification)actions.get(actionName);
+    public Notification getAction(String actionName) { 
+	return (Notification)actions.get(actionName); 
     }
 
     /** 
@@ -454,18 +502,20 @@ public class EDStateMachine {
      * @param stateName the name of the action
      * @return the state with the given name
      */
-    public EDState getState(String stateName) {
-	return (EDState)states.get(stateName);
-    }
+    public EDState getState(String stateName) { return (EDState)states.get(stateName); }
 
     /** 
      * Sets the value for inTransition. Called by a state
      * when it is bearing children.
      * @param inTransition the new value for inTransition
      */
-    void setInTransition(boolean inTransition) {
-	this.inTransition = inTransition;
-    }
+    void setInTransition(boolean inTransition) { this.inTransition = inTransition; }
+
+    /** @return the specification for this machine */
+    public EDStateMachineSpecification getSpecification(){ return specification;  }
+
+    /** @return whether this machine has started receiving notifications */
+    public boolean hasStarted(){ return this.hasStarted; }
 }
 
 

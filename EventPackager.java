@@ -26,17 +26,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.20  2001-06-03 01:12:41  jjp32
+ * Revision 1.21  2001-06-18 17:44:51  jjp32
  *
- * Again, forgot to compile first.  now fixed.
- *
- * Revision 1.19  2001/06/03 01:11:13  jjp32
- *
- * Updates, tweaks, hacks for demo.  Also now makes sanity check on command line params
- *
- * Revision 1.18  2001/06/01 15:43:39  jjp32
- *
- * Added support for AIDE
+ * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
+ * trunk is now development again, and the aforementioned branches are
+ * hereby closed.
  *
  * Revision 1.17  2001/01/30 02:39:36  jjp32
  *
@@ -185,12 +179,6 @@ public class EventPackager implements Notifiable {
     try {
       siena.subscribe(g, this);
     } catch(SienaException e) { e.printStackTrace(); }
-
-    Filter h = new Filter();
-    h.addConstraint("ProbedClass", Op.ANY, "");
-    try {
-      siena.subscribe(h, this);
-    } catch(SienaException e) { e.printStackTrace(); }
   }
     
   /**
@@ -234,9 +222,7 @@ public class EventPackager implements Notifiable {
 	else
 	  usage();
       }
-    } else {
-      usage();
-    }
+    }	   
 
     EventPackager ep = new EventPackager(7777, "EventPackager.spl");
     ep.run();
@@ -258,16 +244,11 @@ public class EventPackager implements Notifiable {
 
     // Do a turnaround and send it out.
     Notification q = null;
-    if(n.getAttribute("Type") != null &&
-       n.getAttribute("Type").stringValue().equals("SmartEvent")) {
+    if(n.getAttribute("Type").stringValue().equals("SmartEvent")) {
       // Extract the XML data and send it out
       String data = n.getAttribute("SmartEvent").stringValue();
       q = KXNotification.EventPackagerKXNotification(11111,22222,(String)null,
 						     data);
-    } else if(n.getAttribute("ProbedClass") != null) {
-      // AIDE stuff - send to metaparser
-      q = KXNotification.MetaparserInput("EventPackager",11111,22222,(String)null,
-					 n.getAttribute("Event").stringValue());
     } else {
       // Direct Siena thing, just send it out
       q = KXNotification.EventPackagerKXNotification(11111,22222,n);

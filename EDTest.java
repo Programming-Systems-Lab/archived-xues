@@ -11,8 +11,14 @@ import siena.*;
  * @version 0.1
  *
  * $Log$
- * Revision 1.2  2001-05-21 00:43:04  jjp32
- * Rolled in Enrico's changes to main Xues trunk
+ * Revision 1.3  2001-06-18 17:44:51  jjp32
+ *
+ * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
+ * trunk is now development again, and the aforementioned branches are
+ * hereby closed.
+ *
+ * Revision 1.1.4.2  2001/05/21 00:47:25  jjp32
+ * Synched up changes with main Xues trunk
  *
  * Revision 1.1.4.1  2001/05/02 00:04:27  eb659
  *

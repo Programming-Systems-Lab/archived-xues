@@ -1,6 +1,48 @@
+Event Distiller Development Branch TODO:
 
-Event Distiller Stable Trunk TODO:
+1. (Enrico) loop of states, able to be interrupted. State 'x' can occur
+any number of times, ended by an 'e' event. Fail if an 'x' times out.
+Succeed if 'e' occurs
 
-1. (Janak) Roll in latest dev work after testing.
+2. (Enrico) Integrate James's Daughter-Of-Siena once he has
+implemented priority dispatching. (call 'reorderRules()' or whatever, 
+when necessary, and return value upon notification - just uncomment)
 
-2. (Janak) Documentation
+4. single instance (one time only, or one at any given time)
+needs testing...
+
+7. (Janak) Test event loopback support.
+
+8. (Janak) Merge xues-eb659 and xues-jw402 branches.
+
+9. (Janak) Documentation work - finish commenting schema and rule
+files.
+
+
+to be designed:
+
+5. (Janak) Decide if we want to take and modify matched notifications
+into an action.
+
+6. (Janak) Decide if we want to save ED state on shutdown
+(i.e. serialize objects).  Feasibility needs to be determined.
+
+14. (Enrico/Janak) Build an XML generator for the rules.
+
+-------------------------------
+Notes about counter states:
+
+1) The counter feature for states: say I have a state like this:
+<state name="s" timebound="50" children="t" actions="a" fail_actions="F"  
+absorb="true" count="10">etc..
+- timebound applies to all states, including the first right? (so if this
+is the first state, we compare against the time of the creation of the    
+machine itself?)
+- children applies only to the last of the 10 states?
+- actions applies only to the last state?
+- fail_actions apply to all states?
+- absorb applies to all states?
+
+2) if the count is '-1' this is a loop state. Then the 'children' are states
+that are a valid exit from the loop
+

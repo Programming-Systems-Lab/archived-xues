@@ -29,19 +29,26 @@
                             </xsd:complexType>
                           </xsd:element>
                         </xsd:sequence>
-                        <!-- name for this event -->
+                        <!-- name for this event. Must be specifyed -->
             		<xsd:attribute name="name" type="xsd:string" />	
-                        <!-- Timebound for occurrence of this event -->
+                        <!-- Timebound for occurrence of this event.
+			     unlimited by default -->
                         <xsd:attribute name="timebound" type="xsd:integer" />
-                        <!-- List of (names of) events that may follow this one.
-			     this list and the following are comma-delimited -->
+                        <!-- comma-delimited list of (names of) events that may follow this.
+			     may be omitted  -->
             		<xsd:attribute name="children" type="xsd:string" />
                         <!-- List of (names of) notifications to send in the case that 
-			     this event is matched  -->
+			     this event is matched. May be omitted  -->
             		<xsd:attribute name="actions" type="xsd:string" />
                         <!-- List of (names of) notifications to send in the case that
-			     this event is NOT matched  -->
+			     this event is NOT matched. May be omitted  -->
             		<xsd:attribute name="fail_actions" type="xsd:string" />
+			<!-- Whether this state will absorb the events that match it;
+			     false by default -->
+			<xsd:attribute name="absorb" type="xsd:boolean" />
+			<!-- how many times this event will need to be matched to pass;
+			     if not specifyed, '1' will be assumed -->
+			<xsd:attribute name="count" type="xsd:decimal" />
                       </xsd:complexType>
                     </xsd:element> <!-- /state -->
 	          </xsd:sequence>
@@ -71,6 +78,15 @@
             </xsd:sequence>
             <!-- The name of this rule. -->
             <xsd:attribute name="name" type="xsd:string" />
+            <!-- the position where this rule is inserted: 
+	         lower positions have higher priority -->
+            <xsd:attribute name="position" type="xsd:decimal" />
+            <!-- the cyterion for instantiating this state machine:
+	         '0' means the machine will only be instantiated once
+		 '1' means there will always be only one instance at any given time
+		 '2' means new machines are instantiated as one starts 
+		 see EDConst -->
+            <xsd:attribute name="instantiation" type="xsd:decimal" />
           </xsd:complexType>
         </xsd:element> <!-- /rule -->
       </xsd:sequence>

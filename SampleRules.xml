@@ -16,13 +16,13 @@
      BOTH the first and the second, and a new state machine will be
      generated.  Since said machine has a failure notification, 
      a failure notification will always be generated.  -->
-<rule name="spamblocker">
+<rule name="spamblocker" instantiation="1">
    <states>
-      <state name="a" timebound="-1" children="b" actions="" fail_actions="">
+      <state name="a" timebound="-1" children="b">
         <attribute name="from" value="*1"/>
 	<attribute name="spam" value="true"/>
       </state>
-      <state name="b" timebound="5" children="" actions="A,B" fail_actions="F">
+      <state name="b" timebound="5" children="" actions="A,B" fail_actions="F" absorb="true">
         <attribute name="from" value="*1"/>
 	<attribute name="spam" value="true"/>
       </state>
@@ -43,13 +43,38 @@
    </actions>
 </rule>
 
+
+<!-- The loop rule. Illustrates how you can specify that one event
+     happens any number of times, until some 'end' event happens  -->
+<rule name="loop" instantiation="1">
+   <states>
+      <state name="start" timebound="-1" children="loop">
+        <attribute name="event" value="loop"/>
+      </state>
+      <state name="loop" timebound="5" children="end" count="-1" absorb="true" fail_actions="F">
+        <attribute name="event" value="loop"/>
+      </state>
+      <state name="end" timebound="50" actions="S" fail_actions="F"><!-- fail_actions are not sent here -->
+        <attribute name="event" value="end"/>
+      </state>
+   </states>
+   <actions>
+      <notification name="S">
+         <attribute name="reached_end" value="true"/>
+      </notification>
+      <notification name="F">
+	 <attribute name="reached_end" value="false"/>
+      </notification>
+   </actions>
+</rule>
+
 <!-- The hexagon rule. The graph for this rule is like:
                     c - d
                    /     \
               a - b       g - h
                    \     /
                     e - f                           -->
-<rule name="hexagon">
+<rule name="hexagon" position="0" instantiation="2">
    <states>
       <state name="a" timebound="-1" children="b" actions="" fail_actions="">
         <attribute name="event" value="a"/>

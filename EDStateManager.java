@@ -40,14 +40,75 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.17  2001-06-02 14:48:20  jjp32
- * Trimmed down debug comments for Phil
+ * Revision 1.18  2001-06-18 17:44:51  jjp32
  *
- * Revision 1.16  2001/05/29 17:31:08  jjp32
- * Reflected change from branch on main version (re spec file)
+ * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
+ * trunk is now development again, and the aforementioned branches are
+ * hereby closed.
  *
- * Revision 1.15  2001/05/21 00:43:04  jjp32
- * Rolled in Enrico's changes to main Xues trunk
+ * Revision 1.12.4.17  2001/06/06 19:52:09  eb659
+ * tested loop feature. Works, but identified other issues, to do with new
+ * implementation of timestamp validation:
+ * - keeping the time based on last received event has the inconvenience that we
+ * do not send failure notifs if we do not get events (i.e. time stops moving)
+ * - should there be different scenarios for real-time and non-realtime?
+ *
+ * Revision 1.12.4.16  2001/06/01 22:31:19  eb659
+ *
+ * counter feature implemented and tested
+ *
+ * Revision 1.12.4.15  2001/05/31 22:36:39  eb659
+ *
+ * revision of timebound check: initial states can now have a specified bound.
+ * allow values starting with '*'. Add an initial '*' as escape character...
+ * preparing the ground for single-instance rules, and countable states
+ *
+ * Revision 1.12.4.14  2001/05/30 21:34:52  eb659
+ *
+ * rule consistency check: the following are implemented and thoroughly
+ * tested (You don't need a source file to test: just mess up the spec file):
+ * - specification of non-defined actions/fail_actions
+ * - specification of non-defined children
+ * - specification of non-defined wildcards
+ * Also, fixed potential bug in wildcard binding...
+ *
+ * Revision 1.12.4.13  2001/05/29 21:16:43  eb659
+ *
+ * Rule ordering implemented, tested, and extended to xsd file
+ *
+ * Revision 1.12.4.12  2001/05/29 17:30:25  jjp32
+ * Fixed condition where no specification file was found -- the reaper
+ * would not start.  Still need to test functionality with no
+ * specification file.
+ *
+ * Revision 1.12.4.11  2001/05/28 22:22:14  eb659
+ *
+ * added EDTestConstruct to test embedded constructor. Can construct ED using
+ * a Notifiable owner, and optionally, a spec file and/or a debug flag.
+ * There's a bug having to do with the wildcard binding, I'll look at that
+ * in more detail tomorrow.
+ *
+ * Revision 1.12.4.10  2001/05/25 20:13:36  eb659
+ *
+ * allow ordering of rules;  (XMLspec needs update)
+ * stateMachine instances are within the specification
+ * StateMachineSpecification implement Comparable interface:
+ * (higher priority objects appear smaller)
+ * added EDNotifiable interface
+ *
+ * Revision 1.12.4.9  2001/05/23 21:40:42  eb659
+ *
+ *
+ * DONE Direct (non-Siena) interface: new constructor taking a notifialbe object
+ * DONE 2) allow states to absorb events - but waiting for the bus and XML
+ *
+ * ADDED rule consistency check, and error handling:
+ * DONE checkConsistency() method in edsms
+ * DONE KXNotification for EDError
+ * DONE 1) no duplicate rules - checks against duplicate names
+ * DONE 2) What happens if state parameters are missing, e.g., fail_actions?
+ * DONE 3) check that all children and actions specified in the states are specified in the rule
+ * more checks to be done - wildcards, etc.
  *
  * Revision 1.12.4.8  2001/05/06 05:31:07  eb659
  *
@@ -197,12 +258,12 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
     private Siena siena = null;
   
     /** Counts EDStateMachines for ID tagging */
-    private int idCounter = 0;
+    //private int idCounter = 0;
 
     /** EDStateMachineSpecifications */
-    private Vector stateMachineTemplates = null;
+    Vector stateMachineTemplates = new Vector();
     /** EDStateMachines */
-    private Vector stateMachines = null;
+    //private Vector stateMachines = null;
 
     // variables used for parsing only
 
@@ -210,6 +271,8 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
     private SAXParser sxp = null;
     /** The current statemachine being built. */
     private EDStateMachineSpecification currentEdsms = null;
+    /** The positoin where we will place the current sped. */
+    private int currentPosition = -1;
     /** The current state being built. */
     private EDState currentState = null;
     /** The current action being built. */
@@ -241,22 +304,21 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
    * Regular CTOR.  Utilize XML specification file to build state machines.
    */
   public EDStateManager(Siena siena, EventDistiller ed, 
-			String specFilename) {
+			String specFileName) {
     this.ed = ed;
     this.siena = siena;
-    this.stateMachineTemplates = new Vector();
-    this.stateMachines = new Vector();
     
     // subscribe to internal siena
     subscribe();
 
     // Do we have a spec filename?
-    if(specFilename != null) {
+    if(specFileName != null) {
+	if (EventDistiller.DEBUG) System.out.println("parsing file: " + specFileName);
       // Initialize SAX parser and run it on the file
       sxp = new SAXParser();
       sxp.setContentHandler(this);
       try {
-	sxp.parse(new InputSource(new FileInputStream(specFilename)));
+	sxp.parse(new InputSource(new FileInputStream(specFileName)));
       } catch(Exception e) {
 	System.err.println("FATAL: EDStateManager init failed:");
 	e.printStackTrace();
@@ -267,49 +329,46 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
     new Thread(this).start();
   }
 
-    /** 
+    /** OLD -- carried out directly by the stateMachine when it starts
      * Called when a new machine of the given specification needs to be created.
      * @param spec the type of machine that needs to be constructed
-     */
+     *
     public void addStateMachine(EDStateMachineSpecification spec) {
 	synchronized(stateMachines) {
 	    stateMachines.addElement(new EDStateMachine(spec));
 	}
-    }
+	}*/
 
-  /**
-   * The reaper thread. Disposes state machines that 
-   * have timed out.
-   */
+  /** The reaper thread. Disposes state machines that have timed out. */
   public void run() {
-    //...
-      try { 
-      while(true) {
-	Thread.currentThread().sleep(1000); 
-	// Reap!
-	//	if(EventDistiller.DEBUG) System.err.println("EDStateManager: Reaping...");
-	if(EventDistiller.DEBUG) System.err.print("%");
-	synchronized(stateMachines) {
-	  // Only reap if there *are* state machines
-	  int offset = 0;
+      while(!ed.inShutdown) {
+	  try { Thread.currentThread().sleep(EDConst.REAP_INTERVAL);  }
+	  catch(InterruptedException ex) { ; }
+	  // Reap!
+	  if(EventDistiller.DEBUG) System.err.print("%");
 	  
-	  while(offset < stateMachines.size()) {
-	    EDStateMachine e = (EDStateMachine)stateMachines.elementAt(offset);
-	    //	    if(EventDistiller.DEBUG)
-	    //	      System.err.println("EDStateManager: Attempting to reap " + e.myID);
-	    
-	    if(e.reap()) {
-	      if(EventDistiller.DEBUG)
-		System.err.println("EDStateManager: Reaped." + e.myID);
-	      stateMachines.removeElementAt(offset);
-	    } else offset++;
+	  synchronized(stateMachineTemplates) {
+	      for (int i = 0; i < stateMachineTemplates.size(); i++) {
+		  Vector stateMachines = 
+		      ((EDStateMachineSpecification)stateMachineTemplates.get(i)).stateMachines;
+		  
+		  int offset = 0;	  
+		  while(offset < stateMachines.size()) {
+		      EDStateMachine e = (EDStateMachine)stateMachines.elementAt(offset);
+		      if(EventDistiller.DEBUG)
+			  System.err.println("EDStateManager: Attempting to reap " + e.myID);
+		      
+		      if(e.reap()) {
+			  if(EventDistiller.DEBUG)
+			      System.err.println("EDStateManager: Reaped." + e.myID);
+			  stateMachines.removeElementAt(offset);
+		      } else offset++;
+		  }
+	      }
 	  }
-	}
       }
-    }
-    catch(InterruptedException ex) { ; }
   }
-
+      
   /* We don't hav ethis any more... now states handle their own notifications
    * and when all states are dead, the machine is reaped
    *
@@ -341,18 +400,19 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
 
     // methods for parsing
 
-  /**
-   * Handle the beginning of a SAX element.  We only use this in
-   * certain cases, e.g. in the case of a new rule where we have to
-   * instantiate a new currentStateMachine.
-   */
+  /** Handle the beginning of a SAX element. */
   public void startElement(String uri, String localName, String qName,
 			   Attributes attributes) throws SAXException {
-    if(EventDistiller.DEBUG) System.out.println("parsing " + localName + "," + 
-						qName);
+      //if(EventDistiller.DEBUG) System.out.println("parsing " + localName + "," + 
+      //					qName);
     if(localName.equals("rule")) { // Start of new EDSMS
-	currentEdsms = new  EDStateMachineSpecification
-	    (attributes.getValue("", "name"), "" + (idCounter++), siena, this);
+	currentEdsms = new EDStateMachineSpecification
+	    (attributes.getValue("", "name"), siena, this);
+	String s = attributes.getValue("", "position");
+	if (s != null) currentPosition = Integer.parseInt(s);
+	s = attributes.getValue("", "instantiation");
+	if (s != null) try { currentEdsms.setInstantiationPolicy(Integer.parseInt(s)); } 
+	catch(IllegalArgumentException ex) { System.err.println(ex); }
     }
 
     if(localName.equals("state")) { // Start of new state
@@ -364,6 +424,13 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
 		  attributes.getValue("", "children"),
 		  attributes.getValue("", "actions"),
 		  attributes.getValue("", "fail_actions"));
+	// absorb
+	String s = attributes.getValue("", "absorb");
+	if (s != null && s.equals("true")) currentState.setAbsorb(true);
+	// count
+	s = attributes.getValue("", "count");
+	if (s != null) currentState.setCount(Integer.parseInt(s));
+
 	currentEdsms.addState(currentState);
       } catch(Exception e) {
 	System.err.println("FATAL: EDStateManager init failed:");
@@ -380,12 +447,12 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
     }
 
     if(localName.equals("attribute")) { // Start of new attribute
-      if(EventDistiller.DEBUG) {
-	System.out.println("--> name = " + 
-			   attributes.getValue("","name"));
-	System.out.println("--> value = " + 
-			   attributes.getValue("","value"));
-      }
+	if(EventDistiller.DEBUG) {
+	//System.out.println("--> name = " + 
+	//		   attributes.getValue("","name"));
+	//System.out.println("--> value = " + 
+	//		   attributes.getValue("","value"));
+	}
       // Create the attribute
       String attr = attributes.getValue("","name");
       AttributeValue val = new AttributeValue(attributes.getValue("","value"));
@@ -405,29 +472,38 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
     }
   } 
 
-    /**
-     * Handle the end of a SAX element.
-     */
+    /** Handle the end of a SAX element. */
     public void endElement(String namespaceURI, String localName, String qName) 
       throws SAXException {
-	if(EventDistiller.DEBUG) System.out.println("parsed " + localName + "," + 
-						    qName);
+	//if(EventDistiller.DEBUG) System.out.println("parsed " + localName + "," + 
+	//					    qName);
 	if(localName.equals("rule")) {
-	    // don't allow duplicate names
-	    for (int i = 0; i < stateMachines.size(); i++)
-		if (((EDStateMachineSpecification)stateMachineTemplates.get(i)).getName
-		    ().equalsIgnoreCase(currentEdsms.getName())) {
-		    if (EventDistiller.DEBUG)  
-			System.err.println("ERROR: EDStateManager: cannot add rule "
-					   + currentEdsms.getName() + ": name exists");
-		    return; // don't add it
+	    if (EventDistiller.DEBUG)
+		System.out.println("parsed rule:\n" + currentEdsms.toXML());
+
+	    // is the specified rule legal?
+	    String error = currentEdsms.checkConsistency();
+
+	    if (error == null) {
+		/* ok, now we can add it. To the end of the vector,
+		 * if the position was not specified */
+		synchronized(stateMachineTemplates) {
+		    // where do we add it?
+		    int defaultPosition = stateMachineTemplates.size();
+		    // at the end, if not specified
+		    if (currentPosition < 0) currentPosition = defaultPosition;
+		    else currentPosition = Math.min(currentPosition, defaultPosition);
+		    stateMachineTemplates.add(currentPosition, currentEdsms);
+		    currentPosition = -1;
+		    currentEdsms.init(); 
+		}
+	    } 
+	    else { // specification is ill-defined
+		System.err.println("ERROR: EDStateManager: cannot add rule "
+				   + currentEdsms.getName() + " :\n" + error);
+		// send an error notification
+		ed.sendPublic(KXNotification.EDError(KXNotification.EDERROR_RULEBASE, error));
 	    }
-	    // ok, now we can add it
-	    stateMachineTemplates.addElement(currentEdsms);
-	    currentEdsms.findInitialStates(); 
-	    /* instantiate the first child constructed on the model of 
-	     * the specification, so that it starts receiving notifications */
-	    stateMachines.add(new EDStateMachine(currentEdsms));
 	}
     }
 
@@ -520,38 +596,37 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
       EDStateMachineSpecification spec = null;     
 
       // remove the specification      
-      for (int i = 0; i < stateMachineTemplates.size(); i++) {
-	  if (((EDStateMachineSpecification)stateMachineTemplates.get
-	       (i)).getName().equalsIgnoreCase(s)) {
-	      // remember
-	      spec = (EDStateMachineSpecification)stateMachineTemplates.get(i);
-	      // remove
-	      stateMachineTemplates.remove(i);
-	      if (EventDistiller.DEBUG) 
-		  System.out.println("EDStateManager: successfully removed rule " + i + " !");
-	      break; // we assume there's only one spec for each name
-	  }
-      }
+      synchronized(stateMachineTemplates) {
+	  for (int i = 0; i < stateMachineTemplates.size(); i++) {
+	      if (((EDStateMachineSpecification)stateMachineTemplates.get
+		   (i)).getName().equalsIgnoreCase(s)) {
+		  // remember
+		  spec = (EDStateMachineSpecification)stateMachineTemplates.get(i);
 
-      // if not found forget it
-      if(spec == null){
-	  if(EventDistiller.DEBUG) 
-	      System.out.println("EDStateManager: could not remove rule: none matched");
-	  return;
-      }
-	     
-      // kill all stateMachines with this specification
-      synchronized(stateMachines) {
-	  for(int j = 0;j < stateMachines.size(); j++) {
-	      if (((EDStateMachine)stateMachines.get(j)).getSpecification() == spec) {
-		  // unsubscribe
-		  ((EDStateMachine)stateMachines.get(j)).killAllStates();
-		  // remove
-		  stateMachines.remove(j);
-		  j--;
+		  // kill all stateMachines instances
+		  Vector stateMachines = spec.stateMachines;
+		  synchronized(stateMachines) {
+		      for(int j = 0;j < stateMachines.size(); j++) 
+			  ((EDStateMachine)stateMachines.get(j)).killAllStates();
+		  }
+
+		  // remove the spec
+		  stateMachineTemplates.remove(i);
+		  if (EventDistiller.DEBUG) 
+		  System.out.println("EDStateManager: successfully removed rule " + i + " !");
+		  break; // we assume there's only one spec for each name
 	      }
 	  }
       }
+
+      // if not found
+      if(spec == null){
+	  System.out.println("ERROR: could not remove rule: name '" + s + "' not found");
+	  ed.sendPublic(KXNotification.EDError
+			(KXNotification.EDERROR_RULEBASE, 
+			 "could not remove rule: name '" + s + "' not found"));
+      }
+	     
   }
 
     /**
