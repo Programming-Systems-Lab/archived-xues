@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2000/10/XMLSchema" targetNamespace="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>Event Distiller Rule Specification.  Copyright
+	2001 Trustees of Columbia University in the City of New York.
+	All Rights Reserved.</xsd:documentation>
+  </xsd:annotation>
+  <!-- Rule specification.  A rule consists of "states" that make up a pattern, and "actions" to take based on those states. -->
+  <xsd:element name="rule">
+    <xsd:complexType>
+      <xsd:sequence>
+	<!-- States consist of many individual attribute/value states.  They should be put in order, with appropriate timebounds. -->
+        <xsd:element name="states">
+	  <xsd:complexType>
+	    <xsd:sequence>
+	      <xsd:element name="state" maxOccurs="unbounded">
+	        <xsd:complexType>
+		  <xsd:attribute name="attributename" type="xsd:string" />
+		  <xsd:attribute name="value" type="xsd:string" />
+		  <xsd:attribute name="timebound" type="xsd:integer" />
+	        </xsd:complexType>
+	      </xsd:element>
+	    </xsd:sequence>
+	  </xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="actions">
+	  <xsd:complexType>
+	    <!-- Eventually, multiple types of notifications will be provided.  Right now, only one notification is supported - and of attribute/value type. -->
+	    <xsd:choice>
+	      <xsd:element name="notification" minOccurs="0" maxOccurs="unbounded">
+		<xsd:complexType>
+		  <xsd:sequence>
+		    <xsd:element name="attribute" maxOccurs="unbounded">
+		      <xsd:complexType>
+		        <xsd:attribute name="name" type="xsd:string" />
+		        <xsd:attribute name="value" type="xsd:string" />
+		      </xsd:complexType>
+		    </xsd:element>
+		  </xsd:sequence>
+		</xsd:complexType>
+	      </xsd:element> <!-- /notification -->
+	    </xsd:choice> <!-- no other choices right now -->
+	  </xsd:complexType>
+	</xsd:element> <!-- /actions -->
+      </xsd:sequence>
+      <!-- The name of this rule. -->
+      <xsd:attribute name="name" type="xsd:string" />
+    </xsd:complexType>
+  </xsd:element> <!-- /rule -->
+</xsd:schema>
