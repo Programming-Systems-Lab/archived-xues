@@ -2,10 +2,12 @@ package psl.xues.notifiers;
 
 import siena.*;
 import psl.xues.*;
+import psl.sendmail.*;
 import psl.worklets2.wvm.*;
 import psl.worklets2.worklets.*;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 
 /**
@@ -22,7 +24,10 @@ import java.util.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.1  2001-01-30 07:18:32  jjp32
+ * Revision 1.2  2001-02-07 01:45:25  gskc
+ * Changes made in Monterey.
+ *
+ * Revision 1.1  2001/01/30 07:18:32  jjp32
  *
  * Last commit?
  *
@@ -66,7 +71,7 @@ public class WorkletEventNotifier implements Notifiable {
     sienaRef = new HierarchicalDispatcher();
     try {
       ((HierarchicalDispatcher)sienaRef).
-	setReceiver(new TCPPacketReceiver(61990));
+	setReceiver(new TCPPacketReceiver(5557));
       ((HierarchicalDispatcher)sienaRef).setMaster(sienaHost);
     } catch(Exception e) { e.printStackTrace(); }
 
@@ -74,16 +79,40 @@ public class WorkletEventNotifier implements Notifiable {
 
 
     // Create WVM
-    wvmRef = new WVM(this, "localhost", "foo");
+    // wvmRef = new WVM(this, InetAddress.getLocalHost().getHostName(), "foo");
+    wvmRef = new WVM(this, "127.0.0.1", "WorkletEventNotifier");
 
   }
 
   public void notify(Notification n) {
+
+    String emailAdd_to_reject = "";
+
     Worklet wkl = new Worklet(null);
-    /*
-      CERWJ wj = new CERWJ(confFile, rHost, rName);
-    */
-  }
+    System.out.println("Creating CERWJ");
+    String confFileIn = "config.txt";
+    // write out the confFileIn
+    try {
+      Writer out = new FileWriter(confFileIn);
+      out.write("# END_OF /etc/mail/access\t" +
+                "# END_OF /etc/mail/access\t" +
+                "# END_OF /etc/mail/access\t" +
+                "# END_OF /etc/mail/access\t" + 
+                "# THE FOLLOWING HAS BEEN INSERTED BY A WORKLET ... worklet wuz 'ere\n" +
+                emailAdd_to_reject + "        REJECT\n\n" + 
+                "# END_OF /etc/mail/access\n");
+      out.close();
+    } catch (IOException e) {
+      System.out.println("Error trying to write to config file: " + confFileIn);
+      e.printStackTrace();
+    }
+    
+    CERWJ wj = new CERWJ(confFileIn, "/etc/mail/access", "10.0.1.2", "sendmailMonitor");
+    System.out.println("Adding CERWJ to WKL");
+    wkl.addJunction(wj);
+    System.out.println("Deploying WKL w/ CERWJ");
+    wkl.deployWorklet(wvmRef);
+}
 
   public void notify(Notification[] n) {
     ;
