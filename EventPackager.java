@@ -25,7 +25,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.9  2001-01-01 00:32:28  jjp32
+ * Revision 1.10  2001-01-18 01:41:35  jjp32
+ *
+ * Moved KXNotification to kx; other modifications for demo
+ *
+ * Revision 1.9  2001/01/01 00:32:28  jjp32
  *
  * Added rudimentary Siena-publishing capabilities to Event Packager.  Created a (possibly, in the future) base notification class with convenience constructors (right now just for EP but in the future also for other KX components).
  *
@@ -59,7 +63,7 @@ import java.io.*;
  * Updating
  *
  */
-public class EventPackager /*implements*/ {
+public class EventPackager {
   int listeningPort = -1;
   ServerSocket listeningSocket = null;
   String spoolFilename;

@@ -15,7 +15,11 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.7  2000-12-26 22:25:13  jjp32
+ * Revision 1.8  2001-01-18 01:41:35  jjp32
+ *
+ * Moved KXNotification to kx; other modifications for demo
+ *
+ * Revision 1.7  2000/12/26 22:25:13  jjp32
  *
  * Updating to latest preview versions
  *
@@ -44,8 +48,7 @@ import java.util.*;
  * Updating
  *
  */
-public class EventDistiller implements GroupspaceService,
-				       GroupspaceCallback {
+public class EventDistiller {
   GroupspaceController gcRef = null;
   private String roleName = "EventDistiller";
 
