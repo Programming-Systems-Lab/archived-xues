@@ -49,7 +49,7 @@ public class SienaUtils {
       booleanValue();
     } catch(Exception e) {
       // We're using the older-style Siena packaging
-      debug.debug("Using Siena 1.3...",e);
+      debug.debug("Using Siena 1.3...");
       try {
         success = ((java.lang.Boolean)Class.
         forName("psl.xues.util.Siena13Utils").

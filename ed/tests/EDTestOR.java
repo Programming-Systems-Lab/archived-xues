@@ -6,6 +6,7 @@ import java.net.*;
 import java.util.*;
 import siena.*;
 import psl.xues.ed.*;
+import psl.xues.util.EDConst;
 
 /**
  * Tester for the functionality in the OR representation.

@@ -3,6 +3,7 @@ package psl.xues.ed.tests;
 import java.util.*;
 import siena.*;
 import psl.xues.ed.*;
+import psl.xues.util.EDConst;
 
 /**
  * Tester class for EDBus.<br>

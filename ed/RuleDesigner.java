@@ -14,6 +14,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.*;
 import siena.*;
+import psl.xues.util.EDConst;
 
 /**
  * A GUI allowing generation of XML specification for ED rules.

@@ -2,6 +2,7 @@ package psl.xues.ed;
 
 import java.util.*;
 import siena.*;
+import psl.xues.util.EDConst;
 
 /**
  * Helper class to keep track of an individual subscriber of

@@ -2,6 +2,7 @@ package psl.xues.ed;
 
 import java.util.*;
 import siena.*;
+import psl.xues.util.EDConst;
 
 /**
  * The Queue used in EDBus.

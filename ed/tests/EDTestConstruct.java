@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.*;
 import siena.*;
 import psl.xues.ed.*;
+import psl.xues.util.EDConst;
 
 /**
  * Tester for the embedded constructor.

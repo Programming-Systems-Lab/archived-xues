@@ -6,7 +6,7 @@ import org.w3c.dom.Element;
 
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
-import psl.xues.ed.EDConst;
+import psl.xues.util.EDConst;
 
 import siena.Notification;
 import siena.AttributeValue;

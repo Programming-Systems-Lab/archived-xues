@@ -1,6 +1,7 @@
 package psl.xues.ed;
 
 import psl.kx.*;
+import psl.xues.util.EDConst;
 
 import java.io.*;
 import java.util.*;
@@ -237,8 +238,8 @@ public class EventDistiller implements Runnable, Notifiable {
     // Set receiver and master properties
     try {
       if(sienaPort != null) {
-        ((HierarchicalDispatcher)publicSiena).setReceiver(
-        SienaUtils.newTCPPacketReceiver(Integer.parseInt(sienaPort)));
+        SienaUtils.setTCPPacketReceiver((HierarchicalDispatcher)publicSiena,
+        Integer.parseInt(sienaPort));
       }
       if(sienaHost != null)
         ((HierarchicalDispatcher)publicSiena).setMaster(sienaHost);

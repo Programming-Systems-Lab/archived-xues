@@ -1,9 +1,9 @@
-package psl.xues.ed;
+package psl.xues.util;
 
 import siena.Notification;
 
 /** 
- * Constants in ED.
+ * Constants in ED.  It's in the util package because classes in EP use it.
  * <p>
  * Copyright (c) 2000-2002: The Trustees of Columbia University and the
  * City of New York.  All Rights Reserved.

@@ -4,6 +4,7 @@ import java.util.*;
 import siena.*;
 
 import org.apache.log4j.Logger;
+import psl.xues.util.EDConst;
 
 /**
  * Individual Event Distiller state machine state.  A state is matched

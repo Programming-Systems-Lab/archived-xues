@@ -8,6 +8,7 @@ package psl.xues.ed.tests;
 import psl.events.siena.utils.*;
 import siena.*;
 import psl.xues.ed.*;
+import psl.xues.util.EDConst;
 
 /**
  * The CorrelationRules tester for Peppo.

@@ -5,6 +5,7 @@ import java.io.*;
 import java.util.*;
 import javax.swing.tree.*;
 import siena.*;
+import psl.xues.util.EDConst;
 
 /**
  * Class to specify a machine template.
