@@ -59,6 +59,15 @@ public abstract class EPInput implements Runnable {
   }
   
   /**
+   * Get this input's name.
+   *
+   * @return The string representing the instance name of this input.
+   */
+  public String getName() {
+    return sourceID;
+  }
+  
+  /**
    * Default run implementation - basically, do nothing.  Change/override this 
    * only if you need to do some form of polling or listening for your input -
    * and if you do, consider adding shutdown functionality.

@@ -48,7 +48,7 @@ public class SienaEvent extends EPEvent {
    */
   public FlatEvent toFlatEvent() {
     // Not implemented right now
-    debug.warn("Not yet implemented");
+    debug.warn("toFlatEvent not yet implemented");
     return null;
   }
 }

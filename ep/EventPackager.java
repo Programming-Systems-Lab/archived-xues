@@ -4,6 +4,7 @@ import org.apache.log4j.Category;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.PropertyConfigurator;
 
+import java.util.HashSet;
 import java.util.HashMap;
 
 import psl.xues.ep.event.EPEvent;
@@ -29,8 +30,11 @@ public class EventPackager implements Runnable, EPInputInterface {
   /** Default configuration file */
   public static final String defaultConfigFile = "EPConfig.xml";
 
-  /** Event formats */
-  HashMap eventFormats = null;
+  /** 
+   * "Tested" event formats - meaning they were successfully loaded into
+   * the JVM.
+   */
+  HashSet eventFormats = null;
   
   /** Inputters */
   HashMap inputters = null;

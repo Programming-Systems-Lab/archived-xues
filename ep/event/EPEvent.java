@@ -9,16 +9,17 @@ package psl.xues.ep.event;
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-public abstract class EPEvent {
+public abstract class EPEvent implements Comparable {
   /** Intrinsic format.  Override this. */
-  private final String format = "EPEvent";
+  protected final String format = "EPEvent";
+  /** Timestamp of this event, in OUR perception */
+  protected long timestamp = -1;
   
   /**
-   * CTOR.
+   * CTOR.  Assume that construction time is the correct timestamp time.
    */
   public EPEvent() {
-    
-    
+    timestamp = System.currentTimeMillis();
   }
   
   /**
@@ -28,5 +29,29 @@ public abstract class EPEvent {
    */
   public String getFormat() {
     return format;
+  }
+  
+  /**
+   * Get the timestamp of this event.
+   *
+   * @return Standard UNIX time format (long)
+   */
+  public long getTimestamp() {
+    return timestamp;
+  }
+
+  /**
+   * Comparison function.  ONLY COMPARES TIMESTAMPS (you have been WARNED!)
+   *
+   * @param o The other event to compare timestamps against.
+   * @return An integer conforming to the Comparable interface.
+   */
+  public int compareTo(Object o) {
+    if(!(o instanceof EPEvent))
+      throw new ClassCastException("Can only compare EPEvents");
+
+    if(this.timestamp < ((EPEvent)o).timestamp) return -1;
+    else if(this.timestamp == ((EPEvent)o).timestamp) return 0;
+    else return 1; // Must be greater
   }
 }

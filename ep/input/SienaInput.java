@@ -12,11 +12,17 @@ import siena.SienaException;
 import siena.Notification;
 import siena.TCPPacketReceiver;
 
+import psl.xues.ep.event.EPEvent;
+import psl.xues.ep.event.SienaEvent;
+
 /**
  * Siena input filter for EP.
  *
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
+ *
+ * TODO:
+ * - Support bytearray filters (why does Siena have this?)
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -128,6 +134,7 @@ public class SienaInput extends EPInput implements Notifiable {
       
       if(f != null) { // success, actually apply it
         try {
+          debug.info("Subscribing filter \"" + filterName + "\"...");
           hd.subscribe(f, this);
         } catch(SienaException se) {
           debug.error("Cannot subscribe filter \"" + filterName + "\"", se);
@@ -145,10 +152,13 @@ public class SienaInput extends EPInput implements Notifiable {
   }
   
   public void notify(Notification n) {
-    // Construct a new SienaEvent
+    debug.debug("Received notification " + n);
     
-    // Tell the EP to do something with it
+    // Construct a new SienaEvent and wrap the notification in there
+    SienaEvent se = new SienaEvent(n);
     
+    // Inject it into the EP
+    ep.injectEvent(se);
   }
   
   public void notify(Notification[] n) {
