@@ -39,6 +39,7 @@ public class EPHandler implements Notifiable{
 	uid=uid;
 	pwd=pwd;
 	statement = state;
+	System.out.println("EPHandler created");
     }
     /*
      * get the actions associated with the particular Notification since we already know the 
@@ -47,13 +48,15 @@ public class EPHandler implements Notifiable{
      */
     
     public void notify(Notification n){
+	System.out.println("notification received");	
 	try{
-	String action = null;
-	ResultSet rs = statement.executeQuery("SELECT * FROM Action_listing WHERE filter_id = filter_index");
-	while(!rs.isAfterLast()){
-	    action = rs.getString(2);
-	    executeAction(action, n);
-	}
+	    String action = null;
+	    ResultSet rs = statement.executeQuery("SELECT * FROM Action_listing WHERE filter_id='"+ filterIndex+"'");
+	    System.out.println("notification received " + rs);
+	    while(rs.next()){
+		action = rs.getString(2);
+		executeAction(action, n);
+	    }
 	}
 	catch(SQLException e){
 	    e.printStackTrace();
@@ -64,9 +67,9 @@ public class EPHandler implements Notifiable{
 	  //String property = n.getAttribute("Type").stringValue();
 	  
 	  String toDo = (String)list_of_actions.get(filterIndex);
-	if(toDo!=null){
-	    if(DEBUG)System.out.println("toDo---stuff to do to property " + toDo);
-	    st = new StringTokenizer(toDo);
+	  if(toDo!=null){
+	  if(DEBUG)System.out.println("toDo---stuff to do to property " + toDo);
+	  st = new StringTokenizer(toDo);
 	    if (DEBUG) System.out.println("things to do: " + toDo);
 	    
 	    if(toDo != null && toDo.length() >0){
@@ -93,12 +96,15 @@ public class EPHandler implements Notifiable{
     private void executeAction(String action, Notification n){
 	if(action.equals("addFilter")) addFilter(n);
     }
-
+    
     /*XXX to be documented: any filter that to be added must have the attributes of 1) desc,
      * 2)AttrName, 3)AttrOp, 4)AttrVal 5)actionVal
      */ 
     private void addFilter(Notification n){
-	String description = n.getAttribute("Type").stringValue();//picked up new filter desc.
+	AttributeValue description = n.getAttribute("Type");
+	System.out.println("description: " + description);
+	String description2 = "n.a";
+	if(description != null) description2=description.stringValue();
 	String attrName = n.getAttribute("AttrName").stringValue();//picked up attribute
 	String opName = n.getAttribute("AttrOp").stringValue();
 	String attrValue = n.getAttribute("AttrVal").stringValue();
@@ -106,7 +112,7 @@ public class EPHandler implements Notifiable{
 	int temp = 0;
 	try{
 	    if(attrName != null && opName != null && attrValue != null){
-		executeSQLQuery("INSERT INTO Filter_ID (id, description)" + "VALUES (NEXTVAL('filter_id_id_seq'),'" + description + "')");
+		executeSQLQuery("INSERT INTO Filter_ID (id, description)" + "VALUES (NEXTVAL('filter_id_id_seq'),'" + description2 + "')");
 		ResultSet r = statement.executeQuery("SELECT MAX(id) FROM Filter_ID");
 		if (r.next())
 		    temp = r.getInt(1);

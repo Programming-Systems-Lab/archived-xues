@@ -11,7 +11,13 @@ import siena.*;
  * @version 0.1
  *
  * $Log$
- * Revision 1.4  2001-09-19 17:33:41  aq41
+ * Revision 1.5  2002-01-11 05:01:52  aq41
+ * Minor debugging completed.
+ * In order to startup the eventpackager, now type:
+ * java psl.xues.EventPackager -s senp://localhost:5000 -uid [userID] -pwd [password] -d
+ * the userID and the password allow connection to the psl DB.
+ *
+ * Revision 1.4  2001/09/19 17:33:41  aq41
  * Minor debugging, in process of implementing acceptance of new filters through
  * notification.
  *
@@ -103,12 +109,13 @@ public class EPTest {
 	n2.putAttribute("LookupType", "smartevent");
 	
 	Notification n3 = new Notification();
-	n3.putAttribute("Type", "addFilter");
+	n3.putAttribute("type", "addFilter");
 	n3.putAttribute("keepFilter", true);
 	n3.putAttribute("Name", "cd");
 	n3.putAttribute("AttrName", "Name");
 	n3.putAttribute("AttrOp", "=");
 	n3.putAttribute("AttrVal", "Check");
+	n3.putAttribute("ActVal", "none");
 	
 	Notification n4 = new Notification();
 	n4.putAttribute("Name", "Check");
