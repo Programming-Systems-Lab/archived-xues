@@ -145,6 +145,7 @@ public class EDQueue {
 	}
     }
 
+    /** For non-autoflush.. comment me */
     public boolean canDequeueWithLength(long waitTime){
 	if(q.size()==0){
 	    return false;

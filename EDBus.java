@@ -134,6 +134,7 @@ public class EDBus {
 	    }.start();
     }
 
+    /** For debugging purposes */
     private void dumpSubscribers(){
 	verbosePrintln("EDBus:******Start dumping subscribers*****");
 	for(int i = 0;i<subscribers.size();i++){
@@ -301,9 +302,10 @@ public class EDBus {
 		verbosePrintln("Dispatcher interuppted");
 	    }
 	}
-	synchronized(this){
-	    this.notifyAll();
-	}
+	// For debugging purposes
+	//  	synchronized(this){
+	//  	    this.notifyAll();
+	//  	}
     }
 
     /**
