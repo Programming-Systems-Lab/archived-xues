@@ -40,8 +40,11 @@ public abstract class EPInput implements Runnable {
    * useful information.
    * @param sourceID The unique sourceID assigned to you by the configuration
    * file.
+   * @exception InstantiationException may get thrown by a child.  We don't
+   * but it's here anyway just to be explicit.
    */
-  public EPInput(EPInputInterface ep, Element el) {
+  public EPInput(EPInputInterface ep, Element el) 
+  throws InstantiationException {
     // Attempt to identify our instance name, which we call sourceID
     this.sourceID = el.getAttribute("Name");
     // Extra-paranoia checking - we really shouldn't need this

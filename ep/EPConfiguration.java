@@ -143,7 +143,13 @@ class EPConfiguration {
     debug.info("Successfully loaded event format \"" + eventFormatName + "\"");
     return eventFormatName;
   }
-  
+
+  /**
+   * Build a new inputter based on a XML DOM description of it.
+   *
+   * @param inputter The description in DOM-tree form.
+   * @return An instance of EPInput if successful, else null.
+   */
   private EPInput buildInputter(Element inputter) {
     String inputterName = inputter.getAttribute("Name");
     String inputterType = inputter.getAttribute("Type");
@@ -162,7 +168,6 @@ class EPConfiguration {
       epi = (EPInput)Class.forName(inputterType).getConstructor(new Class[]
       { inputter.getClass(), EPInputInterface.class }).newInstance(new Object[]
       { inputter, (EPInputInterface)ep });
-      ep.inputters.put(inputterName, epi);
     } catch(Exception e) {
       debug.warn("Failed in loading inputter \"" + inputterName +
       "\", ignoring", e);
@@ -174,31 +179,36 @@ class EPConfiguration {
     return epi;
   }
   
-  private void buildOutputters(NodeList outputters) {
-  }
-  
+  /**
+   * Build a new outputter given the XML DOM definition of it.
+   *
+   * @param outputter The description in DOM-tree form.
+   * @return An instance of EPOutput if successful, else null.
+   */
   private EPOutput buildOutputter(Element outputter) {
-    Element outputter = (Element)outputters.item(i);
     String outputterName = outputter.getAttribute("Name");
     String outputterType = outputter.getAttribute("Type");
     if(outputterName == null || outputterType == null ||
     outputterName.length() == 0 || outputterType.length() == 0) {
       debug.warn("Invalid outputter name or type detected, ignoring");
-      continue;
+      return null;
     }
     
-    // Try loading this one
+    // Load and instantiate this outputter
     EPOutput epo = null;
     try {
       debug.debug("Loading outputter \"" + outputterName + "\"...");
+      // XXX - Should we be making a deep copy of the outputter element,
+      // since we're handing it to a potentially unknown constructor?
       epo = (EPOutput)Class.forName(outputterName).getConstructor(new Class[]
       { outputter.getClass() }).newInstance(new Object[] { outputter });
-      ep.outputters.put(outputterName, epo);
     } catch(Exception e) {
       debug.warn("Failed in loading outputter \"" + outputterName +
       "\", ignoring", e);
-      continue;
+      return null;
     }
+
+    // Success!
+    return epo;
   }
-  
 }

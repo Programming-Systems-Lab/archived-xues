@@ -16,6 +16,10 @@ import psl.xues.ep.input.EPInputInterface;
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
+ * TODO:
+ * - Implement outputter dispatch threads (or should we just continue to trust 
+ *   that the outputter will be fast?)
+ *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */

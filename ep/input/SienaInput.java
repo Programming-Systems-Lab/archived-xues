@@ -35,14 +35,17 @@ public class SienaInput extends EPInput implements Notifiable {
   /**
    * CTOR.  Modeled after the EPInput CTOR.
    */
-  public SienaInput(EPInputInterface ep, Element el) {
+  public SienaInput(EPInputInterface ep, Element el) 
+  throws InstantiationException {
     super(ep, el);
     // Now parse the element and see if we can get all of the needed
     // information.
     sienaHost = el.getAttribute("SienaHost");
     if(sienaHost == null || sienaHost.length() == 0) {
-      ep.error(this.getClass().getName(),
-      "Instance name not specified, cannot continue building input filter");
+      debug.error("Siena host not specified, " +
+      "cannot continue building Siena input filter");
+      sienaHost = null;
+      throw new InstantiationException("No Siena host specified");
     }
     
     // Now actually try and connect
@@ -53,7 +56,7 @@ public class SienaInput extends EPInput implements Notifiable {
     } catch(Exception ex) {
       debug.error("Cannot connect to specified Siena host", ex);
       hd = null;
-      return;
+      throw new InstantiationException("Cannot connect to Siena host");
     }
   }
   
@@ -163,5 +166,14 @@ public class SienaInput extends EPInput implements Notifiable {
   
   public void notify(Notification[] n) {
     // Do nothing - we don't support sequences for now
+  }
+  
+  /**
+   * Handle shutdown - first let super do its cleanup, then kill the hd
+   */
+  public void shutdown() {
+    super.shutdown();
+    hd.shutdown(); // Unsubscribe from everything
+    hd = null;
   }
 }

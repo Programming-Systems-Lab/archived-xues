@@ -1,5 +1,7 @@
 package psl.xues.ep.event;
 
+import org.apache.log4j.Category;
+
 /**
  * Abstract base class for EP event formats.
  *
@@ -10,26 +12,26 @@ package psl.xues.ep.event;
  * @version $Revision$
  */
 public abstract class EPEvent implements Comparable {
-  /** Intrinsic format.  Override this. */
-  protected final String format = "EPEvent";
   /** Timestamp of this event, in OUR perception */
   protected long timestamp = -1;
+  /** Debugger */
+  protected Category debug = null;
   
   /**
    * CTOR.  Assume that construction time is the correct timestamp time.
    */
   public EPEvent() {
     timestamp = System.currentTimeMillis();
+    // Build our debugger.  XXX - if another class extends this one?
+    debug = Category.getInstance(this.getClass().getName());
   }
   
   /**
-   * Get the format (type) of this event.
+   * Get the format (type) of this event.  You have to implement this.
    *
    * @return A string indicating the type.
    */
-  public String getFormat() {
-    return format;
-  }
+  public abstract String getFormat();
   
   /**
    * Get the timestamp of this event.
@@ -40,6 +42,18 @@ public abstract class EPEvent implements Comparable {
     return timestamp;
   }
 
+  /**
+   * Convert this event to one of another form.
+   *
+   * @return The EPEvent that's actually another event form, or null if it
+   * cannot be done.
+   */
+  public EPEvent convertEvent(String newFormat) {
+    debug.warn("No implementation of ConvertEvent for event type \"" + 
+    getFormat() + "\"");
+    return null;
+  }
+  
   /**
    * Comparison function.  ONLY COMPARES TIMESTAMPS (you have been WARNED!)
    *

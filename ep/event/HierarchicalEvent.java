@@ -20,4 +20,14 @@ public class HierarchicalEvent extends EPEvent {
   public HierarchicalEvent() {
     
   }
+  
+  /** 
+   * Get the format (type) of this event.
+   *
+   * @return A string indicating the type.
+   */
+  public String getFormat() {
+    return "HierarchicalEvent";
+  }
+  
 }

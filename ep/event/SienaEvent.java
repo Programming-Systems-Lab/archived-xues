@@ -7,6 +7,9 @@ import org.apache.log4j.Category;
 /**
  * Simple Siena event representation.  Embeds a Siena Notification for speed.
  *
+ * TODO:
+ * - Support conversion to basic formats.  (Where should this be?)
+ *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
@@ -18,9 +21,7 @@ public class SienaEvent extends EPEvent {
   /**
    * Empty CTOR.
    */
-  public SienaEvent() {
-   
-  }
+  public SienaEvent() { ; }
 
   /**
    * CTOR given an existing Siena notification.
@@ -51,4 +52,14 @@ public class SienaEvent extends EPEvent {
     debug.warn("toFlatEvent not yet implemented");
     return null;
   }
+  
+  /** 
+   * Get the format (type) of this event.
+   *
+   * @return A string indicating the type.
+   */
+  public String getFormat() {
+    return "SienaEvent";
+  }
+  
 }

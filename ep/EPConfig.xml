@@ -18,5 +18,18 @@
             </SienaFilter>
         </Inputter>
     </Inputters>
-</EventPackagerConfiguration>
+<Outputters>
+        <Outputter Name="SienaOutput1" Type="SienaOutput" SienaHost="senp://localhost:7891"></Outputter>
+    </Outputters>
+<Transforms></Transforms>
+    <Rules>
+        <Rule><!--Sources specify a disjoint set-->
+            <Sources>
+                <Source Name="Siena1"></Source>
+            </Sources>
+            
+            <Transforms></Transforms>
+        </Rule>
+    </Rules>
+    </EventPackagerConfiguration>
 
