@@ -40,12 +40,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.34  2001-08-31 19:21:25  eb659
- * ok, this may be the last commit for the summer, unless I discover
- * some bad deficiency over the weekend.
- * Janak, maybe you should take a look at the GUI, and see if there are
- * any obvious errors or deficiencies, that you want changed before we finalize
- * this "summer session"
+ * Revision 1.35  2001-09-05 18:57:40  eb659
+ *
+ * just a couple of bug fixes
  *
  * Revision 1.33  2001/08/27 17:47:42  eb659
  * more work done on the XML generator

@@ -117,10 +117,10 @@ class RuleDesigner extends JFrame implements Rulebase {
 
         // add components to viewport
         JPanel vp = new JPanel();
-        vp.setLayout(new VerticalLayout());
-        vp.add(createRulesPanel());
-        vp.add(createTreePanel());
-        vp.add(createStatePanel());
+        vp.setLayout(new BorderLayout(5, 5));
+        vp.add(createRulesPanel(), BorderLayout.NORTH);
+        vp.add(createTreePanel(), BorderLayout.CENTER);
+        vp.add(createStatePanel(), BorderLayout.SOUTH);
 
         // add to frame
         getContentPane().add(new JScrollPane(vp));
@@ -902,128 +902,5 @@ class StateDialog extends JDialog {
 
     private void addComponents() {
 
-    }
-}
-
-class VerticalLayout extends GridLayout
-{   private int xInset = 5;
-    private int yInset = 2;
-    private int yGap = 0;
-
-    /** Constructor. */
-    public VerticalLayout() { this(5); }
-
-    /** Constructor.
-     *  @param the gap between the components. */
-    public VerticalLayout(int gap)
-    {   super(0, 1, 0, 0);
-        yGap = gap;
-    }
-
-    /**
-     * Manages the layout of the components in the container to which the layout applies.
-     * @param c - the container to which the layout applies.
-     */
-    public void layoutContainer(Container c)
-    {   Insets insets = c.getInsets();
-        int height = yInset + insets.top;
-
-        Component[] children = c.getComponents();
-        Dimension compSize = null;
-        for (int i = 0; i < children.length; i++)
-        {   compSize = children[i].getPreferredSize();
-            children[i].setSize(compSize.width, compSize.height);
-            children[i].setLocation( xInset + insets.left, height);
-            height += compSize.height + yGap;
-        }
-    }
-
-    /** @return the minimum layout size to display all components */
-    public Dimension minimumLayoutSize(Container c)
-    {   Insets insets = c.getInsets();
-        int height = yInset + insets.top;
-        int width = 0 + insets.left + insets.right;
-
-        Component[] children = c.getComponents();
-        Dimension compSize = null;
-        for (int i = 0; i < children.length; i++)
-        {
-            compSize = children[i].getPreferredSize();
-            height += compSize.height + yGap;
-            width = Math.max(width, compSize.width + insets.left + insets.right + xInset*2);
-        }
-        height += insets.bottom;
-        return new Dimension( width, height);
-    }
-
-    /** @return the preferred layout size to display all components */
-    public Dimension preferredLayoutSize(Container c)
-    {   return minimumLayoutSize(c);
-    }
-}
-
-class HorizontalLayout extends GridLayout
-{   private int xInset = 5;
-    private int yInset = 5;
-    private int xGap;
-
-    /**
-     * Constructor.     */
-    public HorizontalLayout()
-    {   this(5);
-    }
-
-    /**
-     * Constructor.
-     * @param the gap between the components.
-     */
-    public HorizontalLayout(int gap)
-    {   super(1, 0, 0, 0);
-        xGap = gap;
-    }
-
-    /**
-     * Manages the layout of the components in the container to which the layout applies.
-     * @param c - the container to which the layout applies.
-     */
-    public void layoutContainer(Container c)
-    {   Insets insets = c.getInsets();
-        int width = xInset + insets.left;
-        Component[] children = c.getComponents();
-        Dimension compSize = null;
-        for (int i = 0; i < children.length; i++)
-        {   compSize = children[i].getPreferredSize();
-            children[i].setSize(compSize.width, compSize.height);
-            children[i].setLocation(width, yInset + insets.top);
-            width += compSize.width + xGap;
-        }
-    }
-
-    /**
-     * @return the minimum layout size to display all components in the container
-     * to which the layout applies
-     */
-    public Dimension minimumLayoutSize(Container c)
-    {   Insets insets = c.getInsets();
-        int width = xInset + insets.left;
-        int height = 0 + insets.top + insets.bottom;
-
-        Component[] children = c.getComponents();
-        Dimension compSize = null;
-        for (int i = 0; i < children.length; i++)
-        {   compSize = children[i].getPreferredSize();
-            width += compSize.width + xGap;
-            height = Math.max(height, compSize.height + insets.top + insets.bottom + yInset*2);
-        }
-        width += insets.right;
-        return new Dimension( width, height);
-    }
-
-    /**
-     * @return the preferred layout size to display all components in the container
-     * to which the layout applies
-     */
-    public Dimension preferredLayoutSize(Container c)
-    {   return minimumLayoutSize(c);
     }
 }

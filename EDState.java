@@ -26,12 +26,9 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.30  2001-08-31 19:21:25  eb659
- * ok, this may be the last commit for the summer, unless I discover
- * some bad deficiency over the weekend.
- * Janak, maybe you should take a look at the GUI, and see if there are
- * any obvious errors or deficiencies, that you want changed before we finalize
- * this "summer session"
+ * Revision 1.31  2001-09-05 18:57:39  eb659
+ *
+ * just a couple of bug fixes
  *
  * Revision 1.29  2001/08/27 17:47:42  eb659
  * more work done on the XML generator
@@ -894,7 +891,7 @@ public class EDState implements EDNotifiable {
 	for(Enumeration keys = constraints.keys(); keys.hasMoreElements();) {
 	    String attName = (String)keys.nextElement();
 	    AttributeConstraint ac = (AttributeConstraint)constraints.get(attName);
-	    s = s + "\t<attribute name =\"" + attName + "\" value=\"" + ac.value +
+	    s = s + "\t<attribute name =\"" + attName + "\" value=\"" + ac.value.stringValue() +
 		"\" op=\"" + Op.operators[ac.op] + "\" type=\"" + EDConst.TYPE_NAMES[ac.value.getType()] + "\"/>\n";
 	}
 	s += "</state>\n";
