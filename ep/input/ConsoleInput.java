@@ -101,9 +101,9 @@ public class ConsoleInput extends EPInput {
         "- INJECTSTRING: injects a \"quoted string\" into EP for testing\n" +
         "- INJECTXML: injects \"quoted XML\" into EP for testing\n" +
         "- INJECTSIENA: injects a Siena notification; use\n" +
-        "  {\"a1\"=(valuetype)\"data\", ...} as the parameter; supported\n" +
-        "  valuetypes include String, boolean, double, or long.  If\n" +
-        "  valuetype is not specified, String is assumed\n" +
+        "  {\"a1\"=(valuetype)\"data\", ...} as the parameter; supported valuetypes\n" +
+        "  include String, boolean, double, or long.  If valuetype is not specified,\n" +
+        "  String is assumed\n" +
         "- SHUTDOWN: shuts down the Event Packager cleanly\n" +
         "-------------------");
       }
@@ -147,22 +147,36 @@ public class ConsoleInput extends EPInput {
       // InjectSiena
       else if(isCommand(command, "injectsiena")) {
         StringTokenizer tok = new StringTokenizer(command, "\"");
+        // Now build the notification
         Notification n = new Notification();
         String attribute = null, rawValueType = null, valueType = null,
         data = null;
         while(tok.hasMoreTokens()) {
           try {
+            // Strip out the initial command declaration, or the comma, or
+            // the closing curly
+            tok.nextToken();
+            if(!tok.hasMoreTokens()) break; // End of statement
+            // We have another Siena AttributeValue, parse
             attribute = tok.nextToken();
             rawValueType = tok.nextToken();
             // Parse rawValueType.  Handle situations where there are NO
             // tokens left for the rawValueType, i.e., there's no valueType.
             StringTokenizer tok2 = new StringTokenizer(rawValueType, "()");
-            if(tok2.hasMoreTokens()) tok2.nextToken(); // Skip =
-            valueType = (tok2.hasMoreTokens()) ? tok2.nextToken() : null;
-            // Parse data
+            // Yes, I know this is an evil test, just trying to compact
+            // the code slightly.  The inline nextToken strips out the equals
+            // sign.
+            if(tok2.hasMoreTokens() && tok2.nextToken() != null &&
+            tok2.hasMoreTokens()) {
+              valueType = tok2.nextToken();
+            } else { // No valueType at all
+              valueType = null;
+            }
+            // Finally, slurp the data
             data = tok.nextToken();
           } catch(Exception e) {
-            out.println("Parse error in InjectSiena: " + e);
+            out.println("Parse error in InjectSiena");
+            e.printStackTrace();
             break;
           }
           
@@ -180,9 +194,10 @@ public class ConsoleInput extends EPInput {
             break;
           }
           
-          // Now publish the notification
-          ep.injectEvent(new SienaEvent(getName(), n));
         }
+        // Now publish the notification, if there's anything
+        if(n.size() > 0)
+          ep.injectEvent(new SienaEvent(getName(), n));
       }
       
       // Invalid

@@ -8,7 +8,7 @@
     <EventFormat Name="psl.xues.ep.event.DOMEvent"></EventFormat>
   </EventFormats>
   <Inputters>
-    <Inputter Name="SocketInput1" Type="psl.xues.ep.input.SocketInput" Port="9001" SocketType="TCP" DataType="XMLObject" />
+    <Inputter Name="SocketInput1" Type="psl.xues.ep.input.SocketInput" Port="9001" SocketType="tcpconn" DataType="XMLObject" />
     <Inputter Name="SienaInput1" Type="psl.xues.ep.input.SienaInput" SienaReceivePort="7890">
       <SienaFilter Name="AllFilter" />
     </Inputter>
