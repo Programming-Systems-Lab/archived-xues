@@ -9,6 +9,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import psl.xues.ep.event.*;
+import psl.xues.ep.util.EPConst;
 
 import siena.Notification;
 
@@ -18,9 +19,10 @@ import siena.Notification;
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
- * <!-- 
+ * <!--
  * TODO:
- * - Handle every other kind of event other than DOMEvent better:)
+ * - Handle every other kind of event other than DOMEvent better
+ * - Handle DOMEvent better :)
  * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
@@ -30,7 +32,7 @@ public class ConsoleOutput extends EPOutput {
   /**
    * CTOR.
    */
-  public ConsoleOutput(EPOutputInterface ep, Element el) 
+  public ConsoleOutput(EPOutputInterface ep, Element el)
   throws InstantiationException {
     super(ep,el);
   }
@@ -65,8 +67,8 @@ public class ConsoleOutput extends EPOutput {
     } else { // Just try to print it out
       debug.info("Event (" + epe.getFormat() + ") received");
       debug.info("Event contents:\n---" + epe + "---");
-    }      
-      
+    }
+    
     return true;  // Wasn't that hard?
   }
   
@@ -103,7 +105,7 @@ public class ConsoleOutput extends EPOutput {
       }
     }
   }
-
+  
   /**
    * Print Siena notification
    */

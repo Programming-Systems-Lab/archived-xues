@@ -26,4 +26,8 @@ public interface EPConst {
   public static final short STRING_OBJECT = 2;
   /** Specifies a XML object-based data type */
   public static final short XML_OBJECT = 3;
+  /** For console output only (currently) */
+  public static final short SIENA_OBJECT = 4;
+  /** For console output only (currently) */
+  public static final short DOM_OBJECT = 5;
 }
