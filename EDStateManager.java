@@ -40,7 +40,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.27  2001-06-30 21:13:17  eb659
+ * Revision 1.28  2001-07-03 00:29:42  eb659
+ * identified and fixed race condition. Others remain
+ *
+ * Revision 1.27  2001/06/30 21:13:17  eb659
  * *** empty log message ***
  *
  * Revision 1.26  2001/06/29 21:38:43  eb659
@@ -406,7 +409,11 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 			    stateMachines.remove(j); 
 			    j--;
 			}
-		    } 
+			else {
+			    errorManager.println("EDStateManager: Did not reap " + reapand.myID,
+						 EDErrorManager.REAPER);
+			}
+		    }
 		}
 	    }
 	}

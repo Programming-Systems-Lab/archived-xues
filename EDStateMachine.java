@@ -19,7 +19,10 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.20  2001-06-30 21:13:17  eb659
+ * Revision 1.21  2001-07-03 00:29:42  eb659
+ * identified and fixed race condition. Others remain
+ *
+ * Revision 1.20  2001/06/30 21:13:17  eb659
  * *** empty log message ***
  *
  * Revision 1.19  2001/06/29 00:03:18  eb659
@@ -248,6 +251,10 @@ public class EDStateMachine implements Comparable {
 
     /** error manager for output. */
     EDErrorManager errorManager;
+
+    /** Whether this state machine is currently being reaped. */
+    boolean reaping = false;
+
     /**
      * Constructs a new stateMachine based on a stateMachineSpecification.
      * @param specification the specification on which this machine is constructed
@@ -297,12 +304,15 @@ public class EDStateMachine implements Comparable {
      * @return whether this machine is 'dead' and can be removed 
      */
     synchronized boolean reap() {
+	reaping = true;
+	errorManager.println("EDStateMachine: " + myID + " attempting to reap itself", EDErrorManager.REAPER);
+
 	/* if machine has not started yet, no need to check it 
 	 * may reconsider this, once we will have rules that are made on the fly,
 	 * with limited validity */
 	if(!hasStarted) return false;
 
-	errorManager.println("EDStateMachine: " + myID + " attempting to reap itself", EDErrorManager.REAPER);
+	errorManager.println("EDStateMachine: " + myID + " has started, enumeration beginning", EDErrorManager.REAPER);
 
 	/* go through individual states,
 	 * which will kill themselves if they timed out */
@@ -314,7 +324,9 @@ public class EDStateMachine implements Comparable {
 	    if (e.reap()) failedStateNames.add(e.getName());
 	}
 
-	if(containsLiveStates()) return false;
+	errorManager.println("EDStateMachine: " + myID + " enumeration done, live state check", EDErrorManager.REAPER);
+
+	if(containsLiveStates()) return endReap(false);
 
 	/* if all states are dead by now: */
 	errorManager.println("EDStateMachine: " + myID + " about to get reaped", EDErrorManager.REAPER);
@@ -328,8 +340,24 @@ public class EDStateMachine implements Comparable {
 	    specification.instantiate();
 
 	/* 3) throw the state machine away */
-	return true; 
+	return endReap(true); 
     }
+
+    /**
+     * Just wakes up sleeping states, and returns.
+     */
+    private boolean endReap(boolean b) {
+	if (!b) {
+	    Enumeration elements = states.elements();
+	    while(elements.hasMoreElements()) {
+		Object e = elements.nextElement();
+		synchronized (e) { e.notifyAll(); }
+	    }
+	}
+	reaping = false;
+	return b;
+    }
+	
 
     /** @return whether there are live states in this machine */
     private boolean containsLiveStates(){

@@ -25,7 +25,10 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.23  2001-06-30 21:13:17  eb659
+ * Revision 1.24  2001-07-03 00:29:42  eb659
+ * identified and fixed race condition. Others remain
+ *
+ * Revision 1.23  2001/06/30 21:13:17  eb659
  * *** empty log message ***
  *
  * Revision 1.22  2001/06/29 21:38:43  eb659
@@ -397,17 +400,21 @@ public class EDState implements EDNotifiable {
     
 	    //subscribe -- our filter, we handle notifs, our machine determines priority
 	    bus.subscribe(buildSienaFilter(), this, sm);
-
 	    errorManager.println("EDState: subscribing state: " + myID, EDErrorManager.STATE);
 	}
 
 	// live!
+	//errorManager.println("EDState: " + myID + " about to move parent to end", EDErrorManager.STATE);
+
 	synchronized (parents) { 
 	    /* removing the parent, if already here, has the 
 	     * effect of putting the most recent parent at the 
 	     * end of the vector, which we want to */
 	    parents.remove(parent);
 	    parents.add(parent); }
+
+	//errorManager.println("EDState: " + myID + " added parent ", EDErrorManager.STATE);
+
 	this.alive = true;
 
 	/* make sure there is a hashtable defined at any time,
@@ -420,6 +427,7 @@ public class EDState implements EDNotifiable {
 		wildHash = new Hashtable();
 	    else wildHash = parent.getWildHash(); 
 	}
+	errorManager.println("EDState: " + myID + " born successfully ", EDErrorManager.STATE);
     }
 
     /** Kills this state: unsubscribe and set alive to false. */
@@ -428,11 +436,63 @@ public class EDState implements EDNotifiable {
 	bus.unsubscribe(this); 
     }
 
+    /** Handles siena callbacks */
+    synchronized public boolean notify(Notification n) {
+	errorManager.println("EDState " + myID + ": Received: " + n, 
+			     EDErrorManager.STATE);
+
+	// hang on while the machine is being reaped
+	if (sm.reaping) {
+	    try{ wait(); }
+	    catch(InterruptedException ex) { ; }
+	}
+
+	long millis = n.getAttribute("timestamp").longValue();
+	EDState parent;
+	synchronized (parents) {
+	    for (int i = 0; i < parents.size(); i++) {
+		parent = (EDState)parents.get(i);
+
+		/* inherit the wildHash from the candidate parent,
+		 * so we can compare wildcard values while validating.
+		 * (note that when we are born we already have a default wildHash) */
+		if (parent != null) wildHash = parent.getWildHash();
+		
+		// does the notification match us? 
+		if(validate(n, parent)) {
+		    errorManager.println("EDState " + myID + " MATCHED at time: " + millis,
+					 EDErrorManager.STATE);
+		    
+		    // yes!
+		    ts = millis; // timestamp
+		    /* lock the state machine, so that the reaper doesn't mess with it 
+		     * while there is a transition between states */
+
+		    synchronized(sm) { succeed(); }
+		    errorManager.println("EDState:" + myID + ": succeeded", 
+					 EDErrorManager.STATE);
+
+		    if (absorb) {
+			errorManager.println("EDState:" + myID + ": ABSORBING event", 
+					     EDErrorManager.STATE);
+			return true;
+		    }
+		    return false;
+		}
+	    }
+	}
+	errorManager.println("EDState:" + myID + ": REJECTED Notification", 
+			     EDErrorManager.STATE);
+	return false; // no match, no absorb
+    }
+
     /** 
      * Called when the state is matched. The state 
      * now lives the climax of its brief existence.
      */
     private void succeed() {
+	errorManager.println("EDState: " + myID + ": starting succeed()",EDErrorManager.STATE);
+
 	// 2. the machine has started
 	sm.setStarted(); 
 	// 3. this state may be breaking the loop of its parent
@@ -444,7 +504,10 @@ public class EDState implements EDNotifiable {
 	}
 	if (count > 1) { // counter feature
 	    if (!hasStarted) {
-		parents.add(this);
+		synchronized(parents) {
+		    parents.removeAllElements();
+		    parents.add(this);
+		}
 		hasStarted = true;
 	    }
 	    count --;
@@ -454,6 +517,7 @@ public class EDState implements EDNotifiable {
 		 EDErrorManager.STATE);
 	}
 	else if (count < 0) { // loop feature
+	    errorManager.println("EDState: " + myID + ": LOOP state bearing children", EDErrorManager.STATE);
 	    /* bear children, and myself */
 	    bear(this);
 	    for (int i = 0; i < children.length; i++) 
@@ -476,6 +540,9 @@ public class EDState implements EDNotifiable {
 	    kill();
 	}
 
+
+	errorManager.println("EDState: " + myID + ": finishing succeed()", EDErrorManager.STATE);
+
 	// reap will instantiate new machine, if necessary
 	//if (sm.getSpecification().getInstantiationPolicy() == EDConst.ONE_AT_A_TIME) sm.reap();
 	// out for now, but uncomment when found why reaper sometimes hangs...
@@ -497,48 +564,6 @@ public class EDState implements EDNotifiable {
 	    sm.sendAction(fail_actions[i], wildHash);
     }
 
-    /** Handles siena callbacks */
-    synchronized public boolean notify(Notification n) {
-	long millis = n.getAttribute("timestamp").longValue();
-	boolean succeeded = false;
-
-	errorManager.println("EDState " + myID + ": Received: " + n, 
-			     EDErrorManager.STATE);
-	EDState parent;
-	synchronized (parents) {
-	    for (int i = 0; i < parents.size(); i++) {
-		parent = (EDState)parents.get(i);
-
-		/* inherit the wildHash from the candidate parent,
-		 * so we can compare wildcard values while validating.
-		 * (note that when we are born we already have a default wildHash) */
-		if (parent != null) wildHash = parent.getWildHash();
-		
-		// does the notification match us? 
-		if(validate(n, parent)) {
-		    errorManager.println("EDState " + myID + " MATCHED at time: " + millis, 
-					 EDErrorManager.STATE);
-		    
-		    // yes!
-		    ts = millis; // timestamp
-		    /* lock the state machine, so that the reaper doesn't mess with it 
-		     * while there is a transition between states */
-		    synchronized(sm) { succeed(); }
-
-		    if (absorb) {
-			errorManager.println("EDState:" + myID + ": ABSORBING event", 
-					     EDErrorManager.STATE);
-			return true;
-		    }
-		    return false;
-		}
-	    }
-	}
-	errorManager.println("EDState:" + myID + ": REJECTED Notification", 
-			     EDErrorManager.STATE);
-	return false; // no match, no absorb
-    }
-
     /**
      * Checks to see if this state has timed out, relative to its
      * parent(s). If so, the state cannot be matched anymore,
@@ -546,9 +571,9 @@ public class EDState implements EDNotifiable {
      * @return whether this state has timed out and is now dead
      */
     synchronized boolean reap() {
+	errorManager.println("checking state for life: " + myID, EDErrorManager.REAPER);
 	if (!alive) return false;
 
-	errorManager.println("checking live state: " + myID, EDErrorManager.REAPER);
 	long currentTime =  sm.getSpecification().getManager().getEventDistiller().getTime();
 
 	/* we're at the end of time, we must fail...
@@ -557,12 +582,17 @@ public class EDState implements EDNotifiable {
 	    kill();
 	    return true;
 	}
+
+	errorManager.println("checking live state: " + myID, EDErrorManager.REAPER);
+
 	/* can we still be matched? check the last (most recent) parent.
 	 * NOTE: this assumes that events are processed sequentially,
 	 * else we would need to check all the parents */
 	if(validateTimebound 
-	   ((EDState)parents.lastElement(), currentTime - EDConst.REAP_FUDGE)) 
+	   ((EDState)parents.lastElement(), currentTime - EDConst.REAP_FUDGE)) {
+	    errorManager.println("state: " + myID + "has not timed out yet, no reap", EDErrorManager.REAPER);
    	    return false;
+	}
 
 	// if we're still here, timebound has failed
 	errorManager.println("currentTime is " + currentTime + "\nmost recent parent time is " +

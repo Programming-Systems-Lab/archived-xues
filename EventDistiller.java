@@ -19,7 +19,10 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.33  2001-06-29 00:03:18  eb659
+ * Revision 1.34  2001-07-03 00:29:43  eb659
+ * identified and fixed race condition. Others remain
+ *
+ * Revision 1.33  2001/06/29 00:03:18  eb659
  * timestamp validation for loop doesn't work correctly, darn
  * reaper thread sometimes dies when a new machine is instantiated
  * (this only happens when dealing with an instantiation
@@ -248,7 +251,7 @@ public class EventDistiller implements Runnable, Notifiable {
     EDStateManager manager;
     
     /** Internal event dispatcher. */
-    //private Siena privateSiena = null;
+    private Siena privateSiena = null;
     private EDBus bus;
     
     /** Public (KX) siena to communicate with the outside world */

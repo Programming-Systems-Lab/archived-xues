@@ -104,7 +104,7 @@ class EDErrorGUI extends JFrame implements EDErrorManager {
 
 	setTitle("Event Distiller output");
 	setIconImage(null);
-	setSize(500, 500);
+	setSize(500, 900);
 	textPane.setEditable(false);
 	scrollPane = new JScrollPane(textPane);
 	getContentPane().add(scrollPane, BorderLayout.CENTER);
