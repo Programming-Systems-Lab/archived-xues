@@ -99,7 +99,7 @@ public class EDBus {
      */
     private long waitTime;
 
-    private boolean DEBUG = false;
+    private boolean DEBUG = true;
 
     /**
      *
@@ -129,6 +129,22 @@ public class EDBus {
 	    }.start();
     }
 
+    private void dumpSubscribers(){
+	System.out.println("EDBus:******Start dumping subscribers*****");
+	for(int i = 0;i<subscribers.size();i++){
+	    EDNotifiable n = ((Subscriber)subscribers.elementAt(i)).n;
+	    if(n instanceof EDStateManager){
+		System.out.println("Manager");
+	    }else if(n instanceof EDState){
+		System.out.println("EDState: "+((EDState)n).myID);
+	    }else{
+		System.out.println(n);
+	    }
+	}
+	System.out.println("***End dumping subscribers.\n");
+
+    }
+
 
     /**
      * Subscribes to this bus.
@@ -143,11 +159,17 @@ public class EDBus {
      */
     public void subscribe(Filter f, EDNotifiable n, Comparable c){
 	Subscriber s = new Subscriber(f,n,c);
-	subsHash.put(n,s);
-	subscribers.add(s);
-	Collections.sort(subscribers);
+	synchronized(subscribers){
+	    subsHash.put(n,s);
+	    subscribers.add(s);
+	    if(DEBUG){
+		dumpSubscribers();
+		System.out.println("EDBus Sort Subscribers.");
+	    }
+	    Collections.sort(subscribers);
+	    //if(DEBUG) dumpSubscribers();
+	}
     }
-
 
     /**
      *  Unsubscribe from this bus.
@@ -164,9 +186,12 @@ public class EDBus {
      *           and is successfully removed
      */
     public boolean unsubscribe(EDNotifiable n){
-	Subscriber s = (Subscriber)subsHash.get(n);
-	subsHash.remove(n);
-	return subscribers.remove(s);
+	synchronized(subscribers){
+	    Subscriber s = (Subscriber)subsHash.get(n);
+	    
+	    subsHash.remove(n);
+	    return subscribers.remove(s);
+	}
     }
 
 
@@ -182,6 +207,7 @@ public class EDBus {
 	    System.err.println("Cannot publish when EDBus has been shutdown.");
 	}
     }
+
 
     /**
      *  Shuts down the bus.
@@ -238,7 +264,6 @@ public class EDBus {
 		    // Will implement more efficient threading interaction
 		    // when I feel like it.
 
-		    if(DEBUG)System.out.println("Dispatcher sleeping");
 		    Thread.currentThread().sleep(100);
 		}
 	    }catch(InterruptedException exception){
