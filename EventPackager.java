@@ -26,7 +26,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.19  2001-06-03 01:11:13  jjp32
+ * Revision 1.20  2001-06-03 01:12:41  jjp32
+ *
+ * Again, forgot to compile first.  now fixed.
+ *
+ * Revision 1.19  2001/06/03 01:11:13  jjp32
  *
  * Updates, tweaks, hacks for demo.  Also now makes sanity check on command line params
  *
@@ -229,10 +233,10 @@ public class EventPackager implements Notifiable {
 	  DEBUG = true;
 	else
 	  usage();
-      } else {
-	usage();
       }
-    }	   
+    } else {
+      usage();
+    }
 
     EventPackager ep = new EventPackager(7777, "EventPackager.spl");
     ep.run();
