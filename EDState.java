@@ -25,7 +25,14 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.16  2001-06-20 20:07:21  eb659
+ * Revision 1.17  2001-06-25 20:30:31  eb659
+ * We have a working ED again!
+ * Tested/fixed:
+ * instantiation modes for SMs: 0,1,2
+ * event absorption
+ * fixed error in XML output
+ *
+ * Revision 1.16  2001/06/20 20:07:21  eb659
  * time-based and event-based timekeeping
  *
  * Revision 1.15  2001/06/20 18:54:44  eb659
@@ -313,21 +320,6 @@ public class EDState implements EDNotifiable {
 	fail_actions = listToArray(failActionsList);
     }
 
-    /** are we sing this anywere?
-     * Clone CTOR.
-     *
-    public EDState(EDState e) {
-	/* Ouch, but I have to do this 
-	this.attributes = (Hashtable)e.attributes.clone();
-	this.tb = e.tb;
-	this.ts = e.ts;
-	this.name = e.name;
-
-	this.children = e.children;
-	this.actions = e.actions;
-	this.fail_actions = e.fail_actions;
-    }*/
-
     /**
      * Clone-and-assign-state-machine CTOR. This constructor 
      * is used when a stateMachine is instantiated.
@@ -341,6 +333,8 @@ public class EDState implements EDNotifiable {
 	this.ts = e.ts;
 	this.name = e.name;
 	this.count = e.count;
+	this.absorb = e.absorb;
+
 	this.sm = sm;
 	this.myID = sm.myID + ":" + name;
 	this.bus = bus;
@@ -443,19 +437,27 @@ public class EDState implements EDNotifiable {
 		sm.sendAction(actions[i], wildHash); 
 	    }
 	    // 6. commit suicide
-	    kill(); 
+	    kill();
 	}
+
 	// 7. end of transition
 	sm.setInTransition(false);
+
+	// 8. instantiate new machine, if necessary
+	if (sm.getSpecification().getInstantiationPolicy() == EDConst.ONE_AT_A_TIME && sm.reap())
+	    sm.getSpecification().instantiate();
     }
 
     /** 
      * Sends out the failure notifications for this state.
      *
      * NOTE: at the moment we are using the wildhash
-     * of the first parent that matched us. We may need to change
+     * of the first parent that matched us, to fill in the 
+     * wildcards of failure notifications. 
+     * We may need to change
      * this, since different parents may have different 
-     * wildcard values defined.
+     * wildcard values defined. If you fail, how do you know what 
+     * wildcards are the correct ones?
      */
     public void fail() {
 	for (int i = 0; i < fail_actions.length; i++)
@@ -490,7 +492,11 @@ public class EDState implements EDNotifiable {
 		    succeed();
 		    succeeded = true;
 
-		    if (absorb) return true; 
+		    if (absorb) {
+			if (EventDistiller.DEBUG) 
+			    System.out.println("EDState:" + myID + ": absorbing event");
+			return true;
+		    }
 		    else return false;
 		}
 	    }
@@ -499,14 +505,6 @@ public class EDState implements EDNotifiable {
 	    System.err.println("EDState:" + myID + ": rejected Notification");
 	return false; // no match, no absorb
     }
-
-  /** do we need this?
-   * Add an attribute/value pair (strings).  This is accomplished by
-   * wrapping an AttributeValue val.
-   *
-  public void add(String attr, String val) {
-    add(attr, new AttributeValue(val));
-    }*/
 
     /**
      * Checks to see if this state has timed out, relative to its
@@ -665,20 +663,20 @@ public class EDState implements EDNotifiable {
     return attrEqual(internalVal,externalVal);
   }
 
-  /**
-   * Compare timebound to a (previous) state.  IMPORTANT: to use this,
-   * you must validate *every* state.  This is necessary because the
-   * timestamp is stored in the state, to allow for future state 
-   * comparisons.  Otherwise, if this comparison is made against an
-   * unvalidated state, we will immediately return false (EXCEPTING
-   * non-time-bound states - if it's not time bound, this ALWAYS
-   * returns true).
-   *
-   * @param prev The previous state
-   * @param t The current event's timestamp (UNIX time format)
-   * @return a boolean indicating if this state can occurred  
-   *         'in time' from the previous state.
-   */
+    /**
+     * Compare timebound to a (previous) state.  IMPORTANT: to use this,
+     * you must validate *every* state.  This is necessary because the
+     * timestamp is stored in the state, to allow for future state 
+     * comparisons.  Otherwise, if this comparison is made against an
+     * unvalidated state, we will immediately return false (EXCEPTING
+     * non-time-bound states - if it's not time bound, this ALWAYS
+     * returns true).
+     *
+     * @param prev The previous state
+     * @param t The current event's timestamp (UNIX time format)
+     * @return a boolean indicating if this state can occurred  
+     *         'in time' from the previous state.
+     */
     public boolean validateTimebound(EDState prev, long t) { 
 	// No time bounds, always good
 	if(tb == -1) return true;
@@ -687,7 +685,7 @@ public class EDState implements EDNotifiable {
 	 * against the time when the rule was created */
 	if (prev == null) return (t - sm.timestamp <= this.tb);
 	
-	// Prev state never validated
+	// Prev state never validated -- should not happen
 	if (prev.ts == -1)  return false;
     
 	// normal case, compare against the timestamp of the parent
@@ -724,7 +722,7 @@ public class EDState implements EDNotifiable {
 	    String attr = (String)keys.nextElement();
 	    AttributeValue val = (AttributeValue)objs.nextElement();
 	    s = s + "\t<attribute attribute =\"" + attr + 
-		"\" value=\"" + val + "\"/>\n";
+		"\" value=\"" + val.stringValue() + "\"/>\n";
 	}
 	s += "</state>\n";
 	return s;
@@ -821,20 +819,20 @@ public class EDState implements EDNotifiable {
      * modify the table, we need to clone it.
      * @return the name of this EDState 
      */
-    public Hashtable getWildHash() { 
+    Hashtable getWildHash() { 
 	if (children.length > 1 && count == 1)
 	    return (Hashtable)wildHash.clone();
 	return wildHash; 
     }
 	
     /** @return the name of this EDState */
-    public String getName(){ return name; }
+    String getName(){ return name; }
 	
     /** @return the name of this EDState */
-    public long getTimebound(){ return tb; }
+    long getTimebound(){ return tb; }
 
     /** @return whether this EDState is currently subscribed */
-    public boolean isAlive(){ return alive; }
+    boolean isAlive(){ return alive; }
 	
     /** @return the (names of the) children of this EDState */
     String[] getChildren() { return children; }

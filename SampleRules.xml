@@ -11,12 +11,13 @@
 <rulebase xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd">
 
 <!-- The spamblocker rule.  If we receive two "spam" notifications from the
-     same person, send out appropriate notifications.  NOTE: Since
-     the two states are the same, the second event received will match the
-     BOTH the first and the second, and a new state machine will be
-     generated.  Since said machine has a failure notification, 
-     a failure notification will always be generated.  -->
-<rule name="spamblocker" instantiation="1">
+     same person, send out appropriate notifications. 
+
+     Note that this rule has instantiation'1', so that a new instance is 
+     created only when the previous instance has succeeded or timed out. 
+     note also that the second event is absorbed, if matched -->
+
+<rule name="spamblocker" instantiation="2">
    <states>
       <state name="a" timebound="-1" children="b">
         <attribute name="from" value="*1"/>
@@ -45,7 +46,9 @@
 
 
 <!-- The loop rule. Illustrates how you can specify that one event
-     happens any number of times, until some 'end' event happens  -->
+     happens any number of times (by setting count="-1"), 
+     until some 'end' event happens  -->
+
 <rule name="loop" instantiation="1">
    <states>
       <state name="start" timebound="-1" children="loop">
@@ -68,36 +71,41 @@
    </actions>
 </rule>
 
-<!-- The hexagon rule. The graph for this rule is like:
+<!-- The hexagon rule. Illustrates how OR conditions are implemented. 
+     The graph for this rule is like:
                     c - d
                    /     \
-              a - b       g - h
+              a - b       g - h --> A
                    \     /
-                    e - f                           -->
+                    e - f                           
+     The action associated with state 'h' will be sent if any sequence of events
+     that contains as a subset the sequence 'abcdgh' or 'abefgh' is received,
+     within the appropriate timebounds.    -->
+
 <rule name="hexagon" position="0" instantiation="2">
    <states>
-      <state name="a" timebound="-1" children="b" actions="" fail_actions="">
+      <state name="a" timebound="-1" children="b" actions="" fail_actions="F">
         <attribute name="event" value="a"/>
       </state>
-      <state name="b" timebound="10" children="c,e" actions="" fail_actions="">
+      <state name="b" timebound="10" children="c,e" actions="" fail_actions="F">
 	<attribute name="event" value="b"/>
       </state>
-      <state name="c" timebound="10" children="d" actions="" fail_actions="">
+      <state name="c" timebound="10" children="d" actions="" fail_actions="F">
         <attribute name="event" value="c"/>
       </state>
-      <state name="d" timebound="10" children="g" actions="" fail_actions="">
+      <state name="d" timebound="10" children="g" actions="" fail_actions="F">
         <attribute name="event" value="d"/>
       </state>
-      <state name="e" timebound="10" children="f" actions="" fail_actions="">
+      <state name="e" timebound="10" children="f" actions="" fail_actions="F">
         <attribute name="event" value="e"/>
       </state>
-      <state name="f" timebound="10" children="g" actions="" fail_actions="">
+      <state name="f" timebound="10" children="g" actions="" fail_actions="F">
         <attribute name="event" value="f"/>
       </state>
-      <state name="g" timebound="10" children="h" actions="" fail_actions="">
+      <state name="g" timebound="10" children="h" actions="" fail_actions="F">
         <attribute name="event" value="g"/>
       </state>
-      <state name="h" timebound="10" children="" actions="A" fail_actions="">
+      <state name="h" timebound="10" children="" actions="A" fail_actions="F">
         <attribute name="event" value="h"/>
       </state>
    </states>
@@ -105,7 +113,9 @@
       <notification name="A">
          <attribute name="hex" value="true"/>
       </notification>
-<!-- more actions? -->
+      <notification name="F">
+         <attribute name="hex_failure" value="true"/>
+      </notification>
    </actions>
 </rule>
 </rulebase>

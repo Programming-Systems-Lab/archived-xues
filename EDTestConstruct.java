@@ -29,8 +29,8 @@ public class EDTestConstruct implements Notifiable {
 
 	// send it a couple of events
 	sendEvent();
-	try { Thread.currentThread().sleep(600); }
-	catch (Exception ex) { ; }
+	//try { Thread.currentThread().sleep(600); }
+	//catch (Exception ex) { ; }
 	sendEvent();
 
 	/*
@@ -49,9 +49,11 @@ public class EDTestConstruct implements Notifiable {
 	ed.shutdown();
     }
 
+    /** Sends an event, using present time for timestamp. */
+    private void sendEvent() { sendEvent(System.currentTimeMillis()); }
 
-    /** Sends an event.  */
-    private void sendEvent() {
+    /** Sends an event, with a given timestamp. */
+    private void sendEvent(long l) {
 	// make event
 	Notification n1 = new Notification();
 	n1.putAttribute("Source", "EventDistiller");
@@ -59,14 +61,14 @@ public class EDTestConstruct implements Notifiable {
 	n1.putAttribute("Type", "EDInput");
 	n1.putAttribute("from", "Janak");
 	n1.putAttribute("spam", "true");
-	n1.putAttribute("timestamp", System.currentTimeMillis());
+	n1.putAttribute("timestamp", l);
 
 	// send it
 	ed.notify(n1);   
     }
 
 
-    /** Sends an event.  */
+    /** Sends a 'loop' event.  */
     private void sendLoopEvent() {
 	// make event
 	Notification n1 = new Notification();

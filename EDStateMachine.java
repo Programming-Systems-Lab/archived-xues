@@ -19,7 +19,14 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.14  2001-06-20 18:54:44  eb659
+ * Revision 1.15  2001-06-25 20:30:31  eb659
+ * We have a working ED again!
+ * Tested/fixed:
+ * instantiation modes for SMs: 0,1,2
+ * event absorption
+ * fixed error in XML output
+ *
+ * Revision 1.14  2001/06/20 18:54:44  eb659
  * handle self-comparison
  *
  * Revision 1.13  2001/06/18 20:58:36  eb659
@@ -269,98 +276,6 @@ public class EDStateMachine implements Comparable {
 	    state.bear(null);
 	}
   }
-    
-  /* do we need this?
-   * Add a state.  WARNING! This machine *WILL* adjust the state.  If you 
-   * need a deep copy, make one!
-   *
-  public void addState(EDState s) {
-    // Assign ourselves as the "owner" state machine
-    s.assignOwner(this);
-    states.addElement(s);
-    try {
-      Filter f = s.buildSienaFilter();
-      if(EventDistiller.DEBUG)
-	System.err.println("EDStateMachine/"+myID+"/"+": Subscribing " + f);
-      siena.subscribe(f,this);
-    } catch(SienaException e) { e.printStackTrace(); }
-  }*/
-
-  /*
-   * Add an action.  If the notification does not exist it will be
-   * created the first time.  Use setAction if you want to *replace*
-   * the notification with a new one.
-   *
-  public void addAction(String attr, String val) {
-    if(action == null) {
-      action = new Notification();
-    }
-    action.putAttribute(attr, val);
-    } */
-
-  /*
-   * (Re)set the action.
-   *
-  public void setAction(String attr, String val) {
-    action = null;
-    addAction(attr,val);
-    } */
-
-    /*
-      move this to the EDState...
-  public void notify(Notification n) {
-    long millis = System.currentTimeMillis();
-    if(EventDistiller.DEBUG) 
-      System.err.println("EDStateMachine/"+myID+"/"+
-			 ": Received notification " + millis + 
-			 " which is " + n);
-    // Check it against the current state - but to do this, we need
-    // the prev state
-    EDState prevState = (currentState == 0 ? null : 
-			 (EDState)states.elementAt(currentState-1));
-    if(((EDState)states.elementAt(currentState)).validate(n,prevState)) {
-      if(EventDistiller.DEBUG)
-	System.err.println("EDStateMachine/"+myID+"/"+
-			   ": Notification " + millis + " matched!");
-      // Yes!
-      currentState++;
-      // Did we pass the last state?
-      if(states.size() == currentState) {
-	// Yes - send action
-	finish();
-      }
-    } else {
-      if(EventDistiller.DEBUG)
-	System.err.println("EDStateMachine/"+myID+"/"+
-			   ": Notification " + millis + " rejected");
-    }
-  }
-
-  /** Unused Siena construct. 
-      public void notify(Notification[] s) { ; }*/
-
-  /** moved down to the state level 
-   * needs revision - or, do we need this at all?
-   * Finish up the state machine.  Yes, this could be inlined, but
-   * why?  Also, another alternative is to have EDManager do the
-   * unsubscription.  Since we subscribe in the first place it seems
-   * to make better sense to handle our own unsubscriptions (but this
-   * behavior may change someday...)
-   *
-  private void finish() {
-    if(EventDistiller.DEBUG)
-      System.err.println("EDStateMachine/" + myID + "/: finishing");
-    // Remove all notifications
-    try {
-      siena.unsubscribe(this);
-    } catch(SienaException e) { e.printStackTrace(); }
-
-    }
-
-    // Call our manager and tell them we're finished, and hand them
-    // the (modified) notifications to send
-    el.finish(this, actions);
-  } */
 
     /** 
      * Reap ourselves if necessary. 
@@ -386,16 +301,15 @@ public class EDStateMachine implements Comparable {
 
 	if(containsLiveStates()) return false;
 
-	/* if all states are dead by now: 
-	 * 1) send failure notifications for SOME state that failed */
-	if (failedStateNames.size() > 0) 
-	    ((EDState)states.get(failedStateNames.get(0).toString())).fail();
-	/* 2) instantiate new machine, if necessary */
-	if (specification.getInstantiationPolicy() == EDConst.ONE_AT_A_TIME)
-	    specification.instantiate();
-	/* 3) throw the state amchine away */
+	/* if all states are dead by now: */
 	if (EventDistiller.DEBUG) 
 	    System.out.println("EDStateMachine: " + myID + " about to get reaped");
+
+	/* 1) send failure notifications for SOME state that failed */
+	if (failedStateNames.size() > 0) 
+	    ((EDState)states.get(failedStateNames.get(0).toString())).fail();
+
+	/* 2) throw the state machine away */
 	return true; 
 
 
