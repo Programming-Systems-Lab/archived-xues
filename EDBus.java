@@ -168,6 +168,12 @@ public class EDBus {
 	}
     }
 
+    private void println(Object s){
+	if(em!=null){
+	    em.println("EDBus: "+s,EDErrorManager.DISPATCHER);
+	}
+    }
+
 
 
     /**
@@ -191,6 +197,7 @@ public class EDBus {
      * @param c <code>Comparable</code> for dispatch ordering
      */
     public void subscribe(Filter f, EDNotifiable n, Comparable c){
+	println("new subscrption");
 	Subscriber s = new Subscriber(f,n,c);
 	synchronized(subscribers){
 	    subsHash.put(n,s);
@@ -198,6 +205,7 @@ public class EDBus {
 	    Collections.sort(subscribers);
 	    dumpSubscribers();
 	}
+	println("finished subscription");
     }
 
     /**

@@ -25,7 +25,12 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.24  2001-07-03 00:29:42  eb659
+ * Revision 1.25  2001-07-03 21:36:23  eb659
+ * Improved problems in race conditions. The application now hangs in the subscribe()
+ * method in EDBus. Run EDTestConstruct: sometimes it works impeccably, other times
+ * it hangs in EDBus.subscribe. James, Janak, do you want to have a look at it?
+ *
+ * Revision 1.24  2001/07/03 00:29:42  eb659
  * identified and fixed race condition. Others remain
  *
  * Revision 1.23  2001/06/30 21:13:17  eb659
@@ -394,26 +399,28 @@ public class EDState implements EDNotifiable {
      * @param parent the parent node, against whom we validate our timestamp,
      *               or null, if this is an initial state
      */
-    public void bear(EDState parent) {
+    void bear(EDState parent) {
+	errorManager.println("EDState: " + myID + " being born", EDErrorManager.STATE);
 	if (!alive) {
 	    parents = new Vector();
+	    errorManager.println("EDState: " + myID + " being born for the first time", EDErrorManager.STATE);
     
 	    //subscribe -- our filter, we handle notifs, our machine determines priority
 	    bus.subscribe(buildSienaFilter(), this, sm);
-	    errorManager.println("EDState: subscribing state: " + myID, EDErrorManager.STATE);
+	    errorManager.println("EDState: " + myID + " subscribing state: ", EDErrorManager.STATE);
 	}
 
 	// live!
-	//errorManager.println("EDState: " + myID + " about to move parent to end", EDErrorManager.STATE);
+	errorManager.println("EDState: " + myID + " about to add parent to end", EDErrorManager.STATE);
 
-	synchronized (parents) { 
+	/*synchronized (parents)*/ { 
 	    /* removing the parent, if already here, has the 
 	     * effect of putting the most recent parent at the 
 	     * end of the vector, which we want to */
 	    parents.remove(parent);
 	    parents.add(parent); }
 
-	//errorManager.println("EDState: " + myID + " added parent ", EDErrorManager.STATE);
+	errorManager.println("EDState: " + myID + " added parent ", EDErrorManager.STATE);
 
 	this.alive = true;
 
@@ -432,24 +439,32 @@ public class EDState implements EDNotifiable {
 
     /** Kills this state: unsubscribe and set alive to false. */
     public void kill() {
+	errorManager.println("EDState: " + myID + " being KILLED", EDErrorManager.STATE);
 	this.alive = false;
 	bus.unsubscribe(this); 
     }
 
     /** Handles siena callbacks */
-    synchronized public boolean notify(Notification n) {
+    public boolean notify(Notification n) {
 	errorManager.println("EDState " + myID + ": Received: " + n, 
 			     EDErrorManager.STATE);
+	synchronized(sm) {
 
 	// hang on while the machine is being reaped
-	if (sm.reaping) {
-	    try{ wait(); }
-	    catch(InterruptedException ex) { ; }
-	}
+	    /*if (sm.reaping) {
+	      try{ 
+	      errorManager.println("EDState " + myID + ": waiting" + n, 
+	      EDErrorManager.STATE);
+	      wait(); }
+	      catch(InterruptedException ex) { ; }
+	    }*/
+
+	// tell the machine we're succeeding
+	sm.addSucceedingState();
 
 	long millis = n.getAttribute("timestamp").longValue();
 	EDState parent;
-	synchronized (parents) {
+	/*synchronized (parents)*/ {
 	    for (int i = 0; i < parents.size(); i++) {
 		parent = (EDState)parents.get(i);
 
@@ -468,22 +483,29 @@ public class EDState implements EDNotifiable {
 		    /* lock the state machine, so that the reaper doesn't mess with it 
 		     * while there is a transition between states */
 
-		    synchronized(sm) { succeed(); }
+		    /*synchronized(sm)*/ { succeed(); }
 		    errorManager.println("EDState:" + myID + ": succeeded", 
 					 EDErrorManager.STATE);
 
 		    if (absorb) {
 			errorManager.println("EDState:" + myID + ": ABSORBING event", 
 					     EDErrorManager.STATE);
-			return true;
+			return endNotify(true);
 		    }
-		    return false;
+		    return endNotify(false);
 		}
 	    }
 	}
 	errorManager.println("EDState:" + myID + ": REJECTED Notification", 
 			     EDErrorManager.STATE);
-	return false; // no match, no absorb
+	return endNotify(false); // no match, no absorb
+	}
+    }
+
+    /** Convenience mehtod to end notify. */
+    private boolean endNotify(boolean b) {
+	//sm.removeSucceedingState();
+	return b;
     }
 
     /** 
@@ -493,18 +515,18 @@ public class EDState implements EDNotifiable {
     private void succeed() {
 	errorManager.println("EDState: " + myID + ": starting succeed()",EDErrorManager.STATE);
 
-	// 2. the machine has started
+	// the machine has started
 	sm.setStarted(); 
-	// 3. this state may be breaking the loop of its parent
-	synchronized (parents) {
+	// this state may be breaking the loop of its parent
+	/*synchronized (parents)*/ {
 	    for (int i = 0; i < parents.size(); i++) {
 		EDState parent = (EDState)parents.get(i);
-		if (parent != null && parent.getCount() == -1) parent.kill();
+		if (parent != null && parent != this && parent.getCount() == -1) parent.kill();
 	    }
 	}
 	if (count > 1) { // counter feature
 	    if (!hasStarted) {
-		synchronized(parents) {
+		/*synchronized(parents)*/ {
 		    parents.removeAllElements();
 		    parents.add(this);
 		}
@@ -517,9 +539,10 @@ public class EDState implements EDNotifiable {
 		 EDErrorManager.STATE);
 	}
 	else if (count < 0) { // loop feature
-	    errorManager.println("EDState: " + myID + ": LOOP state bearing children", EDErrorManager.STATE);
+	    errorManager.println("EDState: " + myID + ": LOOP state bearing itself", EDErrorManager.STATE);
 	    /* bear children, and myself */
 	    bear(this);
+	    errorManager.println("EDState: " + myID + ": LOOP state bearing children", EDErrorManager.STATE);
 	    for (int i = 0; i < children.length; i++) 
 		sm.getState(children[i]).bear(this);
 	    // the kids will kill me, if they make it
@@ -570,7 +593,7 @@ public class EDState implements EDNotifiable {
      * and we can kill it.
      * @return whether this state has timed out and is now dead
      */
-    synchronized boolean reap() {
+    boolean reap() {
 	errorManager.println("checking state for life: " + myID, EDErrorManager.REAPER);
 	if (!alive) return false;
 
@@ -906,7 +929,7 @@ public class EDState implements EDNotifiable {
     long getTimebound(){ return tb; }
 
     /** @return whether this EDState is currently subscribed */
-    synchronized boolean isAlive(){ return alive; }
+    boolean isAlive(){ return alive; }
 	
     /** @return the (names of the) children of this EDState */
     String[] getChildren() { return children; }

@@ -19,7 +19,12 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.21  2001-07-03 00:29:42  eb659
+ * Revision 1.22  2001-07-03 21:36:23  eb659
+ * Improved problems in race conditions. The application now hangs in the subscribe()
+ * method in EDBus. Run EDTestConstruct: sometimes it works impeccably, other times
+ * it hangs in EDBus.subscribe. James, Janak, do you want to have a look at it?
+ *
+ * Revision 1.21  2001/07/03 00:29:42  eb659
  * identified and fixed race condition. Others remain
  *
  * Revision 1.20  2001/06/30 21:13:17  eb659
@@ -255,6 +260,12 @@ public class EDStateMachine implements Comparable {
     /** Whether this state machine is currently being reaped. */
     boolean reaping = false;
 
+    /** 
+     * How many states are succeeding at this point. 
+     * Only allow reaping if the number of states succeeding at this point is 0.
+     */
+    private int succeedingStates = 0;
+
     /**
      * Constructs a new stateMachine based on a stateMachineSpecification.
      * @param specification the specification on which this machine is constructed
@@ -304,6 +315,9 @@ public class EDStateMachine implements Comparable {
      * @return whether this machine is 'dead' and can be removed 
      */
     synchronized boolean reap() {
+	/*if (succeedingStates > 0) try { wait(); }
+	  catch(InterruptedException ex) { ; }
+	*/
 	reaping = true;
 	errorManager.println("EDStateMachine: " + myID + " attempting to reap itself", EDErrorManager.REAPER);
 
@@ -347,13 +361,13 @@ public class EDStateMachine implements Comparable {
      * Just wakes up sleeping states, and returns.
      */
     private boolean endReap(boolean b) {
-	if (!b) {
-	    Enumeration elements = states.elements();
-	    while(elements.hasMoreElements()) {
-		Object e = elements.nextElement();
-		synchronized (e) { e.notifyAll(); }
-	    }
-	}
+	/*if (!b) {
+	  Enumeration elements = states.elements();
+	  while(elements.hasMoreElements()) {
+	  Object e = elements.nextElement();
+	  synchronized (e) { e.notifyAll(); }
+	  }
+	    }*/
 	reaping = false;
 	return b;
     }
@@ -456,6 +470,15 @@ public class EDStateMachine implements Comparable {
 
     /** @return whether this machine has started receiving notifications */
     public boolean hasStarted(){ return this.hasStarted; }
+
+    /** Called by a state of tis machine, when it receives a notification. */
+    void addSucceedingState() { succeedingStates++; }
+
+    /** Called by a state of this machine, when it ends receiving a notification. */
+    synchronized void removeSucceedingState() {
+	succeedingStates--;
+	if (succeedingStates == 0) notify();
+    }
 
     // comparable interface
 

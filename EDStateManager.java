@@ -40,7 +40,12 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.28  2001-07-03 00:29:42  eb659
+ * Revision 1.29  2001-07-03 21:36:23  eb659
+ * Improved problems in race conditions. The application now hangs in the subscribe()
+ * method in EDBus. Run EDTestConstruct: sometimes it works impeccably, other times
+ * it hangs in EDBus.subscribe. James, Janak, do you want to have a look at it?
+ *
+ * Revision 1.28  2001/07/03 00:29:42  eb659
  * identified and fixed race condition. Others remain
  *
  * Revision 1.27  2001/06/30 21:13:17  eb659
@@ -391,7 +396,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	    ("reaper ceased due to shutdown", EDErrorManager.REAPER);
     }
 
-    void reap() { 
+    void reap() {
 	errorManager.print("%", EDErrorManager.REAPER);
 	
 	synchronized(stateMachineTemplates) {
