@@ -19,7 +19,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.15  2001-01-30 06:26:18  jjp32
+ * Revision 1.16  2001-01-30 07:33:10  jjp32
+ *
+ * I'm done for tonight
+ *
+ * Revision 1.15  2001/01/30 06:26:18  jjp32
  *
  * Lots and lots of updates.  EventDistiller is now of demo-quality.
  *
@@ -113,7 +117,7 @@ public class EventDistiller implements Notifiable {
    * Reap fudge factor.  IMPORTANT to take care of non-realtime event
    * buses (can anyone say Siena?)  XXX - should be a better way to do this.
    */
-  public static int reapFudgeMillis = 10000;
+  public static int reapFudgeMillis = 60000;
 
   /**
    * Main.  */
