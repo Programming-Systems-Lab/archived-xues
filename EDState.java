@@ -16,7 +16,11 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.5  2001-01-30 02:39:36  jjp32
+ * Revision 1.6  2001-01-30 06:26:18  jjp32
+ *
+ * Lots and lots of updates.  EventDistiller is now of demo-quality.
+ *
+ * Revision 1.5  2001/01/30 02:39:36  jjp32
  *
  * Added loopback functionality so hopefully internal siena gets the msgs
  * back
@@ -126,7 +130,7 @@ public class EDState {
     // Step 1. Perform timestamp validation.  If timestamp validation
     // fails, then we don't need to go further.
     AttributeValue timestamp = n.getAttribute("timestamp");
-    if(validateTimebound(prev,timestamp.longValue()) == false)
+    if(validateTimebound(prev,timestamp/*.longValue()*/) == false)
       return false;
 
     // Step 2. Now try and compare the attributes in the state's
@@ -169,16 +173,18 @@ public class EDState {
     // Debug
     if(EventDistiller.DEBUG) {
       System.err.println("EDState: comparing attribute \"" + attr +
-			 "\", internalVal = \"" + internalVal + "\", " +
-			 "externalVal = \"" + externalVal + "\"");
+			 "\", internalVal = " + internalVal + ", " +
+			 "externalVal = " + externalVal);
     }
 
     // Wildcard binding?
-    else if(internalVal.getType() == AttributeValue.STRING &&
+    if(internalVal.getType() == AttributeValue.STRING &&
 	    internalVal.stringValue().startsWith("*")) {
       // Is this one previously bound?
       String bindName = internalVal.stringValue().substring(1);
       if(bindName.length() == 0) { // Simple wildcard
+	if(EventDistiller.DEBUG)
+	  System.err.println("EDState: Simple wildcard, match");
 	return true;
       } else { // Binding
 	if(sm == null || sm.wildHash == null) { // BAD
@@ -188,25 +194,42 @@ public class EDState {
 	}
 	// Now check the bind
 	if(sm.wildHash.get(bindName) != null) {
-	  if(((AttributeValue)sm.wildHash.get(bindName)).
-	     isEqualTo(externalVal)) {
+	  if(attrEqual((AttributeValue)sm.wildHash.get(bindName),externalVal)){
 	    // YES!
+	    if(EventDistiller.DEBUG)
+	      System.err.println("EDState: wildcard already bound to \"" + 
+				 sm.wildHash.get(bindName) + "\" and match");
 	    return true;
 	  }
-	  else return false; // Complex wildcard doesn't match
+	  else {
+	    if(EventDistiller.DEBUG)
+	      System.err.println("EDState: wildcard already bound to \"" + 
+				 sm.wildHash.get(bindName) + "\" but nomatch");
+	    return false; // Complex wildcard doesn't match
+	  }
 	} else { // Binding requested, NOT YET BOUND, bind and return true
 	  sm.wildHash.put(bindName, externalVal);
+	  if(EventDistiller.DEBUG)
+	    System.err.println("EDState: wildcard BOUND to " + externalVal);
 	  return true;
 	}
       }
     }
 
     // No wildcard binding, SIMPLE match
-    else if(internalVal.isEqualTo(externalVal)) {
+    if(EventDistiller.DEBUG)
+      System.err.println("EDState: performing SIMPLE match on " + externalVal + "," + internalVal);
+    
+    if(attrEqual(internalVal,externalVal)) {
+      if(EventDistiller.DEBUG) {	
+	System.err.println("EDState: not wildcard, compare succeeded");
+      }
       return true;
     }
 
     // Not our event
+    if(EventDistiller.DEBUG)
+      System.err.println("EDState: not wildcard, compare failed");
     return false;
   }
 
@@ -240,7 +263,8 @@ public class EDState {
    * Convenience accessor method to validateTimebound.
    */
   public boolean validateTimebound(EDState s, AttributeValue t) {
-    if(t == null) { // No match, do WE have a timebound
+    if(t == null || t.getType() != AttributeValue.LONG) { 
+      // No match, do WE have a timebound
       if(tb == -1) { // OK, no timebound specified but we didn't expect one
 	return true;
       }
@@ -265,7 +289,7 @@ public class EDState {
     Filter f = new Filter();
     // We only want events from metaparser that have the state that
     // maches us
-    f.addConstraint("type", "EDInput");
+    f.addConstraint("Type", "EDInput");
     // Now enumerate through the actual attr, val pairs
     Enumeration keys = attributes.keys();
     Enumeration objs = attributes.elements();
@@ -282,4 +306,29 @@ public class EDState {
     }
     return f;
   }  
+
+  /**
+   * AttributeValue isEqualTo check that WORKS.
+   */
+  public static boolean attrEqual(AttributeValue e1, AttributeValue e2) {
+    if(e1.getType() != e2.getType()) return false;
+    
+    switch(e1.getType()) {
+    case AttributeValue.BOOL:
+      if(e1.booleanValue() == e2.booleanValue()) return true;
+      else return false;
+    case AttributeValue.DOUBLE:
+      if(e1.doubleValue() == e2.doubleValue()) return true;
+      else return false;
+    case AttributeValue.LONG:
+      if(e1.longValue() == e2.longValue()) return true;
+      else return false;
+    case AttributeValue.STRING:
+      if(e1.stringValue().equals(e2.stringValue())) return true;
+      else return false;
+    default:
+      System.err.println("EDState: Sorry, can't do attrEqual on this type!!");
+      return false;
+    }
+  }
 }

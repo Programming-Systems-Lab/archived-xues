@@ -19,7 +19,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.14  2001-01-30 02:39:36  jjp32
+ * Revision 1.15  2001-01-30 06:26:18  jjp32
+ *
+ * Lots and lots of updates.  EventDistiller is now of demo-quality.
+ *
+ * Revision 1.14  2001/01/30 02:39:36  jjp32
  *
  * Added loopback functionality so hopefully internal siena gets the msgs
  * back
@@ -178,15 +182,40 @@ public class EventDistiller implements Notifiable {
       ((HierarchicalDispatcher)privateSiena).
 	setReceiver(new TCPPacketReceiver(61979));
     } catch(Exception e) { e.printStackTrace(); }
+
+    // Private siena tester.  Just relays all events published to
+    // private siena on screen.
+    if(EventDistiller.DEBUG) {
+      System.err.println("EventDistiller: Creating private siena tester");
+      Filter f = new Filter();
+      //      f.addConstraint("",new AttributeConstraint(Op.ANY,""));
+      //      f.addConstraint("foo",Op.EQ,"bar");
+      f.addConstraint("loopback",
+		      new AttributeConstraint(Op.ANY,(AttributeValue)null));
+      System.err.println("EventDistiller: Private tester constraint is" 
+			 + " " + f);
+      try {
+	privateSiena.subscribe(f, new Notifiable() {
+	    public void notify(Notification n) {
+	      System.err.println("EventDistiller: Internal received " + n);
+	    }
+	    public void notify(Notification[] n) { ; }
+	  });
+      } catch(Exception e) { e.printStackTrace(); }
+    }			    
     
-    // Create private loopback siena
-    loopbackSiena = new HierarchicalDispatcher();
-    try {
+    /*
+      // Create private loopback siena
+      loopbackSiena = new HierarchicalDispatcher();
+      try {
       ((HierarchicalDispatcher)loopbackSiena).
-	setReceiver(new TCPPacketReceiver(61980));
+      setReceiver(new TCPPacketReceiver(61980));
+      ((HierarchicalDispatcher)loopbackSiena).
+      setMaster("senp://localhost:61979");
       // Now start a loopback class
       EDLoopback edlb = new EDLoopback(loopbackSiena);
-    } catch(Exception e) { e.printStackTrace(); }
+      } catch(Exception e) { e.printStackTrace(); }
+    */
 
     // Initialize state machine manager.  Hand it the private siena.
     EDStateManager edsm = new EDStateManager(privateSiena, this, 
@@ -200,6 +229,7 @@ public class EventDistiller implements Notifiable {
 	  try {
 	    ((HierarchicalDispatcher)publicSiena).shutdown();
 	    ((HierarchicalDispatcher)privateSiena).shutdown();
+	    //	    ((HierarchicalDispatcher)loopbackSiena).shutdown();
 	  } catch(Exception e) { e.printStackTrace(); }
 	}
       });
@@ -216,15 +246,20 @@ public class EventDistiller implements Notifiable {
 	size = eventProcessQueue.size();
       }
 
-      if(size == 0) {
-	if(EventDistiller.DEBUG)
-	  System.err.println("EventDistiller: Queue empty, sleeping");
-	try {
-	  Thread.sleep(10000);
-	} catch(InterruptedException ie) { ; }
-	continue;
-      } else {
-	// Otherwise pull them off
+      try {
+	Thread.sleep(2000);
+      } catch(InterruptedException ie) { ; }
+
+      /*      if(size == 0) {
+	      if(EventDistiller.DEBUG)
+	      System.err.println("EventDistiller: Queue empty, sleeping");
+	      try {
+	      Thread.sleep(2000);
+	      } catch(InterruptedException ie) { ; }
+	      continue;
+	      } else*/
+      if(size != 0) {
+	// Pull them off
 	synchronized(eventProcessQueue) {
 	  Notification n = (Notification)eventProcessQueue.remove(0);
 	  if(EventDistiller.DEBUG)
@@ -261,12 +296,14 @@ public class EventDistiller implements Notifiable {
       } catch(SienaException e) { e.printStackTrace(); }
     } else if(n.getAttribute("Type").stringValue().equals("ParsedEvent") ||
 	      n.getAttribute("Type").stringValue().equals("EDInput")) {
+      // Add a loopback value
+      n.putAttribute("loopback",(int)0);
       // Add the event onto the queue and then wake up the engine
       if(DEBUG) System.err.println("EventDistiller: Putting event on queue");
       synchronized(eventProcessQueue) {
 	eventProcessQueue.addElement(n);
       }
-      edContext.interrupt();
+      //      edContext.interrupt();
     }
   }
 

@@ -15,7 +15,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.4  2001-01-30 02:39:36  jjp32
+ * Revision 1.5  2001-01-30 06:26:18  jjp32
+ *
+ * Lots and lots of updates.  EventDistiller is now of demo-quality.
+ *
+ * Revision 1.4  2001/01/30 02:39:36  jjp32
  *
  * Added loopback functionality so hopefully internal siena gets the msgs
  * back
@@ -40,11 +44,16 @@ class EDStateMachineSpecification implements Notifiable {
   private Notification action;
   private Siena siena;
   private EDStateManager edsm;
+  private String myID = null;
+  /** Counter for ID tagging of EDStateMachines */
+  private int counter = 0;
 
   /**
    * Basic CTOR.  Make sure to add states.
    */
-  public EDStateMachineSpecification(Siena siena, EDStateManager edsm) {
+  public EDStateMachineSpecification(String myID,
+				     Siena siena, EDStateManager edsm) {
+    this.myID = myID;
     this.siena = siena;
     this.edsm = edsm;
     stateArray = new Vector();
@@ -55,7 +64,7 @@ class EDStateMachineSpecification implements Notifiable {
 							  EDStateManager edsm)
   { 
     EDStateMachineSpecification edsms = 
-      new EDStateMachineSpecification(siena,edsm);
+      new EDStateMachineSpecification("foo",siena,edsm);
     EDState e = new EDState(-1);
     e.add("temperature","60");
     edsms.stateArray.addElement(e);
@@ -116,7 +125,8 @@ class EDStateMachineSpecification implements Notifiable {
       System.err.println("EDStateManagerSpecification: Received notification " + n);
     // Create the appropriate state machine(s).  We assume the state
     // machine will register itself with the manager.
-    EDStateMachine sm = new EDStateMachine(siena, edsm, stateArray, 1,
+    EDStateMachine sm = new EDStateMachine(myID + ":" + (counter++),
+					   siena, edsm, stateArray, n,
 					   action);
   }
 

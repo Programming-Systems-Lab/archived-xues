@@ -9,7 +9,11 @@ import siena.*;
   * One argument: xml message to include.
   *
   * $Log$
-  * Revision 1.2  2001-01-30 02:39:36  jjp32
+  * Revision 1.3  2001-01-30 06:26:18  jjp32
+  *
+  * Lots and lots of updates.  EventDistiller is now of demo-quality.
+  *
+  * Revision 1.2  2001/01/30 02:39:36  jjp32
   *
   * Added loopback functionality so hopefully internal siena gets the msgs
   * back
@@ -45,18 +49,29 @@ public class SienaTest {
       return;
     }
 
-    Notification n = new Notification();
-    n.putAttribute("Source", "EventDistiller");
-    n.putAttribute("SourceID", 12345);
-    n.putAttribute("Type", "DirectEvent");
-    n.putAttribute("foo", "bar");
+    /*    Notification n = new Notification();
+	  n.putAttribute("Source", "EventDistiller");
+	  n.putAttribute("SourceID", 12345);
+	  n.putAttribute("Type", "DirectEvent");
+	  n.putAttribute("foo", "bar");
+    */
+
+    Notification n1 = new Notification();
+    n1.putAttribute("Source", "EventDistiller");
+    n1.putAttribute("SourceID", 12345);
+    n1.putAttribute("Type", "DirectEvent");
+    n1.putAttribute("from", "Janak");
+    n1.putAttribute("spam", "true");
+    n1.putAttribute("timestamp",System.currentTimeMillis());
 
     Filter f = new Filter();
     f.addConstraint("foo","bar");
     System.err.println(f);
 
     try {
-      hd.publish(n);
+      //      hd.publish(n);
+      hd.publish(n1);
+      hd.publish(n1);
     } catch (SienaException se) {
       System.err.println("Siena exception on publish:" + se);
       return;

@@ -32,7 +32,11 @@ import org.xml.sax.helpers.DefaultHandler;
  * @version 1.0
  *
  * $Log$
- * Revision 1.9  2001-01-30 00:24:50  jjp32
+ * Revision 1.10  2001-01-30 06:26:18  jjp32
+ *
+ * Lots and lots of updates.  EventDistiller is now of demo-quality.
+ *
+ * Revision 1.9  2001/01/30 00:24:50  jjp32
  *
  * Bug fixes, added test class
  *
@@ -74,8 +78,8 @@ import org.xml.sax.helpers.DefaultHandler;
 public class EDStateManager extends DefaultHandler implements Runnable {
   private EventDistiller ed = null;
   private Siena siena = null;
-  /** Currently unused.  I don't remember what this is for. */
-  private int idCounter = -1;
+  /** Counts EDStateMachines for ID tagging */
+  private int idCounter = 0;
   /** This hashes vectors with EDStateMachineSpecifications */
   private Vector stateMachineTemplates = null;
   private Vector stateMachines = null;
@@ -136,6 +140,9 @@ public class EDStateManager extends DefaultHandler implements Runnable {
       System.err.println("FATAL: EDStateManager init failed:");
       e.printStackTrace();
     }
+
+    // Start da reapah.  In a new thread.
+    new Thread(this).start();
   }
 
   /**
@@ -144,17 +151,28 @@ public class EDStateManager extends DefaultHandler implements Runnable {
   public void run() {
     //...
     try { 
-      Thread.currentThread().sleep(1000); 
-      // Reap!
-      if(EventDistiller.DEBUG) System.err.println("Reaping...");
+      while(true) {
+	Thread.currentThread().sleep(1000); 
+	// Reap!
+	if(EventDistiller.DEBUG) System.err.println("EDStateManager: Reaping...");
 
-      synchronized(stateMachines) {
-	int offset = 0;
-	
-	if(((EDStateMachine)stateMachines.elementAt(offset)).reap()) {
-	  System.err.println("Reaped someone!!!");
-	  stateMachines.removeElementAt(offset);
-	} else offset++;	
+	synchronized(stateMachines) {
+	  // Only reap if there *are* state machines
+	  int offset = 0;
+	  
+	  while(offset < stateMachines.size()) {
+	    EDStateMachine e = (EDStateMachine)stateMachines.elementAt(offset);
+	    if(EventDistiller.DEBUG)
+	      System.err.println("EDStateManager: Attempting to reap " + 
+				 e.myID);
+	    
+	    if(e.reap()) {
+	      if(EventDistiller.DEBUG)
+		System.err.println("EDStateManager: Reaped.");
+	      stateMachines.removeElementAt(offset);
+	    } else offset++;
+	  }
+	}
       }
     }
     catch(InterruptedException ex) { ; }
@@ -165,7 +183,9 @@ public class EDStateManager extends DefaultHandler implements Runnable {
    * to add it to the queue for garbage-collection.
    */
   void addMachine(EDStateMachine m) {
-    stateMachines.addElement(m);
+    synchronized(stateMachines) {
+      stateMachines.addElement(m);
+    }
   }
 
   /**
@@ -175,7 +195,9 @@ public class EDStateManager extends DefaultHandler implements Runnable {
     // Propagate the notification up, but wrap it in KX form
     ed.sendPublic(KXNotification.EDOutputKXNotification(12345,n));
     // Garbage-collect the State Machine
-    stateMachines.removeElement(m);
+    synchronized(stateMachines) {
+      stateMachines.removeElement(m);
+    }
   }
 
   /**
@@ -188,7 +210,8 @@ public class EDStateManager extends DefaultHandler implements Runnable {
     if(EventDistiller.DEBUG) System.out.println("parsing " + localName + "," + 
 						qName);
     if(localName.equals("rule")) { // Start of new EDSMS
-      currentEdsms = new EDStateMachineSpecification(siena,this);
+      currentEdsms = new EDStateMachineSpecification("" + (idCounter++),
+						     siena,this);
       stateMachineTemplates.addElement(currentEdsms);
     }
 

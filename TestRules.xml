@@ -9,7 +9,7 @@
         <attribute name="from" value="*1"/>
 	<attribute name="spam" value="true"/>
       </state>
-      <state timebound="-1">
+      <state timebound="5">
         <attribute name="from" value="*1"/>
 	<attribute name="spam" value="true"/>
       </state>
@@ -31,9 +31,10 @@
    </states>
    <actions>
      <notification>
+	 <attribute name="Instigator" value="Alpa"/>
          <attribute name="Action" value="Push"/>
-	 <attribute name="Target" value="Workgroup"/>
-	 <attribute name="TargetName" value="PSL"/>
+	 <attribute name="Target" value="Module"/>
+	 <attribute name="TargetName" value="Gail"/>
 	 <attribute name="DataHandle" value="*1"/>
       </notification>
    </actions>
@@ -43,16 +44,17 @@
 <rule name="WGCRule2">
    <states>
       <state timebound="-1">
-	<attribute name="Instigator" value="Phil"/>
-	<attribute name="DataHandle" value="*1"/>
+        <attribute name="Instigator" value="Gail"/>
+        <attribute name="DataHandle" value="*1"/>
       </state>
    </states>
-   <actions>
+   <actions>   
      <notification>
+	 <attribute name="Instigator" value="Gail"/>
          <attribute name="Action" value="Push"/>
-	 <attribute name="Target" value="Module"/>
-	 <attribute name="TargetName" value="Alpa"/>
-	 <attribute name="DataHandle" value="*1"/>
+         <attribute name="Target" value="Workgroup"/>
+         <attribute name="TargetName" value="PSL-Workgroup"/>
+         <attribute name="DataHandle" value="*1"/>
       </notification>
    </actions>
 </rule>

@@ -19,7 +19,11 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.5  2001-01-30 02:39:36  jjp32
+ * Revision 1.6  2001-01-30 06:26:18  jjp32
+ *
+ * Lots and lots of updates.  EventDistiller is now of demo-quality.
+ *
+ * Revision 1.5  2001/01/30 02:39:36  jjp32
  *
  * Added loopback functionality so hopefully internal siena gets the msgs
  * back
@@ -49,6 +53,7 @@ public class EDStateMachine implements Notifiable {
   private Siena siena = null;
   private Notification action = null;
   private EDStateManager el = null;
+  String myID = null;
   /**
    * Wildcard binding hashtable.  If there are wildcards in states that must
    * match later states, we store them in this table.  In the future, this
@@ -57,18 +62,22 @@ public class EDStateMachine implements Notifiable {
   Hashtable wildHash = null;
 
   /**
-   * CTOR.  EDStateMachines *must* be launched through a StateManager.
+   * CTOR.  EDStateMachines *must* be launched through a StateManager,
+   * and must be handed the first match that launched this state machine.
+   *
+   * @param myID My ID (just for debugging)
    */
-  EDStateMachine(Siena siena, 
+  EDStateMachine(String myID,
+		 Siena siena, 
 		 EDStateManager el, 
 		 Vector stateArray,
-		 int startState, 
+		 Notification firstNotification,
 		 Notification action) {
     this.siena = siena;
     this.el = el;
+    this.myID = myID;
     this.action = new Notification(action);  // Make a copy
-    // Are we already done?
-    if(stateArray.size() == startState) { // All states done, we work, go home
+    if(stateArray.size() == 0) { // All states done, we work, go home
       finish();
       return;
     }
@@ -80,10 +89,12 @@ public class EDStateMachine implements Notifiable {
       // Clone 'em
       addState(new EDState((EDState)stateArray.elementAt(i),this));
     }
-    this.currentState = startState;
+    this.currentState = 0;
     // Now register ourselves with the StateManager.  Doing so enables
     // us to be garbage-collected intelligently (in the future).
     el.addMachine(this);
+    // If firstNotification is not null, feed it!
+    notify(firstNotification);
   }
     
   /**
@@ -95,7 +106,10 @@ public class EDStateMachine implements Notifiable {
     s.assignOwner(this);
     states.addElement(s);
     try {
-      siena.subscribe(s.buildSienaFilter(),this);
+      Filter f = s.buildSienaFilter();
+      if(EventDistiller.DEBUG)
+	System.err.println("EDStateMachine/"+myID+"/"+": Subscribing " + f);
+      siena.subscribe(f,this);
     } catch(SienaException e) { e.printStackTrace(); }
   }
 
@@ -118,15 +132,21 @@ public class EDStateMachine implements Notifiable {
     action = null;
     addAction(attr,val);
   }
-    
+  
   public void notify(Notification n) {
+    long millis = System.currentTimeMillis();
     if(EventDistiller.DEBUG) 
-      System.err.println("EDStateMachine: Received notification " + n);
+      System.err.println("EDStateMachine/"+myID+"/"+
+			 ": Received notification " + millis + 
+			 " which is " + n);
     // Check it against the current state - but to do this, we need
     // the prev state
     EDState prevState = (currentState == 0 ? null : 
 			 (EDState)states.elementAt(currentState-1));
     if(((EDState)states.elementAt(currentState)).validate(n,prevState)) {
+      if(EventDistiller.DEBUG)
+	System.err.println("EDStateMachine/"+myID+"/"+
+			   ": Notification " + millis + " matched!");
       // Yes!
       currentState++;
       // Did we pass the last state?
@@ -134,6 +154,10 @@ public class EDStateMachine implements Notifiable {
 	// Yes - send action
 	finish();
       }
+    } else {
+      if(EventDistiller.DEBUG)
+	System.err.println("EDStateMachine/"+myID+"/"+
+			   ": Notification " + millis + " rejected");
     }
   }
 
@@ -148,6 +172,8 @@ public class EDStateMachine implements Notifiable {
    * behavior may change someday...)
    */
   private void finish() {
+    if(EventDistiller.DEBUG)
+      System.err.println("EDStateMachine/" + myID + "/: finishing");
     // Remove all notifications
     try {
       siena.unsubscribe(this);
@@ -163,7 +189,7 @@ public class EDStateMachine implements Notifiable {
       if(val.getType() == AttributeValue.STRING &&
 	 val.stringValue().startsWith("*")) {
 	String key = val.stringValue().substring(1);
-	String bindVal = (String)wildHash.get(key);
+	AttributeValue bindVal = (AttributeValue)wildHash.get(key);
 	if(bindVal != null) {
 	  // Replace this attributeValue
 	  action.putAttribute(attr,bindVal);
