@@ -32,6 +32,8 @@ public abstract class EPOutput implements Runnable {
   protected boolean shutdown = false;
   /** Reference to EP */
   protected EPOutputInterface ep = null;
+  /** Number of times this has "fired" */
+  private long count = 0;
   
   /**
    * CTOR.  You are instantiated by the Event Packager and given the XML DOM
@@ -63,6 +65,13 @@ public abstract class EPOutput implements Runnable {
   public String getName() {
     return outputID;
   }
+  
+  /**
+   * Get this output's type.  You must implement this.
+   *
+   * @return The string representing the type of this output.
+   */
+  public abstract String getType();
   
   /**
    * Handle an event handed to you.  All EPOutputters must implement this.
@@ -102,4 +111,23 @@ public abstract class EPOutput implements Runnable {
       debug.warn("Can't interrupt thread, may not shutdown");
     }
   }
+  
+    /**
+   * Mark this input as having been "fired".  Return the new count.
+   *
+   * @return The new count, as int.
+   */
+  public final long addCount() {
+    return ++count;
+  }
+  
+  /**
+   * Get the number of times this has been "fired".
+   * 
+   * @return The new count, as int.
+   */
+  public final long getCount() {
+    return count;
+  }
+
 }

@@ -29,6 +29,8 @@ public class ConsoleInput extends EPInput {
   private static boolean instantiated = false;
   private static final InputStream input = System.in;
   private static final OutputStream output = System.out;
+  private BufferedReader in = null;
+  private PrintWriter out = null;
   
   public ConsoleInput(EPInputInterface ep, Element el)
   throws InstantiationException {
@@ -42,8 +44,8 @@ public class ConsoleInput extends EPInput {
    * Run code.  This is where we actually prompt the user.
    */
   public void run() {
-    BufferedReader in = null;
-    PrintWriter out = null;
+    in = null;
+    out = null;
     
     try {
       in = new BufferedReader(new InputStreamReader(input));
@@ -120,10 +122,12 @@ public class ConsoleInput extends EPInput {
    */
   public void shutdown() {
     shutdown = true;
-    
-    // XXX - now we hope the user had actually used the console to initiate
-    // a shutdown, in which case we have to do nothing.  Otherwise, any way
-    // of terminating a readLine call?
+    // Kill console input now
+    try {
+      in.close();
+    } catch(Exception e) {
+      debug.warn("Couldn't shut down console input", e);
+    }
   }
   
   /**

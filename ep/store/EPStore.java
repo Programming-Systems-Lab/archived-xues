@@ -25,7 +25,9 @@ public abstract class EPStore implements Runnable {
   protected boolean shutdown = false;
   /** EP reference */
   protected EPStoreInterface ep = null;
-
+  /** Number of times this has "fired" */
+  private long count = 0;
+  
   /**
    * CTOR.
    */
@@ -51,6 +53,13 @@ public abstract class EPStore implements Runnable {
   public String getName() {
     return storeID;
   }
+  
+  /**
+   * Get the type.  You must implement this.
+   *
+   * @return A string representing the type.
+   */
+  public abstract String getType();
   
   /**
    * Store the supplied event.
@@ -118,5 +127,23 @@ public abstract class EPStore implements Runnable {
     shutdown = true;
     // Do nothing by default
     return true;
+  }
+
+  /**
+   * Mark this input as having been "fired".  Return the new count.
+   *
+   * @return The new count, as int.
+   */
+  public final long addCount() {
+    return ++count;
+  }
+  
+  /**
+   * Get the number of times this has been "fired".
+   * 
+   * @return The new count, as int.
+   */
+  public final long getCount() {
+    return count;
   }
 }

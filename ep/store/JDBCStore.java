@@ -56,7 +56,7 @@ public class JDBCStore extends EPStore {
   /**
    * CTOR.
    */
-  public JDBCStore(EPStoreInterface ep, Element el) 
+  public JDBCStore(EPStoreInterface ep, Element el)
   throws InstantiationException {
     super(ep,el);
     
@@ -233,7 +233,7 @@ public class JDBCStore extends EPStore {
    * no match, and null if error.
    */
   public Object[] requestEvents(String source) {
-    return getIDs("SELECT ID FROM " + tableName + " WHERE SOURCE = '" + 
+    return getIDs("SELECT ID FROM " + tableName + " WHERE SOURCE = '" +
     source + "'");
   }
   
@@ -248,7 +248,7 @@ public class JDBCStore extends EPStore {
    * no match, and null if error.
    */
   public Object[] requestEvents(String source, long t1, long t2) {
-    return getIDs("SELECT ID FROM " + tableName + " WHERE (SOURCE = '" + 
+    return getIDs("SELECT ID FROM " + tableName + " WHERE (SOURCE = '" +
     source + "') AND (TIMESTAMP BETWEEN " + t1 + " AND " + t2 + ")");
   }
   
@@ -281,7 +281,7 @@ public class JDBCStore extends EPStore {
    */
   private Object[] getIDs(String query) {
     ArrayList ret = new ArrayList();
-
+    
     try {
       Statement reqE = conn.createStatement();
       ResultSet events = reqE.executeQuery(query);
@@ -297,4 +297,12 @@ public class JDBCStore extends EPStore {
     // Success
     return ret.toArray(); // Convert to standard Java array
   }
+  
+  /**
+   * Get the type.
+   */
+  public String getType() {
+    return "JDBCStore";
+  }
+  
 }

@@ -23,7 +23,6 @@ import psl.xues.ep.transform.EPTransform;
 import psl.xues.ep.transform.EPTransformInterface;
 import psl.xues.ep.store.EPStore;
 import psl.xues.ep.store.EPStoreInterface;
-import psl.xues.ep.gui.EPgui;
 
 /**
  * Event Packager for XUES.
@@ -81,6 +80,9 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
   private boolean dequeueing = false;
   /** Is shutdown actually proceeding? */
   private boolean inShutdown = false;
+
+  /** Reference to the GUI */
+  EPgui epgui = null;
   
   /**
    * Default embedded CTOR.
@@ -122,7 +124,9 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     
     // Start GUI
     if(gui) {
-      new EPgui(this);
+      debug.debug("Starting GUI...");
+      epgui = new EPgui(this);
+      new Thread(epgui).start();
     }
   }
   
@@ -164,6 +168,12 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
         // Process it: get the correct inputter and fire it through each of
         // its rules in turn
         EPInput epi = (EPInput)inputters.get(epe.getSource());
+        if(epi == null) {
+          debug.error("Could not find EPInput \"" + epe.getSource() + "\"," +
+          " invalid source?");
+          continue;
+        }
+        epi.addCount(); // Keep count of this firing
         EPRule[] temprules = epi.getCurrentRules();
         for(int i=0; i < temprules.length; i++) {
           // Push it through this rule
@@ -231,7 +241,10 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     debug.info("Shutting down EP...");
     inShutdown = true;
     
-    // Shut down the inputters first
+    // First, shut down the gui
+    if(epgui != null) epgui.shutdown();
+    
+    // Now shut down the inputters
     synchronized(inputters) {
       Iterator i = inputters.values().iterator();
       while(i.hasNext()) {

@@ -127,4 +127,12 @@ public class MemoryStore extends EPStore {
     if(t == null) return null;
     else return t.subMap(new Long(t1), new Long(t2)).values().toArray();
   }
+
+  /**
+   * Get the type.
+   */
+  public String getType() {
+    return "MemoryStore";
+  }
+
 }

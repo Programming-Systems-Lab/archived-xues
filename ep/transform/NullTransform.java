@@ -38,4 +38,11 @@ public class NullTransform extends EPTransform {
   public EPEvent transform(EPEvent original) {
     return original;
   }
+
+  /**
+   * Get the type.
+   */
+  public String getType() {
+    return "NullTransform";
+  }
 }

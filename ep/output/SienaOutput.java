@@ -79,7 +79,7 @@ public class SienaOutput extends EPOutput {
         debug.info("Siena host not specified, will run as Siena master");
       }
     }
-
+    
     // ED configuration information
     String outputED = el.getAttribute("ED");
     if(outputED != null && outputED.length() > 0) {
@@ -128,7 +128,7 @@ public class SienaOutput extends EPOutput {
       // Successful conversion, publish it
       eventToPublish = ((SienaEvent)newepe).getSienaEvent();
     }
-
+    
     if(outputtingToED = true) {
       // Make copy to prevent destroying reference
       eventToPublish = new Notification(eventToPublish);
@@ -166,5 +166,12 @@ public class SienaOutput extends EPOutput {
     super.shutdown();
     hd.shutdown(); // Unsubscribe from everything
     hd = null;
+  }
+  
+  /**
+   * Get the type.
+   */
+  public String getType() {
+    return "SienaOutput";
   }
 }

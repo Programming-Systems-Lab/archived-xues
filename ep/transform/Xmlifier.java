@@ -298,4 +298,12 @@ public class Xmlifier extends EPTransform {
          */
     return document;
   } // buildDom
+
+  /**
+   * Get the type.
+   */
+  public String getType() {
+    return "Xmlifier";
+  }
+
 }

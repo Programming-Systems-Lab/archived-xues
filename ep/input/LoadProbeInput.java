@@ -126,11 +126,11 @@ public class LoadProbeInput extends EPInput {
       String hostname = null;
       try {
         hostname = InetAddress.getLocalHost().getHostName();
-        n.putAttribute("Host", hostname);
+        n.putAttribute("host", hostname);
       } catch(Exception e) {
         debug.warn("Could not put hostname in notification");
       }
-      n.putAttribute("CPU", cpu);
+      n.putAttribute("load", cpu);
       n.putAttribute("RAMFree", ramFree);
       n.putAttribute("SystemRunLength", systemRunLength);
       n.putAttribute("DiskQueueRunLength", diskQueueRunLength);

@@ -27,6 +27,8 @@ public abstract class EPTransform {
   protected Logger debug = null;
   /** EP reference */
   protected EPTransformInterface ep = null;
+  /** Number of times this has "fired" */
+  private long count = 0;
   
   /**
    * CTOR.  The element is provided for any special customizations on this
@@ -59,6 +61,14 @@ public abstract class EPTransform {
   public String getName() {
     return transformID;
   }
+  
+  /**
+   * Get the type.  You must implement this.
+   *
+   * @return A String indicating type.
+   */
+  public abstract String getType();
+    
 
   /**
    * Handle a transform request.  You must implement this to be of any use.
@@ -70,4 +80,22 @@ public abstract class EPTransform {
    * transform.
    */
   public abstract EPEvent transform(EPEvent original);
+
+  /**
+   * Mark this input as having been "fired".  Return the new count.
+   *
+   * @return The new count, as int.
+   */
+  public final long addCount() {
+    return ++count;
+  }
+  
+  /**
+   * Get the number of times this has been "fired".
+   * 
+   * @return The new count, as int.
+   */
+  public final long getCount() {
+    return count;
+  }
 }

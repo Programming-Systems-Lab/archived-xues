@@ -156,4 +156,11 @@ public class TimeSynchronizer extends EPTransform {
       return avgskew;
     }
   }
+
+  /**
+   * Get the type.
+   */
+  public String getType() {
+    return "TimeSynchronizer";
+  }
 }

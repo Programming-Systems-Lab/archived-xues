@@ -17,7 +17,7 @@ public class NullOutput extends EPOutput {
   /**
    * CTOR.
    */
-  public NullOutput(EPOutputInterface ep, Element el) 
+  public NullOutput(EPOutputInterface ep, Element el)
   throws InstantiationException {
     super(ep,el); // Although we don't really need it...
   }
@@ -30,7 +30,7 @@ public class NullOutput extends EPOutput {
     return;
   }
   
-  /** 
+  /**
    * Handle an event.  NullOutput does absolutely zip.
    *
    * @param epe The EPEvent
@@ -46,4 +46,12 @@ public class NullOutput extends EPOutput {
   public void shutdown() {
     return;
   }
+  
+  /**
+   * Get the type.
+   */
+  public String getType() {
+    return "NullOutput";
+  }
+  
 }

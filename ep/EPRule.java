@@ -171,6 +171,7 @@ public class EPRule {
         ((EPTransform)transforms.get(i)).getName() + "\", continuing");
         newepe = oldepe; // Restore
       }
+      ((EPTransform)transforms.get(i)).addCount(); // Keep track of execution
     }
 
     // Now do the outputs
@@ -181,6 +182,7 @@ public class EPRule {
       if(epo.handleEvent(newepe) == false) {
         debug.warn("Could not output to \"" + epo.getName() + "\", continuing");
       }
+      epo.addCount(); // Keep track of execution
     }
 
     // Right now, we always succeed.  XXX - might want to change this behavior.

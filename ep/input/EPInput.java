@@ -37,6 +37,8 @@ public abstract class EPInput implements Runnable {
   protected Element defnElem = null;
   /** Associated runtime rules.  Keep private to avoid sync issues */
   private HashMap runtimeRules = new HashMap();
+  /** Count of times this input has "fired" */
+  private long count = 0;
   
   /**
    * CTOR.  You are instantiated by the Event Packager and given an interface
@@ -133,4 +135,22 @@ public abstract class EPInput implements Runnable {
    * the package identification.
    */
   public abstract String getType();
+  
+  /**
+   * Mark this input as having been "fired".  Return the new count.
+   *
+   * @return The new count, as int.
+   */
+  public final long addCount() {
+    return ++count;
+  }
+  
+  /**
+   * Get the number of times this has been "fired".
+   * 
+   * @return The new count, as int.
+   */
+  public final long getCount() {
+    return count;
+  }
 }

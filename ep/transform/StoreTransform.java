@@ -50,5 +50,12 @@ public class StoreTransform extends EPTransform {
     storeRef.storeEvent(original);
     return original; // No changes
   }
+  
+  /**
+   * Get the type.
+   */
+  public String getType() {
+    return "StoreTransform";
+  }
 }
 

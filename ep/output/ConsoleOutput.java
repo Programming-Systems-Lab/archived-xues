@@ -122,4 +122,11 @@ public class ConsoleOutput extends EPOutput {
   public void shutdown() {
     return;
   }
+  
+  /**
+   * Get the type.
+   */
+  public String getType() {
+    return "ConsoleOutput";
+  }
 }
