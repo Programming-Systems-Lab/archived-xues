@@ -97,9 +97,9 @@
      The graph for this rule is like:
                     c - d
                    /     \
-              a - b       g - h --> A
+              a - b       g - h -> A
                    \     /
-                    e - f                           
+                    e - f
      The action associated with state 'h' will be sent if any sequence of events
      that contains as a subset the sequence 'abcdgh' or 'abefgh' is received,
      within the appropriate timebounds.    -->

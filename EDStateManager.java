@@ -40,13 +40,11 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.31  2001-08-06 16:43:30  eb659
- * Tested essentially all features of ED, particularly counter and loop states.
- * Run EDTestConstruct to test different rules, specifying which rule ot test, and whether the rule should fail. For instance, run 'java psl.xues.EDTestConstruct -r spamblocker -f' to test failure of the spamblocker rule; omit '-f' to test its success.
+ * Revision 1.32  2001-08-17 13:06:00  eb659
+ * Bfirst commit for the XML generator for ED rules.
  *
- * Removed a couple of bugs, and added a small hack, unfortunately. See comments in EDState.createFilter(). Unfortunately, the internal dispatching mechanism does not work very well with inequalities of big numbers, possibly due to automatic type conversion or something. This, btw, has nothing to do with James's work.
- *
- * A couple of hours of work.
+ * AADDDCCC
+ * only partial generation at this point, but what's there has been tested thoroughtly. some 10 hrs
  *
  * Revision 1.29  2001/07/03 21:36:23  eb659
  * Improved problems in race conditions. The application now hangs in the subscribe()
@@ -316,7 +314,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * First full Siena-aware build of XUES!
  *
  */
-public class EDStateManager extends DefaultHandler implements Runnable, EDNotifiable, Comparable {
+public class EDStateManager implements Rulebase, Runnable, EDNotifiable, Comparable {
 
     /** The ed that owns us. */
     private EventDistiller ed = null;
@@ -325,30 +323,13 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
     private EDBus bus = null;
 
     /** EDStateMachineSpecifications */
-    Vector stateMachineTemplates = new Vector();
+    Vector specifications = new Vector();
 
     /** ErrorManager to print errors to. */
     private EDErrorManager errorManager;
 
-
-    // variables used for parsing only
-
     /** SAX parser reference */
     private SAXParser sxp = null;
-    /** The current statemachine being built. */
-    private EDStateMachineSpecification currentEdsms = null;
-    /** The positoin where we will place the current sped. */
-    private int currentPosition = -1;
-    /** The current state being built. */
-    private EDState currentState = null;
-    /** The current action being built. */
-    private Notification currentAction = null;
-    /** What are we currently parsing? */
-    private int currentMode = -1;
-    /** Currently parsing state */
-    private static final int PARSINGSTATE = 1;
-    /** Currently parsing action */
-    private static final int PARSINGACTION = 2;
 
     /**
      * Constructs a new manager.
@@ -367,7 +348,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	if(specFileName != null) {
 	    // Initialize SAX parser and run it on the file
 	    sxp = new SAXParser();
-	    sxp.setContentHandler(this);
+	    sxp.setContentHandler(new EDHandler(this));
 	    try {
 		sxp.parse(new InputSource(new FileInputStream(specFileName)));
 	    }
@@ -409,10 +390,10 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
     void reap() {
 	errorManager.print("%", EDErrorManager.REAPER);
 
-	synchronized(stateMachineTemplates) {
-	    for (int i = 0; i < stateMachineTemplates.size(); i++) {
+	synchronized(specifications) {
+	    for (int i = 0; i < specifications.size(); i++) {
 		Vector stateMachines =
-		    ((EDStateMachineSpecification)stateMachineTemplates.get(i)).stateMachines;
+		    ((EDStateMachineSpecification)specifications.get(i)).stateMachines;
 
 		synchronized(stateMachines) {
 		    for (int j = 0; j < stateMachines.size(); j++) {
@@ -433,132 +414,6 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	    }
 	}
     }
-
-    // methods for parsing
-
-    /** Handle the beginning of a SAX element. */
-    public void startElement(String uri, String localName, String qName,
-			     Attributes attributes) throws SAXException {
-
-	if(localName.equals("rule")) { // Start of new EDSMS
-	    currentEdsms = new EDStateMachineSpecification
-		(attributes.getValue("", "name"), this);
-	    String s = attributes.getValue("", "position");
-	    if (s != null) currentPosition = Integer.parseInt(s);
-	    s = attributes.getValue("", "instantiation");
-	    if (s != null) try { currentEdsms.setInstantiationPolicy(Integer.parseInt(s)); }
-	    catch(IllegalArgumentException ex) { System.err.println(ex); }
-	}
-
-	if(localName.equals("state")) { // Start of new state
-	    try {
-		currentMode = PARSINGSTATE;
-		currentState = new
-		    EDState(attributes.getValue("", "name"),
-			    Integer.parseInt(attributes.getValue("","timebound")),
-			    attributes.getValue("", "children"),
-			    attributes.getValue("", "actions"),
-			    attributes.getValue("", "fail_actions"));
-		// absorb
-		String s = attributes.getValue("", "absorb");
-		if (s != null && s.equals("true")) currentState.setAbsorb(true);
-		// count
-		s = attributes.getValue("", "count");
-		if (s != null) currentState.setCount(Integer.parseInt(s));
-
-		currentEdsms.addState(currentState);
-	    } catch(Exception e) {
-		errorManager.println("FATAL: EDStateManager init failed:", EDErrorManager.ERROR);
-		e.printStackTrace();
-		System.exit(-1);
-	    }
-	}
-
-	else if(localName.equals("notification")) {
-	    // Start of new notification
-	    currentAction = new Notification();
-	    currentEdsms.addAction(attributes.getValue("", "name"), currentAction);
-	    currentMode = PARSINGACTION;
-	}
-
-        else if(localName.equals("attribute")) { // Start of new attribute
-	    // Create the attribute
-            String s5 = attributes.getValue("", "name");
-            AttributeValue attributevalue = null;
-            String s6 = attributes.getValue("", "type");
-
-            // wrap the correct type in an attribute
-            if(s6 == null || s6.equals(EDConst.TYPE_NAMES[1]))
-                attributevalue = new AttributeValue(attributes.getValue("", "value"));
-            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[2]))
-                attributevalue = new AttributeValue(Integer.parseInt(attributes.getValue("", "value")));
-            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[2]))
-                attributevalue = new AttributeValue(Long.parseLong(attributes.getValue("", "value")));
-            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[3]))
-                attributevalue = new AttributeValue(Double.parseDouble(attributes.getValue("", "value")));
-            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[4]))
-                attributevalue = new AttributeValue(Boolean.getBoolean(attributes.getValue("", "value")));
-            short word0 = 1;
-            String s7 = attributes.getValue("", "op");
-            if(s7 != null)
-                word0 = Op.op(s7);
-            s7 = attributevalue.stringValue();
-            if(attributevalue.getType() == 1 && s7.startsWith("*") && !s7.startsWith("**"))
-                word0 = 8;
-
-            // add the attribute
-            switch(currentMode){
-            case PARSINGSTATE:
-                AttributeConstraint attributeconstraint = new AttributeConstraint(word0, attributevalue);
-                currentState.addConstraint(s5, attributeconstraint);
-                break;
-
-            case PARSINGACTION:
-                currentAction.putAttribute(s5, attributevalue);
-                break;
-
-            default:
-                errorManager.println("FATAL: EDStateManager init failed in determining mode", 0);
-                System.exit(-1);
-                break;
-            }
-        }
-    }
-
-    /** Handle the end of a SAX element. */
-    public void endElement(String namespaceURI, String localName, String qName)
-        throws SAXException {
-	if(localName.equals("rule")) {
-	    errorManager.println("parsed rule: " + currentEdsms.getName(),
-					 EDErrorManager.MANAGER);
-
-	    // is the specified rule legal?
-	    String error = currentEdsms.checkConsistency();
-
-	    if (error == null) {
-		/* ok, now we can add it. To the end of the vector,
-		 * if the position was not specified */
-		synchronized(stateMachineTemplates) {
-		    // where do we add it?
-		    int defaultPosition = stateMachineTemplates.size();
-		    // at the end, if not specified
-		    if (currentPosition < 0) currentPosition = defaultPosition;
-		    else currentPosition = Math.min(currentPosition, defaultPosition);
-		    stateMachineTemplates.add(currentPosition, currentEdsms);
-		    currentPosition = -1;
-		    currentEdsms.init();
-		}
-	    }
-	    else { // specification is ill-defined
-		errorManager.println("ERROR: EDStateManager: cannot add rule "
-				     + currentEdsms.getName() + " :\n" + error,
-				     EDErrorManager.ERROR);
-		// send an error notification
-		ed.sendPublic(KXNotification.EDError(KXNotification.EDERROR_RULEBASE, error));
-	    }
-	}
-    }
-
 
     // EDNotifiable interface
 
@@ -618,7 +473,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	// Initialize SAX parser if we don-t have one
 	if (sxp == null) {
 	    sxp = new SAXParser();
-	    sxp.setContentHandler(this);
+	    sxp.setContentHandler(new EDHandler(this));
 	}
 	// parse the string - this effectively adds the rule
 	try {
@@ -630,7 +485,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	    return;
 	}
 	EDStateMachineSpecification added =
-	    (EDStateMachineSpecification)stateMachineTemplates.lastElement();
+	    (EDStateMachineSpecification)specifications.lastElement();
     }
 
   /**
@@ -646,12 +501,12 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
       EDStateMachineSpecification spec = null;
 
       // remove the specification
-      synchronized(stateMachineTemplates) {
-	  for (int i = 0; i < stateMachineTemplates.size(); i++) {
-	      if (((EDStateMachineSpecification)stateMachineTemplates.get
+      synchronized(specifications) {
+	  for (int i = 0; i < specifications.size(); i++) {
+	      if (((EDStateMachineSpecification)specifications.get
 		   (i)).getName().equalsIgnoreCase(s)) {
 		  // remember
-		  spec = (EDStateMachineSpecification)stateMachineTemplates.get(i);
+		  spec = (EDStateMachineSpecification)specifications.get(i);
 
 		  // kill all stateMachines instances
 		  Vector stateMachines = spec.stateMachines;
@@ -661,7 +516,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 		  }
 
 		  // remove the spec
-		  stateMachineTemplates.remove(i);
+		  specifications.remove(i);
 		  if (EventDistiller.DEBUG)
 		  errorManager.println("EDStateManager: successfully removed rule " + i + " !",
 					       EDErrorManager.MANAGER);
@@ -691,12 +546,12 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	errorManager.println("EDStateManager: queried rule " + s, EDErrorManager.MANAGER);
 
 	// find it
-	for (int i = 0; i < stateMachineTemplates.size(); i++)
-	    if (((EDStateMachineSpecification)stateMachineTemplates.get(i)).getName
+	for (int i = 0; i < specifications.size(); i++)
+	    if (((EDStateMachineSpecification)specifications.get(i)).getName
 		().equalsIgnoreCase(s)) {
 		ed.sendPublic(KXNotification.EDOutputRule
-			      (((EDStateMachineSpecification)stateMachineTemplates.get
-				(i)).toXML()));
+			      (((EDStateMachineSpecification)specifications.get
+				(i)).toXML(i)));
 		break;
 	    }
     }
@@ -708,13 +563,100 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
      */
     private void dynamicQueryRules() {
 	String s = "";
-	if (stateMachineTemplates.size() > 0) {
-	    for (int i = 0; i < stateMachineTemplates.size(); i++)
+	if (specifications.size() > 0) {
+	    for (int i = 0; i < specifications.size(); i++)
 		s = s + ((EDStateMachineSpecification)
-			 stateMachineTemplates.get(i)).getName() + ",";
+			 specifications.get(i)).getName() + ",";
 	    s = s.substring(0, s.length() - 1);
 	}
 	ed.sendPublic(KXNotification.EDOutputRules(s));
+    }
+
+    // XML rendering
+
+    void write(File outputFile) {
+        write(outputFile, this);
+    }
+
+    /**
+     * Writes the rules of the given Rulebase to a file.
+     * @param outputFile the file to write to
+     * @param rulebase the source of the rules
+     */
+    static void write(File outputFile, Rulebase rulebase) {
+        try {
+            PrintWriter outputWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)));
+            // start
+            outputWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
+                               + "<rulebase xmlns=\"http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd\">");
+            // the rules
+            for (int i = 0; i < rulebase.getSpecifications().size(); i++)
+                outputWriter.write(((EDStateMachineSpecification)rulebase.getSpecifications().get(i)).toXML(i));
+            // end
+            outputWriter.write("</rulebase>");
+            outputWriter.close();
+        }
+        catch(Exception ex) { ex.printStackTrace(); }
+    }
+
+    /**************************************************
+       methods inherited from the Rulebase interface
+    **************************************************/
+
+    /** @return the Vector of EDStateSpecification */
+    public Vector getSpecifications() { return specifications; }
+
+    /**
+     * Returns whether the given name already belongs to one of the rules
+     * @param s the candidate name
+     * @return whether the given name already belongs to one of the rules
+     */
+    public boolean hasName(String s) {
+        for (int i = 0; i < specifications.size(); i++)
+            if (((EDStateMachineSpecification)specifications.get(i)).getName().equals(s))
+                return true;
+        return false;
+    }
+
+    /**
+     * Adds a given specification.
+     * @param specPosition the index where the specification should be set.
+     *        could be -1, if the specification is to be placed at the end
+     * @param edsms the specification to add
+     * @return whether the rule was added
+     */
+    public boolean addSpecification(int specPosition, EDStateMachineSpecification edsms) {
+        errorManager.println("parsed rule: " + edsms.getName(),
+                                     EDErrorManager.MANAGER);
+
+	// don't allow duplicate names
+	if (hasName(edsms.getName())) {
+            publishError("duplicate name: " + edsms.getName());
+            return false;
+        }
+
+        synchronized(specifications) {
+            // where do we add it?
+            int targetPosition = specifications.size();
+            // at the end, if not specified
+            if (specPosition >= 0 && specPosition <= targetPosition) targetPosition = specPosition;
+            specifications.add(targetPosition, edsms);
+            // initialize the specification
+            edsms.init(this);
+        }
+        return true;
+    }
+
+    /**
+     * Publishes an error in the definition of a specification.
+     * @param error a string representation of the error
+     */
+    public void publishError(String error) {
+        // print to output
+        errorManager.println("ERROR: EDStateManager: cannot add rule:\n" + error,
+                             EDErrorManager.ERROR);
+        // send an error notification
+        ed.sendPublic(KXNotification.EDError(KXNotification.EDERROR_RULEBASE, error));
     }
 
     // standard methods
@@ -726,8 +668,187 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
     public EDBus getBus(){ return this.bus; }
 }
 
+/**
+ * An interface to be implemented by those classes
+ * that have a vector of EDStateSpecification
+ */
+interface Rulebase{
 
+    /** @return the Vector of EDStateSpecification */
+    Vector getSpecifications();
 
+    /**
+     * Returns whether the given name already belongs to one of the rules
+     * @param s the candidate name
+     * @return whether the given name already belongs to one of the rules
+     */
+    public boolean hasName(String s);
+
+    /**
+     * Adds a given specification.
+     * @param position the index where the specification should be set.
+     *        could be -1, if the specification is to be placed at the end
+     * @param edsms the specification to add
+     * @return whether the rule was added
+     */
+    boolean addSpecification(int position, EDStateMachineSpecification edsms);
+
+    /**
+     * Publishes an error in the definition of a specification.
+     * @param error a string representation of the error
+     */
+    void publishError(String error);
+}
+
+/**
+ * Class that handles the XML parsing.
+ */
+class EDHandler extends DefaultHandler {
+
+    /** The class where the Specifications are to be stored. */
+    Rulebase r = null;
+
+    // variables used for parsing only
+
+    /** The current statemachine being built. */
+    private EDStateMachineSpecification currentEdsms = null;
+    /** The positoin where we will place the current sped. */
+    private int currentPosition = -1;
+    /** The current state being built. */
+    private EDState currentState = null;
+    /** The current action being built. */
+    private Notification currentAction = null;
+    /** What are we currently parsing? */
+    private int currentMode = -1;
+    /** Currently parsing state */
+    private static final int PARSINGSTATE = 1;
+    /** Currently parsing action */
+    private static final int PARSINGACTION = 2;
+
+    /**
+     * Constructs a new EDHandler
+     */
+    public EDHandler(Rulebase r) {
+        this.r = r;
+    }
+
+    // methods for parsing
+
+    /** Handle the beginning of a SAX element. */
+    public void startElement(String uri, String localName, String qName,
+			     Attributes attributes) throws SAXException {
+
+	if(localName.equals("rule")) { // Start of new EDSMS
+	    currentEdsms = new EDStateMachineSpecification
+		(attributes.getValue("", "name"));
+
+            // position
+	    String s = attributes.getValue("", "position");
+	    if (s != null) currentPosition = Integer.parseInt(s);
+
+            // instantiation policy
+	    s = attributes.getValue("", "instantiation");
+	    if (s != null)
+                try { currentEdsms.setInstantiationPolicy(Integer.parseInt(s)); }
+	        catch(IllegalArgumentException ex) { System.err.println(ex); }
+	}
+
+	if(localName.equals("state")) { // Start of new state
+	    try {
+		currentMode = PARSINGSTATE;
+		currentState = new
+		    EDState(attributes.getValue("", "name"),
+			    Integer.parseInt(attributes.getValue("","timebound")),
+			    attributes.getValue("", "children"),
+			    attributes.getValue("", "actions"),
+			    attributes.getValue("", "fail_actions"));
+
+		// absorb
+		String s = attributes.getValue("", "absorb");
+		if (s != null && s.equals("true")) currentState.setAbsorb(true);
+
+		// count
+		s = attributes.getValue("", "count");
+		if (s != null) currentState.setCount(Integer.parseInt(s));
+
+		currentEdsms.addState(currentState);
+	    }
+            catch(Exception e) {
+		System.out.println("FATAL: EDStateManager init failed");
+		e.printStackTrace();
+		System.exit(-1);
+	    }
+	}
+
+	else if(localName.equals("notification")) {
+	    // Start of new notification
+	    currentAction = new Notification();
+	    currentEdsms.addAction(attributes.getValue("", "name"), currentAction);
+	    currentMode = PARSINGACTION;
+	}
+
+        else if(localName.equals("attribute")) { // Start of new attribute
+	    // Create the attribute
+            String s5 = attributes.getValue("", "name");
+            AttributeValue attributevalue = null;
+            String s6 = attributes.getValue("", "type");
+
+            // wrap the correct type in an attribute
+            if(s6 == null || s6.equals(EDConst.TYPE_NAMES[1]))
+                attributevalue = new AttributeValue(attributes.getValue("", "value"));
+            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[2]))
+                attributevalue = new AttributeValue(Integer.parseInt(attributes.getValue("", "value")));
+            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[2]))
+                attributevalue = new AttributeValue(Long.parseLong(attributes.getValue("", "value")));
+            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[3]))
+                attributevalue = new AttributeValue(Double.parseDouble(attributes.getValue("", "value")));
+            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[4]))
+                attributevalue = new AttributeValue(Boolean.getBoolean(attributes.getValue("", "value")));
+            short word0 = 1;
+            String s7 = attributes.getValue("", "op");
+            if(s7 != null)
+                word0 = Op.op(s7);
+            s7 = attributevalue.stringValue();
+            if(attributevalue.getType() == 1 && s7.startsWith("*") && !s7.startsWith("**"))
+                word0 = 8;
+
+            // add the attribute
+            switch(currentMode){
+            case PARSINGSTATE:
+                AttributeConstraint attributeconstraint = new AttributeConstraint(word0, attributevalue);
+                currentState.addConstraint(s5, attributeconstraint);
+                break;
+
+            case PARSINGACTION:
+                currentAction.putAttribute(s5, attributevalue);
+                break;
+
+            default:
+                System.out.println("FATAL: EDStateManager init failed in determining mode");
+                System.exit(-1);
+                break;
+            }
+        }
+    }
+
+    /** Handle the end of a SAX element. */
+    public void endElement(String namespaceURI, String localName, String qName)
+        throws SAXException {
+	if(localName.equals("rule")) {
+
+	    // is the specified rule legal?
+	    String error = currentEdsms.checkConsistency();
+
+	    if (error == null) {
+                r.addSpecification(currentPosition, currentEdsms);
+                currentPosition = -1;
+	    }
+	    else { // specification is ill-defined
+                r.publishError(error);
+	    }
+	}
+    }
+}
 
 
 

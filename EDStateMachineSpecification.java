@@ -15,13 +15,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.13  2001-08-06 16:43:30  eb659
- * Tested essentially all features of ED, particularly counter and loop states.
- * Run EDTestConstruct to test different rules, specifying which rule ot test, and whether the rule should fail. For instance, run 'java psl.xues.EDTestConstruct -r spamblocker -f' to test failure of the spamblocker rule; omit '-f' to test its success.
+ * Revision 1.14  2001-08-17 13:06:00  eb659
+ * Bfirst commit for the XML generator for ED rules.
  *
- * Removed a couple of bugs, and added a small hack, unfortunately. See comments in EDState.createFilter(). Unfortunately, the internal dispatching mechanism does not work very well with inequalities of big numbers, possibly due to automatic type conversion or something. This, btw, has nothing to do with James's work.
- *
- * A couple of hours of work.
+ * AADDDCCC
+ * only partial generation at this point, but what's there has been tested thoroughtly. some 10 hrs
  *
  * Revision 1.11  2001/06/28 20:58:42  eb659
  * Tested and debugged timeout, different instantiation policies,
@@ -222,7 +220,7 @@ class EDStateMachineSpecification {
 
     /** our manager. */
     private EDStateManager manager;
-    
+
     /** the name of the rule represented. */
     private String name;
 
@@ -245,21 +243,20 @@ class EDStateMachineSpecification {
     /** State machines with this specification. */
     Vector stateMachines = new Vector();
 
-    /** The instantiation policy for this rule. 
+    /** The instantiation policy for this rule.
      *  See EDConst for legal values. */
     int instantiationPolicy = EDConst.MULTIPLE;
 
   /** Basic CTOR.  Make sure to add states, and to call findInitialStates */
-  public EDStateMachineSpecification(String name, EDStateManager manager) {
+  public EDStateMachineSpecification(String name) {
       this.name = name;
-      this.manager = manager;
   }
 
-  /** Demo test factory, don't use otherwise 
+  /** Demo test factory, don't use otherwise
   public static EDStateMachineSpecification buildDemoSpec(Siena siena,
 							  EDStateManager manager)
-  { 
-    EDStateMachineSpecification managers = 
+  {
+    EDStateMachineSpecification managers =
       new EDStateMachineSpecification("demoTest", "foo",siena,manager);
     // I had to give it some silly parameters, so that it constructs itself - eb659
     EDState e = new EDState("zzz", -1, "", "", "");
@@ -273,7 +270,7 @@ class EDStateMachineSpecification {
     /**
      * Add a state.
      *
-     * NOTE! For this specification to become active, you must subscribe() 
+     * NOTE! For this specification to become active, you must subscribe()
      * AFTER adding states.
      *
      * @param e The state.
@@ -282,7 +279,7 @@ class EDStateMachineSpecification {
 	states.put(e.getName(), e);
     }
 
-    /** 
+    /**
      * Add an Action
      * @param name the name for this action
      * @param action the action
@@ -290,19 +287,14 @@ class EDStateMachineSpecification {
     public void addAction(String name, Notification action) {
 	actions.put(name, action);
     }
-	
-    /** 
+
+    /**
      * Performs various checks for consistency on this specification.
-     * @return a string representing what error prevents this rule from proper 
+     * @return a string representing what error prevents this rule from proper
      *         functioning, or null if the rule is legal
      */
     String checkConsistency() {
 	String error = "";
-	
-	// don't allow duplicate names
-	for (int i = 0; i < manager.stateMachineTemplates.size(); i++)
-	    if (((EDStateMachineSpecification)manager.stateMachineTemplates.get(i)).getName
-		().equals(name)) error += "a rule by this name is already in use\n";
 
 	// check state representation
 	Vector wildcards = new Vector();
@@ -313,21 +305,21 @@ class EDStateMachineSpecification {
 
 	    // do all specified children exist?
 	    String[] children = checkState.getChildren();
-	    for (int i = 0; i < children.length; i++) 
+	    for (int i = 0; i < children.length; i++)
 		if (states.get(children[i]) == null)
 		    error = error + "state '" + children[i] + "' - definded as child of '"
 			+ checkName + "' - is not defined in specification\n";
 
 	    // do all specified actions exist?
 	    String[] checkAct = checkState.getActions();
-	    for (int i = 0; i < checkAct.length; i++) 
+	    for (int i = 0; i < checkAct.length; i++)
 		if (actions.get(checkAct[i]) == null)
-		    error = error + "action '" + checkAct[i] + "' sent by state '" 
+		    error = error + "action '" + checkAct[i] + "' sent by state '"
 			+ checkName + "' - is not defined in specification\n";
 
 	    // do all specified fail_actions exist?
 	    String[] checkFail = checkState.getFailActions();
-	    for (int i = 0; i < checkFail.length; i++) 
+	    for (int i = 0; i < checkFail.length; i++)
 		if (actions.get(checkFail[i]) == null)
 		    error = error + "fail_action '" + checkFail[i] + "' - sent by state '"
 			+  checkName + "' - is not defined in specification\n";
@@ -335,41 +327,42 @@ class EDStateMachineSpecification {
 	    // sample all defined wildcards
 	    Vector wc = getWildcards(checkState);
 	    for (int i = 0; i < wc.size(); i++)
-		if (!wildcards.contains(wc.get(i))) 
+		if (!wildcards.contains(wc.get(i)))
 		    wildcards.add(wc.get(i));
-	    //if (EventDistiller.DEBUG) 
+	    //if (EventDistiller.DEBUG)
 	    //System.out.println("state "+ checkState.getName() + " contains wildcards " + wc);
 	}
 
 	// check actions representation
 	// are wildcards in all actions defined somewhere? -- this doesn't work right now!
 	keys = actions.keys();
-	while (keys.hasMoreElements()) { 
-	    String key = keys.nextElement().toString(); 
-	    Notification act = (Notification)actions.get(key); 
+	while (keys.hasMoreElements()) {
+	    String key = keys.nextElement().toString();
+	    Notification act = (Notification)actions.get(key);
 	    Vector wc = getWildcards(act);
-	    
-	    //if (EventDistiller.DEBUG) 
+
+	    //if (EventDistiller.DEBUG)
 	    //System.out.println("action "+ key + " requests wildcards " + wc);
-	    
+
 	    for (int i = 0; i < wc.size(); i++) {
-		if (wc.get(i).toString().equals("*")) 
-		    error = error + "cannot specify value '*' in action '" + key; 
-		else if (!wildcards.contains(wc.get(i)))  
-		    error = error + "wildcard '*" + wc.get(i) + "' in action '"  
-			+ key + "' is not defined in any state\n"; 
+		if (wc.get(i).toString().equals("*"))
+		    error = error + "cannot specify value '*' in action '" + key;
+		else if (!wildcards.contains(wc.get(i)))
+		    error = error + "wildcard '*" + wc.get(i) + "' in action '"
+			+ key + "' is not defined in any state\n";
 	    }
 	}
-		    
+
 	if (error.equals("")) return null;
 	return error;
     }
 
     /**
-     * Initializes this specification, by finding the initial states, 
+     * Initializes this specification, by finding the initial states,
      * and subscribing the first instance of this specification.
      */
-    void init() {
+    void init(EDStateManager manager) {
+        this.manager = manager;
 	findInitialStates();
 	stateMachines.add(new EDStateMachine(this));
     }
@@ -382,7 +375,7 @@ class EDStateMachineSpecification {
     private void findInitialStates() {
 	Enumeration keys = states.keys();
 	Vector names = new Vector();
-	while (keys.hasMoreElements()) 
+	while (keys.hasMoreElements())
 	    names.add(keys.nextElement());
 	boolean[] hasIncomingEdges = new boolean[names.size()];
 
@@ -403,19 +396,23 @@ class EDStateMachineSpecification {
 
 	// which ones?
 	n = -1;
-	for (int i = 0; i < names.size(); i++) 
+	for (int i = 0; i < names.size(); i++)
 	    if (!hasIncomingEdges[i])
-		initialStates[++n] = names.get(i).toString(); 
+		initialStates[++n] = names.get(i).toString();
     }
 
 
     // XML representation
 
-    /** @return the XML representation of this object */
-    public String toXML(){
+    /** 
+     * @param position the index of priority of the rule
+     * @return the XML representation of this object 
+     */
+    public String toXML(int position){
 	// start
-	String s = "<rule name=\"" + name + "\" instantiation=\"" + instantiationPolicy + "\">\n";
-	
+	String s = "<rule name=\"" + name + "\" instantiation=\"" + 
+	    instantiationPolicy + "\" position=\"" + position + "\">\n";
+
 	// the states
 	s += "<states>\n";
 	Enumeration keys = states.keys();
@@ -439,7 +436,7 @@ class EDStateMachineSpecification {
 	return s;
     }
 
-    /** 
+    /**
      * Returns the XML representation of an action.
      * @param n the notification to represent
      * @param name the name for this action
@@ -450,7 +447,7 @@ class EDStateMachineSpecification {
 	Iterator iterator = n.attributeNamesIterator();
 	while (iterator.hasNext()){
 	    String notifName = iterator.next().toString();
-	    s = s + "\t<attribute name=\"" + notifName + "\" value=\"" + 
+	    s = s + "\t<attribute name=\"" + notifName + "\" value=\"" +
 		n.getAttribute(notifName).stringValue() + "\"/>\n";
 	}
 	s += "</notification>\n";
@@ -459,7 +456,7 @@ class EDStateMachineSpecification {
 
     /**
      * Returns all the wildcards defined in a given state.
-     * @param checkState the state whose wildcards 
+     * @param checkState the state whose wildcards
      * @return the wildcards (without the initial *)
      */
     public static Vector getWildcards(EDState checkState) {
@@ -475,7 +472,7 @@ class EDStateMachineSpecification {
 
     /**
      * Returns all the wildcards defined in a given notification.
-     * @param checkNotif the notification whose wildcards 
+     * @param checkNotif the notification whose wildcards
      * @return the wildcards (without the initial *)
      */
     public static Vector getWildcards(Notification checkNotif) {
@@ -498,16 +495,16 @@ class EDStateMachineSpecification {
     /** @return the instantiation policy for this rule */
     public int getInstantiationPolicy() { return instantiationPolicy; }
 
-    /** 
-     * Creates and subscribes a new machine with this specification. 
-     * Fails to do so if ED is is shutdown, in which case it is 
+    /**
+     * Creates and subscribes a new machine with this specification.
+     * Fails to do so if ED is is shutdown, in which case it is
      * irrelevant to have new machines - at least for now, until
      * retro-active rules are not envisaged.
      */
     void instantiate() {
 	if (!manager.getEventDistiller().isInShutdown()) {
 	    synchronized (stateMachines) {
-		stateMachines.add(new EDStateMachine(this)); 
+		stateMachines.add(new EDStateMachine(this));
 	    }
 	}
     }
@@ -519,6 +516,9 @@ class EDStateMachineSpecification {
 
     /** @return the name of this SMSpecification */
     public String getName(){ return name; }
+
+    /** @param name the new name for this SMSpecification */
+    public void setName(String name){ this.name = name; }
 
     /** @return the actions for this machine */
     public Hashtable getActions(){ return this.actions; }

@@ -25,13 +25,11 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.27  2001-08-06 16:43:29  eb659
- * Tested essentially all features of ED, particularly counter and loop states.
- * Run EDTestConstruct to test different rules, specifying which rule ot test, and whether the rule should fail. For instance, run 'java psl.xues.EDTestConstruct -r spamblocker -f' to test failure of the spamblocker rule; omit '-f' to test its success.
+ * Revision 1.28  2001-08-17 13:06:00  eb659
+ * Bfirst commit for the XML generator for ED rules.
  *
- * Removed a couple of bugs, and added a small hack, unfortunately. See comments in EDState.createFilter(). Unfortunately, the internal dispatching mechanism does not work very well with inequalities of big numbers, possibly due to automatic type conversion or something. This, btw, has nothing to do with James's work.
- *
- * A couple of hours of work.
+ * AADDDCCC
+ * only partial generation at this point, but what's there has been tested thoroughtly. some 10 hrs
  *
  * Revision 1.25  2001/07/03 21:36:23  eb659
  * Improved problems in race conditions. The application now hangs in the subscribe()
