@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<rulebase>
+<rulebase xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd">
 
 <!-- The spamblocker rule -->
-<rule xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" name="testRule">
+<rule name="testRule">
    <states>
       <state timebound="-1">
         <attribute name="from" value="*1"/>
@@ -22,7 +22,7 @@
 </rule>
 
 <!-- First example rule for workgroup cache -->
-<rule xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" name="WGCRule1">
+<rule name="WGCRule1">
    <states>
       <state timebound="-1">
 	<attribute name="Instigator" value="Alpa"/>
@@ -40,7 +40,7 @@
 </rule>
 
 <!-- Second example rule for workgroup cache -->
-<rule xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" name="WGCRule2">
+<rule name="WGCRule2">
    <states>
       <state timebound="-1">
 	<attribute name="Instigator" value="Phil"/>
@@ -56,5 +56,4 @@
       </notification>
    </actions>
 </rule>
-
 </rulebase>
