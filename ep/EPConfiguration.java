@@ -1,22 +1,22 @@
 package psl.xues.ep;
 
 import java.io.*;
-import javax.xml.parsers.*;
 import java.util.*;
-
+import javax.xml.parsers.*;
 import org.apache.log4j.Category;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.PropertyConfigurator;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
+import psl.xues.ep.EPRule;
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.input.EPInput;
 import psl.xues.ep.input.EPInputInterface;
 import psl.xues.ep.output.EPOutput;
+import psl.xues.ep.transform.EPTransform;
 
 /**
  * Event packager configuration parser.  Uses JAXP to handle the XML-formatted
@@ -71,6 +71,7 @@ class EPConfiguration {
     // (But first) instantiate our container of verified event formats
     ep.eventFormats = new HashSet();
     for(int i=0; i < eventFormats.getLength(); i++) {
+      if(eventFormats.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
       String eventFormat = verifyEventFormat((Element)eventFormats.item(i));
       if(eventFormat != null)
         ep.eventFormats.add(eventFormat);
@@ -86,9 +87,23 @@ class EPConfiguration {
       // Build inputters
       NodeList inputters = inputtersList.item(0).getChildNodes();
       for(int i=0; i < inputters.getLength(); i++) {
+        if(inputters.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
         EPInput epi = buildInputter((Element)inputters.item(i));
         if(epi != null)
           ep.inputters.put(epi.getName(), epi);
+      }
+    }
+    
+    // Transforms
+    NodeList transformsList = e.getElementsByTagName("Transforms");
+    ep.transformers = new HashMap();
+    if(transformsList.getLength() > 0) { // No warnings if otherwise
+      NodeList transforms = transformsList.item(0).getChildNodes();
+      for(int i=0; i < transforms.getLength(); i++) {
+        if(transforms.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
+        EPTransform ept = buildTransform((Element)transforms.item(i));
+        if(ept != null)
+          ep.transformers.put(ept.getName(), ept);
       }
     }
     
@@ -102,6 +117,7 @@ class EPConfiguration {
       // Build outputters
       NodeList outputters = outputtersList.item(0).getChildNodes();
       for(int i=0; i < outputters.getLength(); i++) {
+        if(outputters.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
         EPOutput epo = buildOutputter((Element)outputters.item(i));
         if(epo != null)
           ep.outputters.put(epo.getName(), epo);
@@ -109,7 +125,25 @@ class EPConfiguration {
     }
     
     // Finally, load the rules
-    
+    NodeList rulesList = e.getElementsByTagName("Rules");
+    ep.rules = new HashMap();
+    if(rulesList.getLength() == 0 ||
+    rulesList.item(0).getChildNodes().getLength() == 0) {
+      debug.warn("No rules specified, EP won't be all that useful");
+    } else {
+      // Build rules
+      NodeList rules = rulesList.item(0).getChildNodes();
+      for(int i=0; i < rules.getLength(); i++) {
+        if(rules.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
+        try {
+          EPRule epr = new EPRule((Element)rules.item(i), ep);
+          ep.rules.put(epr.getName(), epr);
+        } catch(Exception ex) {
+          debug.warn("Could not instantiate rule: " + ex.toString());
+          continue;
+        }
+      }
+    }
     
     // All done
     return true;
@@ -210,5 +244,38 @@ class EPConfiguration {
 
     // Success!
     return epo;
+  }
+
+  /**
+   * Build a new transform given the XML DOM definition of it.
+   *
+   * @param outputter The description in DOM-tree form.
+   * @return An instance of EPTransform if successful, else null.
+   */
+  private EPTransform buildTransform(Element transform) {
+    String transformName = transform.getAttribute("Name");
+    String transformType = transform.getAttribute("Type");
+    if(transformName == null || transformType == null ||
+    transformName.length() == 0 || transformType.length() == 0) {
+      debug.warn("Invalid transform name or type detected, ignoring");
+      return null;
+    }
+    
+    // Load and instantiate this transform
+    EPTransform ept = null;
+    try {
+      debug.debug("Loading transform \"" + transformName + "\"...");
+      // XXX - Should we be making a deep copy of the transform element,
+      // since we're handing it to a potentially unknown constructor?
+      ept = (EPTransform)Class.forName(transformName).getConstructor(new Class[]
+      { transform.getClass() }).newInstance(new Object[] { transform });
+    } catch(Exception e) {
+      debug.warn("Failed in loading transform \"" + transformName +
+      "\", ignoring", e);
+      return null;
+    }
+
+    // Success!
+    return ept;
   }
 }

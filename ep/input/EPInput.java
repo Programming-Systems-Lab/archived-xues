@@ -1,9 +1,10 @@
 package psl.xues.ep.input;
 
-import psl.xues.ep.EventPackager;
-
+import java.util.HashMap;
 import org.apache.log4j.Category;
 import org.w3c.dom.Element;
+import psl.xues.ep.EventPackager;
+import psl.xues.ep.EPRule;
 
 /**
  * Extend this class to have your very own input mechanism.
@@ -27,6 +28,8 @@ public abstract class EPInput implements Runnable {
   protected Thread myThread = null;
   /** The element responsible for this input format */
   protected Element defnElem = null;
+  /** Associated runtime rules */
+  protected HashMap runtimeRules = new HashMap();
   
   /**
    * CTOR.  You are instantiated by the Event Packager and given an interface
@@ -47,18 +50,15 @@ public abstract class EPInput implements Runnable {
   throws InstantiationException {
     // Attempt to identify our instance name, which we call sourceID
     this.sourceID = el.getAttribute("Name");
-    // Extra-paranoia checking - we really shouldn't need this
     if(sourceID == null || sourceID.length() == 0) {
-      // Shouldn't happen, just for paranoia's sake
-      sourceID = this.getClass().getName();
+      throw new InstantiationException("No sourceID specified for inputter");
     }
     
     this.ep = ep;
     this.defnElem = el;
     
     // Set up the debugging.  We need the type for this as well.
-    debug = Category.getInstance(this.getClass() + "." + sourceID);
-    System.err.println("DEBUGIn: " + this.getClass()); // XXX
+    debug = Category.getInstance(this.getClass().getName() + "." + sourceID);
   }
   
   /**
@@ -98,5 +98,19 @@ public abstract class EPInput implements Runnable {
       debug.warn("Can't interrupt thread, may not shutdown");
     }
   }
-  
+ 
+  /**
+   * Add a rule reference to us.
+   */
+  public void addRule(EPRule r) {
+    runtimeRules.put(r.getName(), r);
+  }
+
+  /**
+   * Get the "type" of input.  You have to implement this.
+   *
+   * @return The type, as String.  Usually, it should be the class name without
+   * the package identification.
+   */
+  public abstract String getType();
 }

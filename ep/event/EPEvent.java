@@ -16,13 +16,28 @@ public abstract class EPEvent implements Comparable {
   protected long timestamp = -1;
   /** Debugger */
   protected Category debug = null;
+  /** Creator ("source", not "type") */
+  protected String source = null;
+  
   
   /**
    * CTOR.  Assume that construction time is the correct timestamp time.
+   *
+   * @param source The generating source for this EPEvent.  If you have
+   * nothing else, specify getClass().getName().
    */
-  public EPEvent() {
-    timestamp = System.currentTimeMillis();
-    // Build our debugger.  XXX - if another class extends this one?
+  public EPEvent(String source) {
+    this(source, System.currentTimeMillis());
+  }
+  
+  /**
+   * CTOR.  Use specified timestamp.  See comments from previous CTOR.
+   */
+  public EPEvent(String source, long timestamp) {
+    this.timestamp = timestamp;
+    this.source = source;
+    // Build our debugger.  Note that if another class extends this one, we
+    // will use that class's name as the debugger's instance name.
     debug = Category.getInstance(this.getClass().getName());
   }
   

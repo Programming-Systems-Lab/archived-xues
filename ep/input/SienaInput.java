@@ -35,7 +35,7 @@ public class SienaInput extends EPInput implements Notifiable {
   /**
    * CTOR.  Modeled after the EPInput CTOR.
    */
-  public SienaInput(EPInputInterface ep, Element el) 
+  public SienaInput(EPInputInterface ep, Element el)
   throws InstantiationException {
     super(ep, el);
     // Now parse the element and see if we can get all of the needed
@@ -158,7 +158,7 @@ public class SienaInput extends EPInput implements Notifiable {
     debug.debug("Received notification " + n);
     
     // Construct a new SienaEvent and wrap the notification in there
-    SienaEvent se = new SienaEvent(n);
+    SienaEvent se = new SienaEvent(getType(), n);
     
     // Inject it into the EP
     ep.injectEvent(se);
@@ -175,5 +175,12 @@ public class SienaInput extends EPInput implements Notifiable {
     super.shutdown();
     hd.shutdown(); // Unsubscribe from everything
     hd = null;
+  }
+  
+  /**
+   * Get the "type" of input.
+   */
+  public String getType() {
+    return "SienaInput";
   }
 }

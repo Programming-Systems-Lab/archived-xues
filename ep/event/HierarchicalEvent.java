@@ -7,6 +7,9 @@ import org.w3c.dom.Node;
  * Default EP event representation: hierarchical format.  Supports many
  * possible inputs, including both flat and XML-like hierarchies.
  *
+ * TODO:
+ * - Implement this!
+ *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @revision $Revision$
  */
@@ -17,9 +20,7 @@ public class HierarchicalEvent extends EPEvent {
   /**
    * Create an empty HierarchicalEvent.
    */
-  public HierarchicalEvent() {
-    
-  }
+  public HierarchicalEvent(String source) { super(source); }
   
   /** 
    * Get the format (type) of this event.

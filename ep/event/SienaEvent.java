@@ -19,21 +19,38 @@ public class SienaEvent extends EPEvent {
   private Category debug = Category.getInstance(SienaEvent.class.getName());
   
   /**
-   * Empty CTOR.
+   * Base CTOR.
+   *
+   * @param source The generator ("source") of these events.
    */
-  public SienaEvent() { ; }
+  public SienaEvent(String source) { this(source, null); }
 
   /**
    * CTOR given an existing Siena notification.
    *
+   * @param source The generator ("source") of these events.
    * @param n The Siena notification to use.
    */
-  public SienaEvent(Notification n) {
+  public SienaEvent(String source, Notification n) {
+    super(source);
     this.n = n;
   }
 
   /**
-   * Get the embedded Siena notification.
+   * CTOR given an existing Siena notification and a timestamp.
+   *
+   * @param source The generator ("source") of these events.
+   * @param n The Siena notification to use.
+   * @param t The timestamp.
+   */
+  public SienaEvent(String source, Notification n, long t) {
+    super(source, t);
+    this.n = n;
+  }
+  
+  /**
+   * Get the embedded Siena notification.  This is NOT a copy, but rather
+   * the orignal.  Modify with care!
    *
    * @return The embedded Siena notification
    */

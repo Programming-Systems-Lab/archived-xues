@@ -1,14 +1,19 @@
 package psl.xues.ep;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import org.apache.log4j.Category;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.PropertyConfigurator;
-
-import java.util.HashSet;
-import java.util.HashMap;
-
 import psl.xues.ep.event.EPEvent;
+import psl.xues.ep.input.EPInput;
 import psl.xues.ep.input.EPInputInterface;
+import psl.xues.ep.output.EPOutput;
+import psl.xues.ep.transform.EPTransform;
 
 /**
  * Event Packager for XUES.
@@ -17,7 +22,7 @@ import psl.xues.ep.input.EPInputInterface;
  * City of New York.  All Rights Reserved.
  *
  * TODO:
- * - Implement outputter dispatch threads (or should we just continue to trust 
+ * - Implement outputter dispatch threads (or should we just continue to trust
  *   that the outputter will be fast?)
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
@@ -30,11 +35,11 @@ public class EventPackager implements Runnable, EPInputInterface {
   
   /** Base CTOR. */
   public EventPackager() { this(null); }
-
+  
   /** Default configuration file */
   public static final String defaultConfigFile = "EPConfig.xml";
-
-  /** 
+  
+  /**
    * "Tested" event formats - meaning they were successfully loaded into
    * the JVM.
    */
@@ -42,9 +47,20 @@ public class EventPackager implements Runnable, EPInputInterface {
   
   /** Inputters */
   HashMap inputters = null;
-  
   /** Outputters */
   HashMap outputters = null;
+  /** Transforms */
+  HashMap transformers = null;
+  /** Rules */
+  HashMap rules = null;
+  
+  /** Event dispatch queue */
+  List eventQueue = null;
+  /** Dequeue thread */
+  Thread dequeueThread = null;
+  
+  /** Shutdown mode */
+  private boolean shutdown = false;
   
   /**
    * Default embedded CTOR.
@@ -68,11 +84,79 @@ public class EventPackager implements Runnable, EPInputInterface {
     // Parse the configuration file
     EPConfiguration epc = new EPConfiguration(configFile, this);
     
+    // Initialize the event queue.  Make it synchronized.
+    eventQueue = Collections.synchronizedList(new ArrayList());
     
+    // Shutdown hook
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      public void run() {
+        shutdown();
+      }
+    });
   }
   
   public void run() {
+    // "Start" each of the components.  Inputters last, since they will
+    // actually start moving data.
+    synchronized(outputters) {
+      Iterator i = outputters.values().iterator();
+      while(i.hasNext()) {
+        new Thread((EPOutput)i.next()).start();
+      }
+    }
     
+    synchronized(inputters) {
+      Iterator i = inputters.values().iterator();
+      while(i.hasNext()) {
+        new Thread((EPInput)i.next()).start();
+      }
+    }
+
+    // Store a reference to our current thread
+    dequeueThread = Thread.currentThread();
+    
+    // Start the dequeue loop
+    while(!shutdown) {
+      while(eventQueue.size() > 0) {
+        // Dequeue the first element
+        EPEvent epe = (EPEvent)eventQueue.remove(0);
+        // Process it
+        
+      }
+      
+      // Nothing to do, time to catch a nap
+      try {
+        Thread.currentThread().sleep(1000);
+      } catch(Exception e) { ; }
+    }
+  }
+  
+  /**
+   * Handle shutdown.
+   */
+  public void shutdown() {
+    debug.info("Shutting down EP...");
+
+    // Stop ourselves first
+    shutdown = true;
+    if(dequeueThread != null) dequeueThread.interrupt();
+    
+    // Shut down the inputters first
+    synchronized(inputters) {
+      Iterator i = inputters.values().iterator();
+      while(i.hasNext()) {
+        ((EPInput)i.next()).shutdown();
+      }
+    }
+    // ... and now the outputters
+    synchronized(outputters) {
+      Iterator i = outputters.values().iterator();
+      while(i.hasNext()) {
+        ((EPOutput)i.next()).shutdown();
+      }
+    }
+
+    debug.info("EP shutdown complete.");
   }
   
   /** Main. */
@@ -106,11 +190,11 @@ public class EventPackager implements Runnable, EPInputInterface {
     System.exit(-1);
   }
   
-  /** 
+  /**
    * Initialize debugging.
-   * 
+   *
    * @param debug Enable debugging at all?
-   * @param debugFile Custom log4j debugging configuration file 
+   * @param debugFile Custom log4j debugging configuration file
    */
   private static void initDebug(boolean debug, String debugFile) {
     // Set up logging
@@ -125,7 +209,7 @@ public class EventPackager implements Runnable, EPInputInterface {
       Category.getDefaultHierarchy().disableDebug();
     }
   }
-
+  
   /**
    * Inject an event into the Event Packager.  Use any supported EPEvent
    * format.
@@ -135,9 +219,11 @@ public class EventPackager implements Runnable, EPInputInterface {
    */
   public boolean injectEvent(EPEvent e) {
     debug.warn("injectEvent not implemented yet");
+    // Need to verify that EPEvent has a timestamp, otherwise warn and put
+    // one ourselves (bad EPInput!)
     return false;
   }
-
+  
   /**
    * Get a list of supported EPEvent-based event formats.
    *
@@ -147,7 +233,7 @@ public class EventPackager implements Runnable, EPInputInterface {
     debug.warn("getSupportedEventFormats not implemented yet");
     return null;
   }
-
+  
   /**
    * Report an error, which will probably get passed to EventPackager's
    * logger verbatim.  ONLY use this if you don't have your own logger
@@ -159,5 +245,5 @@ public class EventPackager implements Runnable, EPInputInterface {
   public void error(String src, String err) {
     debug.error(src + ": " + err);
   }
-
+  
 }

@@ -36,17 +36,15 @@ public abstract class EPOutput implements Runnable {
    * @param e The element containing useful configuration information.
    * @exception InstantiationException
    */
-  public EPOutput(Element e) {
+  public EPOutput(Element el) throws InstantiationException {
     // Attempt to identify our instance name, which we call sourceID
-    this.outputID = e.getAttribute("Name");
+    this.outputID = el.getAttribute("Name");
     if(outputID == null || outputID.length() == 0) {
-      // Shouldn't happen, just for paranoia's sake
-      outputID = this.getClass().getName();
+      throw new InstantiationException("No sourceID specified for outputter");
     }
     
     // Set up the debugging.  We need the type for this as well.
     debug = Category.getInstance(this.getClass() + "." + outputID);
-    System.err.println("DEBUGOut: " + this.getClass()); // XXX
   }
   
   /**

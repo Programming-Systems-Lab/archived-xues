@@ -9,7 +9,7 @@
         <EventFormat Name="FlatEvent"></EventFormat>
     </EventFormats>
     <Inputters>
-        <Inputter Name="Siena1" Type="SienaInput" SienaHost="senp://localhost:7890">
+        <Inputter Name="SienaInput1" Type="SienaInput" SienaHost="senp://localhost:7890">
             <SienaFilter Name="TestFilter1">
                 <SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue"></SienaConstraint>
             </SienaFilter>
@@ -24,11 +24,15 @@
 <Transforms></Transforms>
     <Rules>
         <Rule><!--Sources specify a disjoint set-->
-            <Sources>
-                <Source Name="Siena1"></Source>
-            </Sources>
+            <Inputs>
+                <Input Name="SienaInput1"></Input>
+            </Inputs>
             
+            <!--Transforms are applied in order-->
             <Transforms></Transforms>
+            <Outputs>
+                <Output Name="SienaOutput1"></Output>
+            </Outputs>
         </Rule>
     </Rules>
     </EventPackagerConfiguration>
