@@ -19,12 +19,9 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.15  2001-06-25 20:30:31  eb659
- * We have a working ED again!
- * Tested/fixed:
- * instantiation modes for SMs: 0,1,2
- * event absorption
- * fixed error in XML output
+ * Revision 1.16  2001-06-27 17:46:53  eb659
+ * added EDErrorManager, so James can have a look. We'll use implementors of
+ * this class for the output of ED
  *
  * Revision 1.14  2001/06/20 18:54:44  eb659
  * handle self-comparison
@@ -309,7 +306,11 @@ public class EDStateMachine implements Comparable {
 	if (failedStateNames.size() > 0) 
 	    ((EDState)states.get(failedStateNames.get(0).toString())).fail();
 
-	/* 2) throw the state machine away */
+	/* 2) instantiate new machine, if necessary. */
+	if (specification.getInstantiationPolicy() == EDConst.ONE_AT_A_TIME) 
+	    specification.instantiate();
+
+	/* 3) throw the state machine away */
 	return true; 
 
 

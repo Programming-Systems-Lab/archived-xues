@@ -9,9 +9,6 @@ b. flush event in shutdown when using event-based time
 implemented priority dispatching. (call 'reorderRules()' or whatever, 
 when necessary, and return value upon notification - just uncomment)
 
-4. single instance (one time only, or one at any given time)
-needs testing...
-
 7. (Janak) Test event loopback support.
 
 to be designed:
@@ -40,8 +37,3 @@ machine itself?)
 
 2) if the count is '-1' this is a loop state. Then the 'children' are states
 that are a valid exit from the loop
-
-Done:
-fixed error in XML output
-Tested:
-instantiation modes: 0,1,2

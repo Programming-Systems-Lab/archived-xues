@@ -25,12 +25,9 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.17  2001-06-25 20:30:31  eb659
- * We have a working ED again!
- * Tested/fixed:
- * instantiation modes for SMs: 0,1,2
- * event absorption
- * fixed error in XML output
+ * Revision 1.18  2001-06-27 17:46:53  eb659
+ * added EDErrorManager, so James can have a look. We'll use implementors of
+ * this class for the output of ED
  *
  * Revision 1.16  2001/06/20 20:07:21  eb659
  * time-based and event-based timekeeping
@@ -443,9 +440,8 @@ public class EDState implements EDNotifiable {
 	// 7. end of transition
 	sm.setInTransition(false);
 
-	// 8. instantiate new machine, if necessary
-	if (sm.getSpecification().getInstantiationPolicy() == EDConst.ONE_AT_A_TIME && sm.reap())
-	    sm.getSpecification().instantiate();
+	// reap will instantiate new machine, if necessary
+	if (sm.getSpecification().getInstantiationPolicy() == EDConst.ONE_AT_A_TIME) sm.reap();
     }
 
     /** 
