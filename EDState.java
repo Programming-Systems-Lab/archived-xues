@@ -1,6 +1,7 @@
 
 package psl.xues;
 
+import java.util.*;
 import siena.*;
 
 /**
@@ -15,7 +16,11 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.1  2001-01-22 02:11:54  jjp32
+ * Revision 1.2  2001-01-28 22:58:58  jjp32
+ *
+ * Wildcard support has been added
+ *
+ * Revision 1.1  2001/01/22 02:11:54  jjp32
  *
  * First full Siena-aware build of XUES!
  * 
@@ -31,8 +36,11 @@ public class EDState {
    * Timestamp this state has fired in.  Created and used during
    * timebound validation.
    */
-  public long ts;
-   
+  private long ts;
+  /**
+   * The state machine that "ownes" us.
+   */
+  private EDStateMachine sm = null;
 
   /**
    * CTOR.
@@ -61,25 +69,79 @@ public class EDState {
   }
 
   /**
+   * Clone-and-assign-state-machine CTOR.  Useful if this EDState is a template
+   * for many state machines.
+   */
+  public EDState(EDState e, EDStateMachine sm) {
+    this.attr = e.attr;
+    this.val = e.val;
+    this.tb = e.tb;
+    this.ts = e.ts;
+    this.sm = sm;
+  }
+
+  /**
+   * Set our state machine.
+   */
+  public void assignOwner(EDStateMachine sm) {
+    this.sm = sm;
+  }
+
+  /**
    * Validate a state.  If this returns true, then it means the state
    * was successfully matched within the appropriate timebounds.
    *
    * BUG WARNING: If timestamp is mapped to a non-long, we will crash.
+   *
+   * GOOD LUCK if you can understand this.  Read through a few times,
+   * hopefully it'll make sense then :-)
    */
   public boolean validate(Notification n, EDState prev) {
     AttributeValue a = n.getAttribute(attr);
     AttributeValue timestamp = n.getAttribute("timestamp");
 
-    if(a != null && a.stringValue() != null &&
-       a.stringValue().equals(val)) {
-      // Pull out the timestamp
-      if(timestamp != null) { // Use validate
-	return validateTimebound(prev, timestamp.longValue());
+    // Check to make sure the attribute exists
+    if(a == null || a.stringValue() == null) {
+      // Not our event
+      return false;
+    }
+
+    // Wildcard binding?
+    if(val.startsWith("*")) {
+      // Is this one previously bound?
+      String bindName = val.substring(1);
+      if(bindName.length() == 0) { // Simple wildcard
+	return validateTimebound(prev, timestamp);
+      } else { // Binding
+	if(sm == null || sm.wildHash == null) { // BAD
+	  System.err.println("EDState: ERROR - No State Machine hash "+
+			     "assigned, wildcard binding requested");
+	  return false;
+	}
+	// Now check the bind
+	if(sm.wildHash.get(bindName) != null) {
+	  if(((String)sm.wildHash.get(bindName)).equals(a.stringValue())) {
+	    // YES!
+	    return validateTimebound(prev, timestamp);
+	  }
+	  return false; // Complex wildcard doesn't match
+	} else { 
+	  // Binding requested, NOT YET BOUND, check timestamp and bind
+	  if(validateTimebound(prev, timestamp)) {
+	    // We have a match, bind and return true
+	    sm.wildHash.put(bindName, a.stringValue());
+	  } else { 
+	    // Not our event (timestamp failed)
+	    return false;
+	  }
+	}
       }
-      
-      // No timestamp.  If timebound is -1, we're OK, otherwise fail
-      if(tb == -1) return true;
-      else return false;
+    }
+
+    // No wildcard binding, SIMPLE match
+    if(a.stringValue().equals(val)) {
+      // Pull out the timestamp
+      return validateTimebound(prev, timestamp);
     }
 
     // Not our event
@@ -113,17 +175,41 @@ public class EDState {
   }
 
   /**
+   * Convenience accessor method to validateTimebound.
+   */
+  public boolean validateTimebound(EDState s, AttributeValue t) {
+    if(t == null) { // No match, do WE have a timebound
+      if(tb == -1) { // OK, no timebound specified but we didn't expect one
+	return true;
+      }
+      return false; // No timebound specified, we wanted one.
+    }
+
+    // There was a match to timebound, let's compare    
+    return validateTimebound(s, t.longValue());
+  }
+
+  /**
    * Build a Siena filter for the state machine.  Primarily for
    * EDStateMachine.
-   *
-   * @return A Siena filter.
-   */
+   * 
+   * Note, if val begins with an asterisk "*" it will be considered a
+   * wildcard and will bind to anything.  If there is a suffix after *
+   * it will match to that after the first binding (at least, in this
+   * state machine).
+   * 
+   * @return A Siena filter.  */
   Filter buildSienaFilter() {
     Filter f = new Filter();
     // We only want events from metaparser that have the state that
     // maches us
-    f.addConstraint("type", "ParsedEvent");
-    f.addConstraint(attr, val);
+    f.addConstraint("type", "EDInput");
+    if(val.startsWith("*")) {
+      // XXX - will "" be a problem here?
+      f.addConstraint(attr, new AttributeConstraint(Op.ANY,""));
+    } else {
+      f.addConstraint(attr, val);
+    }
     return f;
   }  
 }

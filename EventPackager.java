@@ -26,7 +26,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.12  2001-01-26 03:30:54  jjp32
+ * Revision 1.13  2001-01-28 22:58:58  jjp32
+ *
+ * Wildcard support has been added
+ *
+ * Revision 1.12  2001/01/26 03:30:54  jjp32
  *
  * Now supports non-localhost siena servers
  *
@@ -110,14 +114,26 @@ public class EventPackager implements Notifiable {
       }
     }
 
-    /* Add a shutdown hook for JDK 1.3 */
-    Runtime.getRuntime().addShutdownHook(new EPShutdownThread());
-
+    /* Add a shutdown hook */
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+	public void run() {      
+	  /* Clean up the file streams */
+	  if(spoolFile != null) {
+	    System.err.println("EventPackager: shutting down");
+	    try {
+	      spoolFile.close();
+	      spoolFile = null;
+	      ((HierarchicalDispatcher)siena).shutdown();
+	    } catch(Exception e) { e.printStackTrace(); }
+	  }
+	}
+      });
+    
     // Now create a Siena node
     siena = new HierarchicalDispatcher();
     try {
       ((HierarchicalDispatcher)siena).
-	setReceiver(new TCPPacketReceiver(91977));
+	setReceiver(new TCPPacketReceiver(61977));
       ((HierarchicalDispatcher)siena).setMaster(sienaHost);
     } catch(Exception e) { e.printStackTrace(); }
 
@@ -199,22 +215,6 @@ public class EventPackager implements Notifiable {
 
   /** Unused Siena construct. */
   public void notify(Notification[] s) { ; }
-
-  /**
-   * Small thread for the addShutdownHook method.
-   */
-  class EPShutdownThread extends Thread {
-    public void run() {      
-      /* Clean up the file streams */
-      if(spoolFile != null) {
-	System.err.println("EventPackager: shutdown detected, closing spoolFile");
-	try {
-	  spoolFile.close();
-	  spoolFile = null;
-	} catch(Exception e) { e.printStackTrace(); }
-      }
-    }
-  }
 
   class EPClientThread implements Runnable {
     private int srcID;

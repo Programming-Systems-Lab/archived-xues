@@ -18,7 +18,11 @@ import siena.*;
  * @version 0.02 (1/20/2001)
  *
  * $Log$
- * Revision 1.11  2001-01-28 21:34:00  jjp32
+ * Revision 1.12  2001-01-28 22:58:58  jjp32
+ *
+ * Wildcard support has been added
+ *
+ * Revision 1.11  2001/01/28 21:34:00  jjp32
  *
  * XML parsing complete; almost ready for demo
  *
@@ -131,7 +135,7 @@ public class EventDistiller implements Notifiable {
     publicSiena = new HierarchicalDispatcher();
     try {
       ((HierarchicalDispatcher)publicSiena).
-	setReceiver(new TCPPacketReceiver(91978));
+	setReceiver(new TCPPacketReceiver(61978));
       ((HierarchicalDispatcher)publicSiena).setMaster(sienaHost);
     } catch(Exception e) { e.printStackTrace(); }
    
@@ -152,12 +156,25 @@ public class EventDistiller implements Notifiable {
     privateSiena = new HierarchicalDispatcher();
     try {
       ((HierarchicalDispatcher)privateSiena).
-	setReceiver(new TCPPacketReceiver(91979));
+	setReceiver(new TCPPacketReceiver(61979));
     } catch(Exception e) { e.printStackTrace(); }
     
     // Initialize state machine manager.  Hand it the private siena.
     EDStateManager edsm = new EDStateManager(privateSiena, this, 
 					     stateSpecFile);
+
+    /* Add a shutdown hook */
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+	public void run() {      
+	  /* Shut down the hierarchical dispatchers */
+	  System.err.println("EventDistiller: shutting down");
+	  try {
+	    ((HierarchicalDispatcher)publicSiena).shutdown();
+	    ((HierarchicalDispatcher)privateSiena).shutdown();
+	  } catch(Exception e) { e.printStackTrace(); }
+	}
+      });
+
 
     // Run
     while(true) {

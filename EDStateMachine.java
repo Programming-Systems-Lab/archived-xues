@@ -17,7 +17,11 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.1  2001-01-22 02:11:54  jjp32
+ * Revision 1.2  2001-01-28 22:58:58  jjp32
+ *
+ * Wildcard support has been added
+ *
+ * Revision 1.1  2001/01/22 02:11:54  jjp32
  *
  * First full Siena-aware build of XUES!
  *
@@ -28,6 +32,12 @@ public class EDStateMachine implements Notifiable {
   private Siena siena = null;
   private Notification action = null;
   private EDStateManager el = null;
+  /**
+   * Wildcard binding hashtable.  If there are wildcards in states that must
+   * match later states, we store them in this table.  In the future, this
+   * might be used for more than just wildcards.
+   */ 
+  Hashtable wildHash = null;
 
   /**
    * CTOR.  EDStateMachines *must* be launched through a StateManager.
@@ -45,12 +55,13 @@ public class EDStateMachine implements Notifiable {
       finish();
       return;
     }
+    this.wildHash = new Hashtable();
     // Add the states, set up notifications.  Why copy the states
     // here?  Since we have to create notifications anyway...
     states = new Vector();
     for(int i=0; i < stateArray.size(); i++) {
       // Clone 'em
-      addState(new EDState((EDState)stateArray.elementAt(i)));
+      addState(new EDState((EDState)stateArray.elementAt(i),this));
     }
     this.currentState = startState;
     // Now register ourselves with the StateManager.  Doing so enables
@@ -58,7 +69,13 @@ public class EDStateMachine implements Notifiable {
     el.addMachine(this);
   }
     
+  /**
+   * Add a state.  WARNING! This machine *WILL* adjust the state.  If you 
+   * need a deep copy, make one!
+   */
   public void addState(EDState s) {
+    // Assign ourselves as the "owner" state machine
+    s.assignOwner(this);
     states.addElement(s);
     try {
       siena.subscribe(s.buildSienaFilter(),this);
