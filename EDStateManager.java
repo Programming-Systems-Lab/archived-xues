@@ -40,7 +40,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.16  2001-05-29 17:31:08  jjp32
+ * Revision 1.17  2001-06-02 14:48:20  jjp32
+ * Trimmed down debug comments for Phil
+ *
+ * Revision 1.16  2001/05/29 17:31:08  jjp32
  * Reflected change from branch on main version (re spec file)
  *
  * Revision 1.15  2001/05/21 00:43:04  jjp32
@@ -284,16 +287,16 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
       while(true) {
 	Thread.currentThread().sleep(1000); 
 	// Reap!
-	if(EventDistiller.DEBUG) System.err.println("EDStateManager: Reaping...");
-
+	//	if(EventDistiller.DEBUG) System.err.println("EDStateManager: Reaping...");
+	if(EventDistiller.DEBUG) System.err.print("%");
 	synchronized(stateMachines) {
 	  // Only reap if there *are* state machines
 	  int offset = 0;
 	  
 	  while(offset < stateMachines.size()) {
 	    EDStateMachine e = (EDStateMachine)stateMachines.elementAt(offset);
-	    if(EventDistiller.DEBUG)
-	      System.err.println("EDStateManager: Attempting to reap " + e.myID);
+	    //	    if(EventDistiller.DEBUG)
+	    //	      System.err.println("EDStateManager: Attempting to reap " + e.myID);
 	    
 	    if(e.reap()) {
 	      if(EventDistiller.DEBUG)
