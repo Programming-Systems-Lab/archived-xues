@@ -34,7 +34,10 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.24  2001-07-31 19:13:36  aq41
+ * Revision 1.25  2001-08-01 13:44:14  aq41
+ * Minor code cleanup.
+ *
+ * Revision 1.24  2001/07/31 19:13:36  aq41
  * Added capability to perform actions on notifications from EPHandler.cfg file
  * instead of hard coding the actions in EventPackager.java
  *
@@ -214,7 +217,6 @@ public class EventPackager implements Notifiable {
 	
 	try{
 	    FileReader reader = new FileReader("EventPackager.cfg");
-	    if(DEBUG)System.out.println("file reader");
 	    in = new BufferedReader(reader);
 	    String inputLine = in.readLine();
 	    int numberOfFilters =0;
@@ -233,8 +235,6 @@ public class EventPackager implements Notifiable {
 		while(st.hasMoreTokens()){
 		    word = st.nextToken();
 		    wordCount++;
-		    if(DEBUG)System.out.println("tokens read: " +word );
-		    //String filterName= "filter"+numberOfFilters;
 		    if (!word.endsWith(",") && wordCount  == 1){
 			filterName  = new Filter();
 			wordCount--;
@@ -243,9 +243,8 @@ public class EventPackager implements Notifiable {
 		    else if(word.endsWith(";") && wordCount % 3 == 0){
 			third = word;
 			third = third.substring(0, third.length() -1);
-			if(DEBUG)System.out.println("first: " + first + "third: " + third);
 			filterName.addConstraint(first, third);
-			System.out.println("filter constrain: " + filterName);
+			if(DEBUG)System.out.println("filter constrain: " + filterName);
 			try{
 			    siena.subscribe(filterName, this);
 			}
@@ -262,14 +261,9 @@ public class EventPackager implements Notifiable {
 			second = word;
 			second = second.substring(0, second.length()-1);
 		    }
-				
-		    
 		}//while more tokens
-		if(DEBUG)System.out.println("next line read");
 		inputLine = in.readLine();
-		if(DEBUG)System.out.println("line read in: " + inputLine);
 	    }//while 
-	    System.out.println("filtername: " + filterName);
 	}//try
 	catch (IOException e){
 	    System.out.println("Error: " + e);
@@ -285,7 +279,7 @@ public class EventPackager implements Notifiable {
 	}//finally
 	
 	// making a hashtable containing action Strings to use on a certain
-	// type of notification. EPHandler.cfg contains the list of actions that
+	// notification. EPHandler.cfg contains the list of actions that
 	// can be performed.
 	
 	Hashtable actions = new Hashtable();
@@ -305,7 +299,7 @@ public class EventPackager implements Notifiable {
 	catch(IOException e){
 	    System.out.println("Error: " + e);
 	}
-	System.out.println("hashtable: " + actions);
+	if(DEBUG)System.out.println("hashtable: " + actions);
         handler = new EPHandler(actions);
     }//constructor
     
