@@ -14,12 +14,17 @@ import java.io.*;
  * Listening on local bus.
  * Handling multi-line input as an event - how to delineate?  Right
  * now, we just blindly do it on a line-by-line basis.
+ * When socket closes, we wipe out TriKX.  More permanent solution.
  *
  * @author Janak J Parekh <jjp32@cs.columbia.edu>
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.6  2000-09-09 15:13:49  jjp32
+ * Revision 1.7  2000-09-09 18:17:14  jjp32
+ *
+ * Lots of bugs and fixes for demo
+ *
+ * Revision 1.6  2000/09/09 15:13:49  jjp32
  *
  * Numerous updates, bugfixes for demo
  *
@@ -205,8 +210,14 @@ public class EventPackager implements GroupspaceService,
 	  }
 	}
       } catch(SocketException e) {
-	if(gcRef != null)
+	if(gcRef != null) {
 	   gcRef.Log(roleName,"Client socket unexpectedly closed");
+	   // Clear out TriKX--HACKO
+	   gcRef.groupspaceEventNonVetoable(new
+	     GroupspaceEvent(new EPPayload(srcID,"allusers null null true"),
+			     "EventDistillerIncoming",
+			     null,null,true));
+	}
 	return;
       } catch(Exception e) {
 	if(gcRef != null)

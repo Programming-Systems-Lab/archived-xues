@@ -15,7 +15,11 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.5  2000-09-09 15:13:49  jjp32
+ * Revision 1.6  2000-09-09 18:17:14  jjp32
+ *
+ * Lots of bugs and fixes for demo
+ *
+ * Revision 1.5  2000/09/09 15:13:49  jjp32
  *
  * Numerous updates, bugfixes for demo
  *
@@ -99,9 +103,13 @@ public class EventDistiller implements GroupspaceService,
 	    if(newRoomName.equals("Linux-2.0.36")) newRoomName = "root";
 	    boolean success = Boolean.valueOf(st.nextToken()).booleanValue();
 	    
-	    // IF successful do the switch
-	    if(success == true) {
-
+	    // If both old and new room are null, clear out
+	    if(oldRoomName.equals("null") && newRoomName.equals("null")) {
+	      gcRef.groupspaceEvent(new 
+		GroupspaceEvent(new
+		  TriKXUpdateObject(null,null),
+				"TriKXEventIncoming",null,null,false));
+	    } else if(success == true) { // IF successful do the switch
 	      // Clear out old room name
 	      gcRef.groupspaceEvent(new 
 		GroupspaceEvent(new 
@@ -114,6 +122,12 @@ public class EventDistiller implements GroupspaceService,
 		  TriKXUpdateObject(newRoomName, java.awt.Color.green),
 				"TriKXEventIncoming",null,null,false));
 	    } else {
+	      // Megamegahack
+	      gcRef.groupspaceEvent(new
+		GroupspaceEvent(new
+		  TriKXUpdateObject(newRoomName, java.awt.Color.blue),
+				"TriKXEventIncoming",null,null,false));
+
 	      for(int i=0; i < 5; i++) {
 		// Mark the failed room red for a few seconds
 		gcRef.groupspaceEvent(new

@@ -1,6 +1,7 @@
 package psl.xues;
 
 import psl.groupspace.*;
+import java.awt.Color;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -16,7 +17,11 @@ import psl.trikx.impl.TriKXUpdateObject;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.5  2000-09-09 15:13:49  jjp32
+ * Revision 1.6  2000-09-09 18:17:14  jjp32
+ *
+ * Lots of bugs and fixes for demo
+ *
+ * Revision 1.5  2000/09/09 15:13:49  jjp32
  *
  * Numerous updates, bugfixes for demo
  *
@@ -45,10 +50,12 @@ public class TriKXEventNotifier extends EventNotifier
 
   private String roleName = "TriKXEventNotifier";
   private TriKXSendThread tst = null;
+  private TriKXUpdateThread tut = null;
   ServerSocket recvSocket = null;
   Socket sendSocket = null;
   int recvSocketPort = -1;
   int sendSocketPort = -1;
+  int sendUpdatePort = 31339;
 
   public TriKXEventNotifier() {
     this(-1, -1);
@@ -68,6 +75,8 @@ public class TriKXEventNotifier extends EventNotifier
 
     tst = new TriKXSendThread();
     new Thread(tst).start();
+    tut = new TriKXUpdateThread();
+    new Thread(tut).start();
   }
 
   public boolean gsInit(GroupspaceController gc) {
@@ -100,8 +109,41 @@ public class TriKXEventNotifier extends EventNotifier
     if(!(ge.getDbo() instanceof TriKXUpdateObject)) {
       System.err.println("Invalid GroupspaceEvent!");
     } else {
+
+      // MEGAHACK TIME
+      TriKXUpdateObject tuo = (TriKXUpdateObject)ge.getDbo();
       System.err.println("Requesting tst to send " + ge.getDbo());
-      tst.sendUpdate((TriKXUpdateObject)ge.getDbo());
+
+      // If a failure to enter (red or black) ignore tut but do tst
+      if(tuo.getColor() == Color.black || tuo.getColor() == Color.red) {
+	tst.sendUpdate((TriKXUpdateObject)ge.getDbo());
+      }
+
+      // If a failure to enter (blue) ignore to tst but do tut
+      else if(tuo.getColor() == Color.blue) {
+	//	tut.sendString("Received new XML");
+	tut.sendString("XML parsed: user DENIED ACCESS to room " + 
+		       ((TriKXUpdateObject)ge.getDbo()).getNodename());
+      }
+
+      // If color null, don't tut but tst
+      else if(tuo.getColor() == null) {
+	tst.sendUpdate((TriKXUpdateObject)ge.getDbo());
+      }	
+
+      // If room Null - don't tst - just tut
+      else if(tuo.getNodename() == null ||
+	      tuo.getNodename().equals("null")) {
+	tut.sendString("XML parsed: user has entered/exited the system");
+      }
+      
+      // Otherwise a good room update
+      else {
+	//	tut.sendString("Received new XML");
+	tut.sendString("XML parsed: user has moved to room " + 
+		       ((TriKXUpdateObject)ge.getDbo()).getNodename());
+	tst.sendUpdate((TriKXUpdateObject)ge.getDbo());
+      }
     }
 
     return GroupspaceCallback.CONTINUE;
@@ -152,6 +194,7 @@ public class TriKXEventNotifier extends EventNotifier
 	// Received something
       	System.err.println("Received deny request for room \"" + input + 
 			   "\" from TriKX");
+	tut.sendString("NOW DENYING ACCESS TO " + input);
 	if(input.equals("root")) input = "Linux-2.0.36";
 	
 	try { // Send it out
@@ -235,6 +278,68 @@ public class TriKXEventNotifier extends EventNotifier
 	sendQueue.addElement(tuo);
       }
       if(tstExecutionContext != null) tstExecutionContext.interrupt();
+    }      
+  }
+
+  /* Unlike the above - text event updates */
+  class TriKXUpdateThread implements Runnable {
+    private Socket s = null;
+    private PrintWriter pws = null;
+    private Vector sendQueue = null;
+    private Thread tutExecutionContext = null;
+
+    public TriKXUpdateThread() {
+      sendQueue = new Vector();
+    }
+
+    public void run() {
+      this.tutExecutionContext = Thread.currentThread();
+      String str;
+
+      while(true) {
+	/* Connect repeatedly to TriKX until connection is made */
+	try {
+	  s = new Socket("localhost",sendUpdatePort);
+	  pws = new PrintWriter(s.getOutputStream(),true);
+	} catch(ConnectException e) {
+	  try {
+	    Thread.currentThread().sleep(1000);
+	  } catch(InterruptedException ie) { ; }
+	  continue;
+	} catch(Exception e) {
+	  e.printStackTrace(); return;
+	}
+	
+	/* Connection made, continue to communicate until the remote side
+	 * fails
+	 */
+	sendQueue.addElement("Connection to Xues established");
+	while(true) {
+	  // Is there stuff in the vector?
+	  while(sendQueue.size() == 0) {
+	    try { 
+	      Thread.currentThread().sleep(1000);
+	    } catch(InterruptedException ie) { ; }
+	  }
+	  synchronized(sendQueue) {
+	    // Try sending stuff in the vector
+	    str = (String)sendQueue.remove(0);
+	  }
+	  try {
+	    pws.println(str);
+	  } catch(Exception e) { 
+	    System.err.println("Connection with remote side failed: "+ e);
+	    break;
+	  }
+	}
+      }
+    }
+
+    public void sendString(String str) {
+      synchronized(sendQueue) {
+	sendQueue.addElement(str);
+      }
+      if(tutExecutionContext != null) tutExecutionContext.interrupt();
     }      
   }
 }
