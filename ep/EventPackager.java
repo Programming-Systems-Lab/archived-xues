@@ -24,6 +24,7 @@ import psl.xues.ep.transform.EPTransform;
  * TODO:
  * - Implement outputter dispatch threads (or should we just continue to trust
  *   that the outputter will be fast?)
+ * - Consider executing rules in parallel...
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -120,8 +121,14 @@ public class EventPackager implements Runnable, EPInputInterface {
       while(eventQueue.size() > 0) {
         // Dequeue the first element
         EPEvent epe = (EPEvent)eventQueue.remove(0);
-        // Process it
-        
+        // Process it: get the correct inputter and fire it through each of
+        // its rules in turn
+        EPInput epi = (EPInput)inputters.get(epe.getSource());
+        EPRule[] temprules = epi.getCurrentRules();
+        for(int i=0; i < temprules.length; i++) {
+          // Push it through this rule
+          temprules[i].processRule(epe);
+        }
       }
       
       // Nothing to do, time to catch a nap

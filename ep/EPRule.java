@@ -2,10 +2,12 @@ package psl.xues.ep;
 
 import java.util.HashSet;
 import java.util.ArrayList;
+import java.util.Iterator;
 import org.apache.log4j.Category;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.input.EPInput;
 import psl.xues.ep.output.EPOutput;
 import psl.xues.ep.transform.EPTransform;
@@ -16,9 +18,11 @@ import psl.xues.ep.transform.EPTransform;
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO:
  * - Consider getting rid of EventPackager reference
  * - Separate debuggers for each rule (as opposed to one for all rules)
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -140,4 +144,36 @@ public class EPRule {
    */
   public String getName() { return ruleName; }
   
+  /**
+   * Process some incoming data.
+   *
+   * @return A boolean indicating success (why?)
+   */
+  public boolean processRule(EPEvent epe) {
+    EPEvent oldepe, newepe = epe;
+    // First attempt transforms for this rule.  XXX - synchronization issues
+    // will appear if we support incremental rule changes.
+    for(int i=0; i < transforms.size(); i++) {
+      oldepe = newepe;
+      newepe = ((EPTransform)transforms.get(i)).transform(oldepe);
+      if(newepe == null) {
+        debug.warn("Could not apply transform \"" + 
+        ((EPTransform)transforms.get(i)).getName() + "\", continuing");
+        newepe = oldepe; // Restore
+      }
+    }
+
+    // Now do the outputs
+    EPOutput epo;
+    Iterator tempoutputs = outputs.iterator();
+    while(tempoutputs.hasNext()) {
+      epo = (EPOutput)tempoutputs.next();
+      if(epo.handleEvent(newepe) == false) {
+        debug.warn("Could not output to \"" + epo.getName() + "\", continuing");
+      }
+    }
+
+    // Right now, we always succeed.  XXX - might want to change this behavior.
+    return true;
+  }
 }

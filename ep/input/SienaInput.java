@@ -158,7 +158,7 @@ public class SienaInput extends EPInput implements Notifiable {
     debug.debug("Received notification " + n);
     
     // Construct a new SienaEvent and wrap the notification in there
-    SienaEvent se = new SienaEvent(getType(), n);
+    SienaEvent se = new SienaEvent(getName(), n);
     
     // Inject it into the EP
     ep.injectEvent(se);

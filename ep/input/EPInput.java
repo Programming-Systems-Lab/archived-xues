@@ -28,8 +28,8 @@ public abstract class EPInput implements Runnable {
   protected Thread myThread = null;
   /** The element responsible for this input format */
   protected Element defnElem = null;
-  /** Associated runtime rules */
-  protected HashMap runtimeRules = new HashMap();
+  /** Associated runtime rules.  Keep private to avoid sync issues */
+  private HashMap runtimeRules = new HashMap();
   
   /**
    * CTOR.  You are instantiated by the Event Packager and given an interface
@@ -46,7 +46,7 @@ public abstract class EPInput implements Runnable {
    * @exception InstantiationException may get thrown by a child.  We don't
    * but it's here anyway just to be explicit.
    */
-  public EPInput(EPInputInterface ep, Element el) 
+  public EPInput(EPInputInterface ep, Element el)
   throws InstantiationException {
     // Attempt to identify our instance name, which we call sourceID
     this.sourceID = el.getAttribute("Name");
@@ -71,7 +71,7 @@ public abstract class EPInput implements Runnable {
   }
   
   /**
-   * Default run implementation - basically, do nothing.  Change/override this 
+   * Default run implementation - basically, do nothing.  Change/override this
    * only if you need to do some form of polling or listening for your input -
    * and if you do, consider adding shutdown functionality.
    */
@@ -98,14 +98,27 @@ public abstract class EPInput implements Runnable {
       debug.warn("Can't interrupt thread, may not shutdown");
     }
   }
- 
+  
   /**
    * Add a rule reference to us.
    */
   public void addRule(EPRule r) {
-    runtimeRules.put(r.getName(), r);
+    synchronized(runtimeRules) {
+      runtimeRules.put(r.getName(), r);
+    }
   }
-
+  
+  /**
+   * Get the rules as a snapshot.
+   */
+  public EPRule[] getCurrentRules() {
+    EPRule[] ret = null;
+    synchronized(runtimeRules) {
+      ret = (EPRule[])runtimeRules.values().toArray(new EPRule[0]);
+    }
+    return ret;
+  }
+  
   /**
    * Get the "type" of input.  You have to implement this.
    *

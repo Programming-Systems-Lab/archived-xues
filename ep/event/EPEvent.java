@@ -23,8 +23,9 @@ public abstract class EPEvent implements Comparable {
   /**
    * CTOR.  Assume that construction time is the correct timestamp time.
    *
-   * @param source The generating source for this EPEvent.  If you have
-   * nothing else, specify getClass().getName().
+   * @param source The generating source for this EPEvent.  Make sure it
+   * uniquely identifies the inputter, else EP will not be able to do anything
+   * useful with this event.
    */
   public EPEvent(String source) {
     this(source, System.currentTimeMillis());
@@ -53,9 +54,14 @@ public abstract class EPEvent implements Comparable {
    *
    * @return Standard UNIX time format (long)
    */
-  public long getTimestamp() {
-    return timestamp;
-  }
+  public long getTimestamp() { return timestamp; }
+  
+  /**
+   * Get the source of this event.
+   *
+   * @return The sourceID of this event.
+   */
+  public String getSource() { return source; }
 
   /**
    * Convert this event to one of another form.
