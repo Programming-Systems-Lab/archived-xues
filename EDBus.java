@@ -423,7 +423,8 @@ class Subscriber implements Comparable{
 
 	    if(value==null){
 		System.err.println("Missing AttributeValue "+
-			       "in Notification");
+			       "in Notification for constraint name"
+				   +constraintName);
 		return false;
 	    }
 
