@@ -25,6 +25,8 @@ public abstract class EPInput implements Runnable {
   protected boolean shutdown = false;
   /** The thread context of this object */
   protected Thread myThread = null;
+  /** The element responsible for this input format */
+  protected Element defnElem = null;
   
   /**
    * CTOR.  You are instantiated by the Event Packager and given an interface
@@ -39,9 +41,9 @@ public abstract class EPInput implements Runnable {
    * @param sourceID The unique sourceID assigned to you by the configuration
    * file.
    */
-  public EPInput(EPInputInterface ep, Element e) {
+  public EPInput(EPInputInterface ep, Element el) {
     // Attempt to identify our instance name, which we call sourceID
-    this.sourceID = e.getAttribute("Name");
+    this.sourceID = el.getAttribute("Name");
     // Extra-paranoia checking - we really shouldn't need this
     if(sourceID == null || sourceID.length() == 0) {
       // Shouldn't happen, just for paranoia's sake
@@ -49,6 +51,7 @@ public abstract class EPInput implements Runnable {
     }
     
     this.ep = ep;
+    this.defnElem = el;
     
     // Set up the debugging.  We need the type for this as well.
     debug = Category.getInstance(this.getClass() + "." + sourceID);
@@ -56,8 +59,9 @@ public abstract class EPInput implements Runnable {
   }
   
   /**
-   * Default run implementation - basically, do nothing.  Change this only if
-   * you need to do some form of polling or listening for your input.
+   * Default run implementation - basically, do nothing.  Change/override this 
+   * only if you need to do some form of polling or listening for your input -
+   * and if you do, consider adding shutdown functionality.
    */
   public void run() {
     // Store a reference to my current thread so it can be interrupted from
