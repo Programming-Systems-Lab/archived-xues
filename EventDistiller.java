@@ -18,7 +18,11 @@ import siena.*;
  * @version 0.02 (1/20/2001)
  *
  * $Log$
- * Revision 1.9  2001-01-22 02:11:54  jjp32
+ * Revision 1.10  2001-01-26 03:30:53  jjp32
+ *
+ * Now supports non-localhost siena servers
+ *
+ * Revision 1.9  2001/01/22 02:11:54  jjp32
  *
  * First full Siena-aware build of XUES!
  *
@@ -73,7 +77,36 @@ public class EventDistiller implements Notifiable {
 
   /** Debug flag. */
   public static final boolean DEBUG = true;
+
+  /** XXX - hack */
+  private static String sienaHost = "senp://localhost";
   
+  /**
+   * Main.
+   */
+  public static void main(String args[]) {
+    if(args.length > 0) { // Siena host specified?
+      for(int i=0; i < args.length; i++) {
+	if(args[i].equals("-s"))
+	  sienaHost = args[++i];
+	else if(args[i].equals("-?"))
+	  usage();
+	else
+	  usage();
+      }
+    }	   
+
+    new EventDistiller();
+  } 
+
+  /**
+   * Print usage.
+   */
+  public static void usage() {
+    System.out.println("usage: java EventDistiller [-s sienaHost] [-?]");
+    System.exit(-1);
+  }
+
   /**
    * CTOR.
    */
@@ -90,7 +123,7 @@ public class EventDistiller implements Notifiable {
     try {
       ((HierarchicalDispatcher)publicSiena).
 	setReceiver(new TCPPacketReceiver(91978));
-      ((HierarchicalDispatcher)publicSiena).setMaster("senp://localhost");
+      ((HierarchicalDispatcher)publicSiena).setMaster(sienaHost);
     } catch(Exception e) { e.printStackTrace(); }
    
     // Subscribe to packager input

@@ -26,7 +26,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.11  2001-01-22 02:11:54  jjp32
+ * Revision 1.12  2001-01-26 03:30:54  jjp32
+ *
+ * Now supports non-localhost siena servers
+ *
+ * Revision 1.11  2001/01/22 02:11:54  jjp32
  *
  * First full Siena-aware build of XUES!
  *
@@ -69,6 +73,9 @@ import java.io.*;
  *
  */
 public class EventPackager implements Notifiable {
+  /** XXX - This is a hack for now */
+  private static String sienaHost = "senp://localhost";
+
   int listeningPort = -1;
   ServerSocket listeningSocket = null;
   String spoolFilename;
@@ -111,7 +118,7 @@ public class EventPackager implements Notifiable {
     try {
       ((HierarchicalDispatcher)siena).
 	setReceiver(new TCPPacketReceiver(91977));
-      ((HierarchicalDispatcher)siena).setMaster("senp://localhost");
+      ((HierarchicalDispatcher)siena).setMaster(sienaHost);
     } catch(Exception e) { e.printStackTrace(); }
 
     // Set up listening.
@@ -152,9 +159,28 @@ public class EventPackager implements Notifiable {
    * Tester.
    */
   public static void main(String args[]) {
+    if(args.length > 0) { // Siena host specified?
+      for(int i=0; i < args.length; i++) {
+	if(args[i].equals("-s"))
+	  sienaHost = args[++i];
+	else if(args[i].equals("-?"))
+	  usage();
+	else
+	  usage();
+      }
+    }	   
+
     EventPackager ep = new EventPackager(7777, "EventPackager.spl");
     ep.run();
   } 
+
+  /**
+   * Print usage.
+   */
+  public static void usage() {
+    System.out.println("usage: java EventPackager [-s sienaHost] [-?]");
+    System.exit(-1);
+  }
 
   /**
    * Handle incoming siena notifications.
