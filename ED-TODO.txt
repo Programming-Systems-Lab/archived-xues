@@ -9,3 +9,6 @@ What if all the attributes for a state are not there?
 Clean up the schema file (Janak)
 
 Dynamic rules - what happens if you try to add a rule that already exists?  Perhaps we need to use rule naming to establish a policy about this.
+
+"Counter" feature for "identical" events (matching a given filter) -
+e.g. a rule is generated if X instances of it are found.
