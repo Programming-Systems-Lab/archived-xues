@@ -12,6 +12,11 @@ import psl.xues.ep.EPRule;
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
+ * <!--
+ * TODO:
+ * - Consider removing default run implementation
+ * -->
+ *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */

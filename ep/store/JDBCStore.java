@@ -1,5 +1,8 @@
 package psl.xues.ep.store;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import org.w3c.dom.Element;
 import psl.xues.ep.event.EPEvent;
 
 /**
@@ -8,9 +11,65 @@ import psl.xues.ep.event.EPEvent;
  * @author Janak J Parekh
  * @version $Revision$
  */
-public class JDBCStore implements EPStore {
+public class JDBCStore extends EPStore {
+  /** Type of database we're using */
+  private String dbType = null;
+  /** Database driver for this type */
+  private String dbDriver = null;
+  /** Name of database */
+  private String dbName = null;
+  /** Name of table */
+  private String tableName = null;
+  /** Username */
+  private String username = null;
+  /** Password */
+  private String password = null;
+  /** JDBC connection */
+  private Connection conn = null;
   
-  /** 
+  /**
+   * CTOR.
+   */
+  public JDBCStore(Element el) throws InstantiationException {
+    super(el);
+    
+    // Now attempt to determine necessary JDBC parameters
+    dbType = el.getAttribute("DBType");
+    dbDriver = el.getAttribute("DBDriver");
+    dbName = el.getAttribute("DBName");
+    tableName = el.getAttribute("DBTable");
+    username = el.getAttribute("Username");
+    password = el.getAttribute("Password");
+    
+    if(dbType == null || dbDriver == null || dbName == null || 
+    tableName == null || username == null || password == null || 
+    dbType.length() == 0 || dbDriver.length() == 0 ||
+    dbName.length() == 0 || tableName.length() == 0 || 
+    username.length() == 0) {
+      debug.error("Can't initialize store: missing parameters");
+      throw new InstantiationException();
+    }
+    
+    // Try to load the driver
+    try {
+      Class.forName(dbDriver);
+    } catch(Exception e) {
+      debug.error("Can't initialize store", e);
+      throw new InstantiationException();
+    }
+    
+    // Attempt connection
+    debug.debug("Connecting to jdbc:" + dbType + ":" + dbName + "...");
+    try {
+      Connection con = DriverManager.getConnection("jdbc:" + dbType + ":" + 
+      dbName, username, password);
+      // TODO: anonymous connections?
+    } catch(Exception e) {
+      debug.error("Can't connect to database", e);
+    }
+  }
+  
+  /**
    * Request an individual event given its (opaque) reference.
    *
    * @param ref The event reference.
@@ -20,9 +79,9 @@ public class JDBCStore implements EPStore {
     
     return null;
     
-  }  
+  }
   
-  /** 
+  /**
    * Request event(s).  Return a set of references to this event.  These
    * references are opaque.
    *
@@ -34,7 +93,7 @@ public class JDBCStore implements EPStore {
     return null;
   }
   
-  /** 
+  /**
    * Store the supplied event.
    *
    * @param e The event to be stored.
@@ -43,4 +102,39 @@ public class JDBCStore implements EPStore {
   public Object storeEvent(EPEvent e) {
     return null;
   }
+  
+  /**
+   * Handle shutdown.
+   *
+   * @return True usually, false if you can't shutdown for some reason.
+   */
+  public boolean shutdown() {
+    
+    return true;
+  }
+  
+  /** Request all events from a given source.
+   *
+   * @param source The source of this event - matches the source in
+   * the EPEvent.
+   * @return An array of (possibly opaque) object references, empty array if
+   * no match, and null if error.
+   */
+  public Object[] requestEvents(String source) {
+    return null;
+  }
+  
+  /** Request events from a given source between the two timestamps.
+   *
+   * @param source The source of this event - matches the source in
+   * the EPEvent.
+   * @param t1 The lower timebound (inclusive).
+   * @param t2 The upper timebound (inclusive).
+   * @return An array of (possibly opaque) object references, empty array if
+   * no match, and null if error.
+   */
+  public Object[] requestEvents(String source, long t1, long t2) {
+    return null;
+  }
+  
 }
