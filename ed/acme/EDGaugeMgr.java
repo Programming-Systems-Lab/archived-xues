@@ -32,7 +32,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
   /** ACME gauge bus URL */
   public String gaugeBusURL = null;
   /** ACME gauge bus */
-  private GaugeReportingBus reportingBus = new SienaGaugeReportingBus();
+  private SienaGaugeReportingBus reportingBus = null;
   /** List of gauge types being tracked (unnecessary?) */
   //private Vector gaugeTypes = new Vector();
   /** Hash of gauges, indexed by gauge ID's */
@@ -58,15 +58,19 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
     if(debugging)
       edu.cmu.cs.able.gaugeInfrastructure.util.Global.debugFlag = true;
     
-    // Make sure the Reporting Gauge bus classes know of the target bus
+    // Let the acme infrastructure initialize the Siena node
     this.gaugeBusURL = gaugeBusURL;
     edu.cmu.cs.able.gaugeInfrastructure.Siena.Initialization.
     initSiena(gaugeBusURL);
     
+    // Now that the Siena node has been initialized, create our
+    // reporting gauge bus
+    reportingBus = new SienaGaugeReportingBus();
+    
     // Finally, register ourselves with the reporting bus entity so we get
     // requests for gauge creation, deletion, etc.
     debug.debug("Registering myself");
-    ((SienaGaugeReportingBus)reportingBus).sienaBus.registerGaugeMgr(this);
+    reportingBus.sienaBus.registerGaugeMgr(this);
   }
   
   /**
@@ -80,7 +84,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    */
   public GaugeControl createGauge(GaugeID gauge, StringPairVector setupParams,
   StringPairVector mappings) {
-    if (gauge.gaugeType.equals("EDGauge")) { // Our gauge to manage
+    if (managesType(gauge.gaugeType)) { // Our gauge to manage
       // "Dummy" handle.  What's the point?
       SienaGaugeMgrGaugeHandle gaugeHandle=new SienaGaugeMgrGaugeHandle(gauge);
       synchronized(gauges) {
@@ -162,5 +166,17 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
     }
     
     return false;
+  }
+  
+  /**
+   * Do we manage this type of gauge?  This method gets called by other
+   * parties to verify if it should send us gauge management requests for
+   * these type(s).
+   *
+   * @return True if we do.
+   */
+  public boolean managesType(String gaugeType) {
+    if(gaugeType.equals("EDGauge")) return true;
+    else return false;
   }
 }

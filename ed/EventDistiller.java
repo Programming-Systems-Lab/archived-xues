@@ -213,6 +213,7 @@ public class EventDistiller implements Runnable, Notifiable {
   String acmeBus) {
     this.stateSpecFile = specFile;
     this.eventDriven = eventDriven;
+    this.acmeBus = acmeBus;
     
     initDebug(debugging, debugFile);
     
@@ -249,6 +250,16 @@ public class EventDistiller implements Runnable, Notifiable {
     if(outputFile != null) {
       setOutputFile(new File(outputFile));
     }
+    
+    
+    // Initialize gauge manager for ACME, if necessary
+    if(acmeBus != null) {
+      debug.debug("Starting gauge manger");
+      this.acmeBus = acmeBus;
+      // Create the ACME gauge manager
+      acmeGM = new EDGaugeMgr(acmeBus, debugging, publicSiena);
+    }
+    
     init();
     run(); /* Don't need to create new thread */
   }
@@ -285,14 +296,6 @@ public class EventDistiller implements Runnable, Notifiable {
     
     // Initialize state machine manager.
     manager = new EDStateManager(this);
-
-    // Initialize gauge manager for ACME, if necessary
-    if(acmeBus != null) {
-      debug.debug("Starting gauge manger");
-      this.acmeBus = acmeBus;
-      // Create the ACME gauge manager
-      acmeGM = new EDGaugeMgr(acmeBus, false, publicSiena);
-    }
   }
   
   /** Start execution of the new EventDistiller. */
