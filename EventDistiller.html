@@ -1,0 +1,336 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Event Distiller documentation</title>
+  </head>
+
+  <body>
+    <h1>Programming Systems Lab<br>KX / Xues / Event Distiller</h1>
+    <h3>(version 1.0)</h3>
+    <h2>Introduction</h2>
+    The Event Distiller is the core of the Xues module within the KX
+    infrastructure.  It is responsible for performing event pattern
+    recognition and notification in a close to real-time fashion.  It
+    has several features that make it uniquely suited for the
+    real-time event monitoring aspect that KX requires.
+    <h2>Execution</h2>
+    <p>
+      Please see the Xues general documentation for common requirements
+      and associated install instructions.
+    </p>
+    <p>
+      The event distiller may be executed by issuing the following
+      command:
+    </p>
+    <p>
+      <strong>java psl.xues.EventDistiller &lt;-s <em>Siena URL</em>&gt; &lt;-f
+	<em>Initial rulebase file</em>&gt; [-d] [-?]</strong>
+    </p>
+    <p>
+      The parameters are:
+    </p>
+    <ul>
+      <li>-s (required) specifies the location of the Siena server to
+	which the EventDistiller will attach and listen for events on.
+      </li>
+      <li>-f (required) specifies the file (stored locally) that
+	serves as the initial rulebase for the EventDistiller.  (In
+	the future, this file may be modifiable through dynamic
+	rulebase modification.)
+      </li>
+      <li>-d (optional) enables Event Distiller debugging.
+      <strong>NOTE:</strong> At this time, debugging produces copious
+      output.
+      </li>
+      <li>-? produces a brief summary of the above.</li>
+    </ul>
+    <p>
+      Once the Event Distiller is run, it will run in the background.
+      No further user interaction is required - all manipulations are
+      done over the Siena bus from this point on.  See the sections
+      "Operation" and "Configuration Files", below.
+    </p>
+    <h2>Operation</h2>
+    <p>
+      Once the Event Distiller is running, it will immediately begin
+      subscribing to notifications it is interested in (based on the
+      rule file supplied at start-time) and listening for instances of
+      these notifications.  Upon a rule match (or a partial match),
+      appropriate notifications will be sent out on the same Siena
+      bus based on the rules defined in the specification file.
+    </p>
+    <h2>Configuration</h2>
+    <p>
+      The heart of Event Distiller configuration lies in the
+      rulebase specification file.  It is in XML, based on the schema
+      described in the <tt>DistillerRule.xsd</tt> file.
+    </p>
+    <h3>Distiller rules</h3>
+    <ul><li><strong><tt>&lt;rulebase
+	    xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd"&gt;</tt></strong><br>
+	This line is the top-level XML rulebase declaration, and is required.
+	<hr>
+	<ul>
+	  <li>
+	    <strong><tt>&lt;rule name="<em>rule
+	    name</em>"&gt;</tt></strong><br> This is the top-level
+	    rule declarator, is declared within ruleBase, and is
+	    repeated at the beginning of each rule.  Rule names are
+	    used primarily for disambiguation at this time; they are
+	    not referred elsewhere.
+	    <hr>
+	    <ul>
+	      <li>
+		<strong><tt>&lt;states&gt;</tt></strong><br> This
+		declarator, contained in a rule, signifies the
+		beginning of state declarations (of which there may be
+		many).  <strong>Note:</strong> There can be only one
+		"states" declaration in a rule.
+		<hr>
+		<ul>
+		  <li>
+		    <strong><tt>&lt;state name="<em>state name</em>"
+		    timebound="<em>milliseconds</em>"
+		    children="<em>CSV-list of children names</em>"
+		    actions="<em>CSV-list of actions</em>"
+		    fail_actions="<em>CSV-list of
+		    actions</em>"&gt;</tt></strong><br>
+		    This is the beginning of declarator for a single
+		    state in the state-list (pattern) to be matched
+		    for this rule.  A number of parameters are
+		    supplied alongside the rule declarator:
+		    <ul>
+		      <li>
+			name (required): specifies the state name.
+			This rule name should not conflict with other
+			state names within this rule.
+		      </li>
+		      <li>
+			timebound (required): specifies the timebound
+			in which this event can happen relative to the
+			previous event.  For the first event, the
+			timebound must always be -1 (e.g. no time
+			limit); for subsequent timebounds it is
+			<em>recommended</em>, although not required,
+			that the timebound be positive.  Note that
+			this timebound is not precise - a fudge factor
+			is present in the Event Distiller to take care
+			of race conditions.
+		      </li>
+		      <li>
+			children (optional): specifies states that
+			can follow this particular state.  If this is
+			the parent state, this field should be left as
+			an empty string ("") or left undefined.
+		      </li>
+		      <li>
+			actions (required): specifies the
+			notification(s) to be sent out when this state
+			is matched.  Usually, this is intended for the
+			last state in a rule, which would signify as
+			the "rule matching", but intermediate
+			notifications can be sent out.
+		      </li>
+		      <li>
+			fail_actions (optional): specifies the
+			notification(s) to be sent out if this state
+			times out waiting for input.  Unlike actions,
+			this is intended for each state, so a
+			different notification <em>may</em> be sent
+			out for a failure at any given point in the
+			state machine.
+		      </li>
+		    </ul>
+		    <hr>
+		    <ul>
+		      <li>
+			<strong><tt>&lt;attribute name="<em>attribute
+			name</em>" value="<em>attribute value</em>"
+			/&gt;</tt></strong><br> Declarator for an
+			attribute-value pair required in this
+			particular state.  Note that there may be many
+			attributes per state, and they are ANDed
+			together in the filter that matches incoming
+			notifications to this state.  Since there are
+			no embedded tags within this tag, you can use
+			the compact end-tag notation (e.g. "/&gt;").
+			Note that the value field here is matched
+			using a string-equals comparison,
+			<em>unless</em> a special wildcard-binding
+			notation is used (see below).
+		      </li>
+		    </ul>
+		    <hr>
+		    <strong><tt>&lt;/state&gt;</tt></strong>
+		  </li>
+		</ul>
+		<hr>
+		<strong><tt>&lt;/states&gt;</tt></strong>
+	      </li>
+	      <li>
+		<strong><tt>&lt;actions&gt;</tt></strong><br> This
+		declarator, contained in a rule, signifies the
+		beginning of <tt>action</tt> declarations (of which
+		there may be many).  <strong>Note:</strong> There can
+		be only one "actions" declaration in a rule.
+		<hr>
+		<ul>
+		  <li>
+		    <strong><tt>&lt;notification
+			name="<em>notification
+			  name</em>"&gt;</tt></strong><br>
+		    This is the beginning of the notification (action)
+		    declarator.  There is one parameter, name, which
+		    corresponds to the actions and fail_actions
+		    references above.  It is <em>strongly</em>
+		    recommended that this name be one contiguous
+		    phrase without whitespace or punctuation to avoid
+		    conflicts in the CSV-lists referenced above.
+		    <hr>
+		    <ul>
+		      <li>
+			<strong><tt>&lt;attribute name="<em>attribute
+			name</em>" value="<em>attribute value</em>"
+			/&gt;</tt></strong><br> Declarator for an
+			attribute-value pair to be included in this
+			particular notification.  Note that there may
+			be many attributes per notification.  Since
+			there are no embedded tags within this tag,
+			you can use the compact end-tag notation
+			(e.g. "/&gt;").  If you use wildcard-binding
+			above, you may use the same wildcard-binding
+			tag here - it will be substituted with the
+			actual bound value (again, see below).
+		      </li>
+		    </ul>
+		    <hr>
+		    <strong><tt>&lt;/notification&gt;</tt></strong>
+		  </li>
+		</ul>
+		<hr>
+		<strong><tt>&lt;/actions&gt;</tt></strong>
+	      </li>
+	    </ul>
+	    <hr>
+	    <strong><tt>&lt;/rule&gt;</tt></strong>
+	  </li>
+	</ul>
+	<hr>
+	<strong><tt>&lt;/rulebase&gt;</tt></strong>
+      </li>
+    </ul>
+    <h3>Wildcard binding</h3> 
+    <p>
+      Attribute values (<em>not</em> names) may be specified as a
+      wildcard that is bound on the first match in a particular rule
+      instance execution.  This is accomplished by putting a "*" as
+      the first character in the matching value, followed by a string
+      key (preferably one contiguous phrase, without whitespace).
+      When the Event Distiller encounters such a value, it checks the
+      key (<em>not</em> the attribute, but rather the string after the
+      "*") against its hash of known keys <em>for this rule
+      instance</em>, and if not found, it makes a new entry into the
+      hash, with the key matching the value that was encountered when
+      processing this rule instance.  If the key is matched, i.e. a
+      value exists for this key, the state is only validated if the
+      incoming value matches the already-stored value for this rule
+      instance.  This is useful if you need to match a value
+      consistently, or need to match a value once and have the
+      resulting value outputted in the notification.  Note that
+      separate rule instances keep separate hashes, so another
+      execution of this rule being done in parallel does not share the
+      wildcard hash.  If you need to match different values for each
+      state in a rule or each attribute in a state, use different key
+      strings in the "*" notation.
+    </p>
+    <p>
+      In a notification (action), if the "*" notation is detected, the
+      Event Distiller will attempt to substitute the value matching
+      the key in the hash in the output.
+      <!-- XXX -->
+      If the value doesn't exist,
+      the "*" and the key are thrown out and an empty string is
+      returned.
+      <!-- /XXX -->
+    </p>
+    <p>
+      If you are attempting to match a literal asterisk at the
+      beginning of the string, use a double-asterisk as your first two
+      characters.  The Event Distiller will throw away the first
+      asterisk and will ignore the remainder of the string, e.g.,
+      "**foo" will match "*foo" in incoming notifications.
+    </p>
+    <h2>Dynamic run-time configuration</h2>
+    <p>
+      In addition to the rulebase specification file, rules may be
+      added, deleted, or queried for through Siena events.  If the
+      "client" (defined here as the party that wishes to change the
+      ED's rulebase) is implemented in Java, we have implemented
+      methods in a convenience class to automate the task: in
+      <tt>psl.kx.KXNotification</tt>, there are methods called
+      <tt>EDManagerAddRule</tt>, <tt>EDManagerRemoveRule</tt>,
+      <tt>EDManagerQueryRule</tt>, and <tt>EDManagerQueryRules</tt>.
+      (C++ users - take a look at the source - the attribute/value
+      pairs are extremely simple to copy into a C++ implementation).
+    </p>
+    <p>Here's a brief description of each method:</p>
+    <ul>
+      <li>EDManagerAddRule is used to add a rule - specify the XML
+	that would normally be in the rulebase specification file,
+	e.g., a complete <tt>&lt;rule&gt;</tt> instance.
+      </li>
+      <li>EDManagerRemoveRule deletes a rule given its name.</li>
+      <li>EDManagerQueryRule returns the XML representation of the
+	rule that's specified by name.</li>
+      <li>EDManagerQueryRules returns a comma-delimited list of all
+	the rules in the currently-running rulebase.</li>
+    </ul>
+    <p>
+      These rules are currently not saved on exit.  Rulebase saving
+      has already been implemented for the next version of ED.
+    </p>
+    <h2>Embedded Event Distillers</h2>
+    <p>
+      There are times when an ED may be used as an internal rule
+      engine solely for one component; if this component is not
+      already Siena-enabled, it may be overkill to integrate it into a
+      new Siena infrastructure.  In these cases, it is possible to
+      instantiate an Event Distiller within another Java module -
+      simply supply the appropriate attributes.  In particular, ED
+      expects the "owner" to have an implementation of
+      <tt>siena.Notifiable</tt> handy, which it issues callbacks to
+      when rules match and a response is returned.  Once the Event
+      Distiller is instantiated, one can simply call its
+      <tt>notify</tt> method, which pushes an event into the
+      Distiller.
+    </p>
+    <p><b>NOTE:</b> With the current version of Event Distiller, it is
+      strongly suggested that the <tt>shutdown()</tt> method be called
+      during shutdown of the owner.  ED runs in a separate thread, and
+      this ensures that the thread will be killed in a safe fashion.
+      The next version of ED will add a shutdown hook so that this is
+      not required (although it is still recommended).
+    </p>
+    <h2>More to come</h2>
+    <p>
+      ED is under active development, and we have a number of new
+      features slated for the next release of ED (to be released in
+      July 2001).
+    </p>
+    <h2>Examples</h2>
+    <p>
+      A number of examples are included with the Event Distiller
+      distribution.  The EDTest*.java files demonstrate typical Event
+      Distiller usage (in albeit simple scenarios), while the *.xml
+      files are sample rulebases.
+    </p>
+    <hr>
+    <address><a href="mailto:jjp32@cs.columbia.edu"></a></address>
+<!-- Created: Mon May 21 22:53:20 Eastern Daylight Time 2001 -->
+<address>Janak J Parekh &lt;janak@cs.columbia.edu&gt;<br>
+<!-- hhmts start -->
+Last modified: Fri Jun 01 23:14:26 Eastern Daylight Time 2001
+<!-- hhmts end -->
+</address>
+  </body>
+</html>
