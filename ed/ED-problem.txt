@@ -1,0 +1,866 @@
+
+c:\Janak\psl\workspace\psl\demo\2002\jun\xues>java psl.xues.ed.EventDistiller -df EDLog.conf -f EDConfig.xml -s senp://localhost:7890 -d -acme senp://barossa.able.cs.cmu.edu:1111
+2002-06-28 17:53:27,180 [main] DEBUG psl.xues.ed.EDBus - New subscription with filter{}
+2002-06-28 17:53:27,180 [main] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:27,190 [main] DEBUG psl.xues.ed.EDBus - Encountered psl.xues.ed.EventDistiller$2@eb7859 in dump
+2002-06-28 17:53:27,190 [main] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:27,190 [main] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:27,230 [main] DEBUG psl.xues.ed.EDBus - New subscription with filter{ EDInput ="ManagerInstruction" Type ="EDInput"}
+2002-06-28 17:53:27,230 [main] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:27,230 [main] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:27,230 [main] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:27,230 [main] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:27,230 [main] DEBUG psl.xues.ed.EDStateManager - Parsing state specification file "EDConfig.xml"
+2002-06-28 17:53:27,240 [main] DEBUG psl.xues.ed.EDHandler - Encountered uri "", localName "", qName "rulebase", attributes "org.apache.crimson.parser.AttributesExImpl@f6f0bf"
+2002-06-28 17:53:27,240 [main] DEBUG psl.xues.ed.EDHandler - Encountered uri "", localName "", qName "rule", attributes "org.apache.crimson.parser.AttributesExImpl@f6f0bf"
+2002-06-28 17:53:27,250 [main] DEBUG psl.xues.ed.EDHandler - Encountered uri "", localName "", qName "states", attributes "org.apache.crimson.parser.AttributesExImpl@f6f0bf"
+2002-06-28 17:53:27,260 [main] DEBUG psl.xues.ed.EDHandler - Encountered uri "", localName "", qName "state", attributes "org.apache.crimson.parser.AttributesExImpl@f6f0bf"
+2002-06-28 17:53:27,260 [main] DEBUG psl.xues.ed.EDHandler - Encountered uri "", localName "", qName "attribute", attributes "org.apache.crimson.parser.AttributesExImpl@f6f0bf"
+2002-06-28 17:53:27,260 [main] DEBUG psl.xues.ed.EDHandler - Encountered uri "", localName "", qName "attribute", attributes "org.apache.crimson.parser.AttributesExImpl@f6f0bf"
+2002-06-28 17:53:27,260 [main] DEBUG psl.xues.ed.EDHandler - Encountered uri "", localName "", qName "actions", attributes "org.apache.crimson.parser.AttributesExImpl@f6f0bf"
+2002-06-28 17:53:27,260 [main] DEBUG psl.xues.ed.EDHandler - Encountered uri "", localName "", qName "notification", attributes "org.apache.crimson.parser.AttributesExImpl@f6f0bf"
+2002-06-28 17:53:27,260 [main] DEBUG psl.xues.ed.EDHandler - Encountered uri "", localName "", qName "attribute", attributes "org.apache.crimson.parser.AttributesExImpl@f6f0bf"
+2002-06-28 17:53:27,260 [main] DEBUG psl.xues.ed.EDHandler - Encountered uri "", localName "", qName "attribute", attributes "org.apache.crimson.parser.AttributesExImpl@f6f0bf"
+2002-06-28 17:53:27,260 [main] DEBUG psl.xues.ed.EDStateManager - Parsed rule 'temperaturepassthru
+2002-06-28 17:53:27,260 [main] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:0 - StateMachine instantiated
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDState.temperaturepassthru:0.tempstate - Being born
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDState.temperaturepassthru:0.tempstate - Being born for the first time
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDState.temperaturepassthru:0.tempstate - Subscribing...
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDState.temperaturepassthru:0.tempstate - Subscription complete
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EDState.temperaturepassthru:0.tempstate - Successfully born
+2002-06-28 17:53:27,270 [main] INFO  psl.xues.ed.EDStateManager - Initialization complete
+2002-06-28 17:53:27,270 [main] DEBUG psl.xues.ed.EventDistiller - Starting gauge manger
+2002-06-28 17:53:27,270 [Thread-9] INFO  psl.xues.ed.EDStateManager.reaper - Reaper started
+2002-06-28 17:53:27,430 [main] DEBUG psl.xues.ed.acme.EDGaugeMgr - Registering myself
+Registering 4f94270e-0017-8085-0000-00eeb8b6d904
+2002-06-28 17:53:27,480 [Thread-2] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124584 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:27,720 [main] DEBUG psl.xues.ed.acme.EDGaugeMgr - Registration complete
+2002-06-28 17:53:27,720 [main] INFO  psl.xues.ed.EventDistiller - Running.
+2002-06-28 17:53:28,061 [Thread-3] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=46.5 DiskQueueRunLength=0 Host="varick" RAMFree=88444 SystemRunLength=1 Type="EDInput"}
+2002-06-28 17:53:28,221 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124584 SystemRunLength=0 Timestamp=1025301207480 Type="EDInput"} internally
+2002-06-28 17:53:28,291 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:28,291 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:0
+2002-06-28 17:53:28,291 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:0 - Attempting to reap myself
+2002-06-28 17:53:28,291 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:0
+2002-06-28 17:53:28,461 [Thread-4] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124560 SystemRunLength=2 Type="EDInput"}
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124584 SystemRunLength=0 Timestamp=1025301207480 Type="EDInput"}
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@3901c6 interested, notifying subscriber
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:0.tempstate - Received event{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124584 SystemRunLength=0 Timestamp=1025301207480 Type="EDInput"}
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:0.tempstate - Starting succeed()
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:0.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=2.0}
+No timestamp - enter fallback mode.
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:0.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:0.tempstate - Succeed finished
+2002-06-28 17:53:28,491 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:28,531 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:28,531 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=2.0}
+2002-06-28 17:53:28,531 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:28,531 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:28,531 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=2.0} sent externally!
+2002-06-28 17:53:28,531 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:28,722 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=46.5 DiskQueueRunLength=0 Host="varick" RAMFree=88444 SystemRunLength=1 Timestamp=1025301208061 Type="EDInput"} internally
+2002-06-28 17:53:29,062 [Thread-5] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=42.70000076293945 DiskQueueRunLength=0 Host="varick" RAMFree=79872 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:29,092 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:29,092 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=46.5 DiskQueueRunLength=0 Host="varick" RAMFree=88444 SystemRunLength=1 Timestamp=1025301208061 Type="EDInput"}
+2002-06-28 17:53:29,092 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:29,092 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:29,222 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124560 SystemRunLength=2 Timestamp=1025301208461 Type="EDInput"} internally
+2002-06-28 17:53:29,292 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:29,292 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:0
+2002-06-28 17:53:29,292 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:0 - Attempting to reap myself
+2002-06-28 17:53:29,292 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:0 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:29,292 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:0 - Enumeration done
+2002-06-28 17:53:29,292 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:0 - No more states left, about reap myself
+2002-06-28 17:53:29,292 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:1 - StateMachine instantiated
+2002-06-28 17:53:29,292 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:1.tempstate - Being born
+2002-06-28 17:53:29,292 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:1.tempstate - Being born for the first time
+2002-06-28 17:53:29,292 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:1.tempstate - Subscribing...
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:1.tempstate - Subscription complete
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:1.tempstate - Successfully born
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:0 successful!
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:1
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:1 - Attempting to reap myself
+2002-06-28 17:53:29,322 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:1
+2002-06-28 17:53:29,462 [Thread-1] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=0.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124528 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124560 SystemRunLength=2 Timestamp=1025301208461 Type="EDInput"}
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@c6f579 interested, notifying subscriber
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:1.tempstate - Received event{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124560 SystemRunLength=2 Timestamp=1025301208461 Type="EDInput"}
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:1.tempstate - Starting succeed()
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:1.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=2.0}
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:1.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:1.tempstate - Succeed finished
+2002-06-28 17:53:29,492 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:29,533 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:29,533 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=2.0}
+2002-06-28 17:53:29,533 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:29,533 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:29,533 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=2.0} sent externally!
+2002-06-28 17:53:29,533 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:29,723 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=42.70000076293945 DiskQueueRunLength=0 Host="varick" RAMFree=79872 SystemRunLength=0 Timestamp=1025301209062 Type="EDInput"} internally
+2002-06-28 17:53:30,063 [Thread-2] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=1.0 DiskQueueRunLength=0 Host="varick" RAMFree=79848 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:30,093 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:30,093 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=42.70000076293945 DiskQueueRunLength=0 Host="varick" RAMFree=79872 SystemRunLength=0 Timestamp=1025301209062 Type="EDInput"}
+2002-06-28 17:53:30,093 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:30,093 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:30,223 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=0.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124528 SystemRunLength=0 Timestamp=1025301209462 Type="EDInput"} internally
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:1
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:1 - Attempting to reap myself
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:1 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:1 - Enumeration done
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:1 - No more states left, about reap myself
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:2 - StateMachine instantiated
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:2.tempstate - Being born
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:2.tempstate - Being born for the first time
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:2.tempstate - Subscribing...
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:2.tempstate - Subscription complete
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:2.tempstate - Successfully born
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:1 successful!
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:2
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:2 - Attempting to reap myself
+2002-06-28 17:53:30,323 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:2
+2002-06-28 17:53:30,454 [Thread-3] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=7.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124528 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=0.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124528 SystemRunLength=0 Timestamp=1025301209462 Type="EDInput"}
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@228a02 interested, notifying subscriber
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:2.tempstate - Received event{ CPU=0.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124528 SystemRunLength=0 Timestamp=1025301209462 Type="EDInput"}
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:2.tempstate - Starting succeed()
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:2.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=0.0}
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:2.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:2.tempstate - Succeed finished
+2002-06-28 17:53:30,494 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:30,534 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:30,534 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=0.0}
+2002-06-28 17:53:30,534 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:30,534 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:30,534 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=0.0} sent externally!
+2002-06-28 17:53:30,534 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:30,724 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=1.0 DiskQueueRunLength=0 Host="varick" RAMFree=79848 SystemRunLength=0 Timestamp=1025301210063 Type="EDInput"} internally
+2002-06-28 17:53:31,064 [Thread-4] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79760 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:31,094 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:31,094 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=1.0 DiskQueueRunLength=0 Host="varick" RAMFree=79848 SystemRunLength=0 Timestamp=1025301210063 Type="EDInput"}
+2002-06-28 17:53:31,094 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:31,094 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:31,225 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=7.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124528 SystemRunLength=0 Timestamp=1025301210454 Type="EDInput"} internally
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:2
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:2 - Attempting to reap myself
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:2 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:2 - Enumeration done
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:2 - No more states left, about reap myself
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:3 - StateMachine instantiated
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:3.tempstate - Being born
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:3.tempstate - Being born for the first time
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:3.tempstate - Subscribing...
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:3.tempstate - Subscription complete
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:3.tempstate - Successfully born
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:2 successful!
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:3
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:3 - Attempting to reap myself
+2002-06-28 17:53:31,325 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:3
+2002-06-28 17:53:31,465 [Thread-5] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=43.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124512 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:31,495 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:31,495 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=7.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124528 SystemRunLength=0 Timestamp=1025301210454 Type="EDInput"}
+2002-06-28 17:53:31,495 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:31,495 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@d63e39 interested, notifying subscriber
+2002-06-28 17:53:31,495 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:3.tempstate - Received event{ CPU=7.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124528 SystemRunLength=0 Timestamp=1025301210454 Type="EDInput"}
+2002-06-28 17:53:31,495 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:3.tempstate - Starting succeed()
+2002-06-28 17:53:31,495 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:3.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:31,525 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=7.0}
+2002-06-28 17:53:31,525 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:3.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:31,525 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:31,525 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:31,525 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:31,525 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:31,525 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:31,525 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:3.tempstate - Succeed finished
+2002-06-28 17:53:31,525 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:31,535 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:31,535 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=7.0}
+2002-06-28 17:53:31,535 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:31,535 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:31,535 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=7.0} sent externally!
+2002-06-28 17:53:31,535 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:31,725 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79760 SystemRunLength=0 Timestamp=1025301211064 Type="EDInput"} internally
+2002-06-28 17:53:32,066 [Thread-1] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=7.0 DiskQueueRunLength=0 Host="varick" RAMFree=79724 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:32,126 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:32,126 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79760 SystemRunLength=0 Timestamp=1025301211064 Type="EDInput"}
+2002-06-28 17:53:32,126 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:32,126 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:32,226 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=43.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124512 SystemRunLength=0 Timestamp=1025301211465 Type="EDInput"} internally
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:3
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:3 - Attempting to reap myself
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:3 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:3 - Enumeration done
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:3 - No more states left, about reap myself
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:4 - StateMachine instantiated
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:4.tempstate - Being born
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:4.tempstate - Being born for the first time
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:4.tempstate - Subscribing...
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:4.tempstate - Subscription complete
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:4.tempstate - Successfully born
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:3 successful!
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:4
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:4 - Attempting to reap myself
+2002-06-28 17:53:32,326 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:4
+2002-06-28 17:53:32,466 [Thread-2] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=1 Type="EDInput"}
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=43.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124512 SystemRunLength=0 Timestamp=1025301211465 Type="EDInput"}
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@b988a6 interested, notifying subscriber
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:4.tempstate - Received event{ CPU=43.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124512 SystemRunLength=0 Timestamp=1025301211465 Type="EDInput"}
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:4.tempstate - Starting succeed()
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:4.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=43.0}
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:4.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:4.tempstate - Succeed finished
+2002-06-28 17:53:32,526 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:32,536 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:32,536 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=43.0}
+2002-06-28 17:53:32,536 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:32,536 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:32,536 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=43.0} sent externally!
+2002-06-28 17:53:32,536 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:32,726 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=7.0 DiskQueueRunLength=0 Host="varick" RAMFree=79724 SystemRunLength=0 Timestamp=1025301212066 Type="EDInput"} internally
+2002-06-28 17:53:33,067 [Thread-3] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=6.0 DiskQueueRunLength=0 Host="varick" RAMFree=79840 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:33,127 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:33,127 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=7.0 DiskQueueRunLength=0 Host="varick" RAMFree=79724 SystemRunLength=0 Timestamp=1025301212066 Type="EDInput"}
+2002-06-28 17:53:33,127 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:33,127 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:33,227 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=1 Timestamp=1025301212466 Type="EDInput"} internally
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:4
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:4 - Attempting to reap myself
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:4 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:4 - Enumeration done
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:4 - No more states left, about reap myself
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:5 - StateMachine instantiated
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:5.tempstate - Being born
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:5.tempstate - Being born for the first time
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:5.tempstate - Subscribing...
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:5.tempstate - Subscription complete
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:5.tempstate - Successfully born
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:4 successful!
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:5
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:5 - Attempting to reap myself
+2002-06-28 17:53:33,327 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:5
+2002-06-28 17:53:33,467 [Thread-4] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124472 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=1 Timestamp=1025301212466 Type="EDInput"}
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@2a1e44 interested, notifying subscriber
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:5.tempstate - Received event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=1 Timestamp=1025301212466 Type="EDInput"}
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:5.tempstate - Starting succeed()
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:5.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:5.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:5.tempstate - Succeed finished
+2002-06-28 17:53:33,527 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:33,537 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:33,537 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:33,537 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:33,537 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:33,537 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0} sent externally!
+2002-06-28 17:53:33,537 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:33,728 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=6.0 DiskQueueRunLength=0 Host="varick" RAMFree=79840 SystemRunLength=0 Timestamp=1025301213067 Type="EDInput"} internally
+2002-06-28 17:53:34,098 [Thread-5] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=6.0 DiskQueueRunLength=0 Host="varick" RAMFree=79836 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:34,128 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:34,128 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=6.0 DiskQueueRunLength=0 Host="varick" RAMFree=79840 SystemRunLength=0 Timestamp=1025301213067 Type="EDInput"}
+2002-06-28 17:53:34,128 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:34,128 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:34,228 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124472 SystemRunLength=0 Timestamp=1025301213467 Type="EDInput"} internally
+2002-06-28 17:53:34,328 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:34,328 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:5
+2002-06-28 17:53:34,328 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:5 - Attempting to reap myself
+2002-06-28 17:53:34,328 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:5 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:34,328 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:5 - Enumeration done
+2002-06-28 17:53:34,328 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:5 - No more states left, about reap myself
+2002-06-28 17:53:34,328 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:6 - StateMachine instantiated
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:6.tempstate - Being born
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:6.tempstate - Being born for the first time
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:6.tempstate - Subscribing...
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:6.tempstate - Subscription complete
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:6.tempstate - Successfully born
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:5 successful!
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:6
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:6 - Attempting to reap myself
+2002-06-28 17:53:34,338 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:6
+2002-06-28 17:53:34,469 [Thread-1] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=10.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124472 SystemRunLength=2 Type="EDInput"}
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124472 SystemRunLength=0 Timestamp=1025301213467 Type="EDInput"}
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@388993 interested, notifying subscriber
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:6.tempstate - Received event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124472 SystemRunLength=0 Timestamp=1025301213467 Type="EDInput"}
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:6.tempstate - Starting succeed()
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:6.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:6.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:6.tempstate - Succeed finished
+2002-06-28 17:53:34,539 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:34,539 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:34,539 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:34,539 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:34,539 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:34,539 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0} sent externally!
+2002-06-28 17:53:34,539 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:34,729 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=6.0 DiskQueueRunLength=0 Host="varick" RAMFree=79836 SystemRunLength=0 Timestamp=1025301214098 Type="EDInput"} internally
+2002-06-28 17:53:35,099 [Thread-2] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=9.0 DiskQueueRunLength=0 Host="varick" RAMFree=79692 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:35,139 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:35,139 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=6.0 DiskQueueRunLength=0 Host="varick" RAMFree=79836 SystemRunLength=0 Timestamp=1025301214098 Type="EDInput"}
+2002-06-28 17:53:35,139 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:35,139 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:35,230 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=10.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124472 SystemRunLength=2 Timestamp=1025301214469 Type="EDInput"} internally
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:6
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:6 - Attempting to reap myself
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:6 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:6 - Enumeration done
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:6 - No more states left, about reap myself
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:7 - StateMachine instantiated
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:7.tempstate - Being born
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:7.tempstate - Being born for the first time
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:7.tempstate - Subscribing...
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:7.tempstate - Subscription complete
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:7.tempstate - Successfully born
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:6 successful!
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:7
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:7 - Attempting to reap myself
+2002-06-28 17:53:35,340 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:7
+2002-06-28 17:53:35,470 [Thread-3] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=10.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124472 SystemRunLength=2 Timestamp=1025301214469 Type="EDInput"}
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@b8f82d interested, notifying subscriber
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:7.tempstate - Received event{ CPU=10.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124472 SystemRunLength=2 Timestamp=1025301214469 Type="EDInput"}
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:7.tempstate - Starting succeed()
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:7.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=10.0}
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:7.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:7.tempstate - Succeed finished
+2002-06-28 17:53:35,550 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:35,550 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:35,550 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=10.0}
+2002-06-28 17:53:35,550 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:35,550 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:35,550 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=10.0} sent externally!
+2002-06-28 17:53:35,550 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:35,730 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=9.0 DiskQueueRunLength=0 Host="varick" RAMFree=79692 SystemRunLength=0 Timestamp=1025301215099 Type="EDInput"} internally
+2002-06-28 17:53:36,101 [Thread-4] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79760 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:36,151 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:36,151 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=9.0 DiskQueueRunLength=0 Host="varick" RAMFree=79692 SystemRunLength=0 Timestamp=1025301215099 Type="EDInput"}
+2002-06-28 17:53:36,151 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:36,151 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:36,231 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301215470 Type="EDInput"} internally
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:7
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:7 - Attempting to reap myself
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:7 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:7 - Enumeration done
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:7 - No more states left, about reap myself
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:8 - StateMachine instantiated
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:8.tempstate - Being born
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:8.tempstate - Being born for the first time
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:8.tempstate - Subscribing...
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:8.tempstate - Subscription complete
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:8.tempstate - Successfully born
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:7 successful!
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:8
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:8 - Attempting to reap myself
+2002-06-28 17:53:36,341 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:8
+2002-06-28 17:53:36,471 [Thread-5] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124456 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:36,551 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:36,551 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301215470 Type="EDInput"}
+2002-06-28 17:53:36,551 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:36,551 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@72ffb interested, notifying subscriber
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:8.tempstate - Received event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301215470 Type="EDInput"}
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:8.tempstate - Starting succeed()
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:8.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:8.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:8.tempstate - Succeed finished
+2002-06-28 17:53:36,581 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:36,651 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:36,651 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:36,651 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:36,651 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:36,651 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0} sent externally!
+2002-06-28 17:53:36,651 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:36,731 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79760 SystemRunLength=0 Timestamp=1025301216101 Type="EDInput"} internally
+2002-06-28 17:53:37,132 [Thread-1] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79612 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:37,182 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:37,182 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79760 SystemRunLength=0 Timestamp=1025301216101 Type="EDInput"}
+2002-06-28 17:53:37,182 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:37,182 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:37,232 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124456 SystemRunLength=0 Timestamp=1025301216471 Type="EDInput"} internally
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:8
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:8 - Attempting to reap myself
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:8 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:8 - Enumeration done
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:8 - No more states left, about reap myself
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:9 - StateMachine instantiated
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:9.tempstate - Being born
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:9.tempstate - Being born for the first time
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:9.tempstate - Subscribing...
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:9.tempstate - Subscription complete
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:9.tempstate - Successfully born
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:8 successful!
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:9
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:9 - Attempting to reap myself
+2002-06-28 17:53:37,342 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:9
+2002-06-28 17:53:37,472 [Thread-2] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=47.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124456 SystemRunLength=0 Timestamp=1025301216471 Type="EDInput"}
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@efb836 interested, notifying subscriber
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:9.tempstate - Received event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124456 SystemRunLength=0 Timestamp=1025301216471 Type="EDInput"}
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:9.tempstate - Starting succeed()
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:9.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:9.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:9.tempstate - Succeed finished
+2002-06-28 17:53:37,482 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:37,552 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:37,552 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:37,552 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:37,552 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:37,552 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0} sent externally!
+2002-06-28 17:53:37,552 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:37,733 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79612 SystemRunLength=0 Timestamp=1025301217132 Type="EDInput"} internally
+2002-06-28 17:53:38,133 [Thread-3] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=14.0 DiskQueueRunLength=0 Host="varick" RAMFree=79576 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:38,183 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:38,183 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79612 SystemRunLength=0 Timestamp=1025301217132 Type="EDInput"}
+2002-06-28 17:53:38,183 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:38,183 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:38,233 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=47.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301217472 Type="EDInput"} internally
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:9
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:9 - Attempting to reap myself
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:9 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:9 - Enumeration done
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:9 - No more states left, about reap myself
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:10 - StateMachine instantiated
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:10.tempstate - Being born
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:10.tempstate - Being born for the first time
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:10.tempstate - Subscribing...
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:10.tempstate - Subscription complete
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:10.tempstate - Successfully born
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:9 successful!
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:10
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:10 - Attempting to reap myself
+2002-06-28 17:53:38,343 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:10
+2002-06-28 17:53:38,473 [Thread-4] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=47.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301217472 Type="EDInput"}
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@8916a2 interested, notifying subscriber
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:10.tempstate - Received event{ CPU=47.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301217472 Type="EDInput"}
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:10.tempstate - Starting succeed()
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:10.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=47.0}
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:10.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:10.tempstate - Succeed finished
+2002-06-28 17:53:38,484 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:38,554 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:38,554 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=47.0}
+2002-06-28 17:53:38,554 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:38,554 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:38,554 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=47.0} sent externally!
+2002-06-28 17:53:38,554 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:38,734 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=14.0 DiskQueueRunLength=0 Host="varick" RAMFree=79576 SystemRunLength=0 Timestamp=1025301218133 Type="EDInput"} internally
+2002-06-28 17:53:39,164 [Thread-5] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=2.0 DiskQueueRunLength=0 Host="varick" RAMFree=79464 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:39,184 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:39,184 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=14.0 DiskQueueRunLength=0 Host="varick" RAMFree=79576 SystemRunLength=0 Timestamp=1025301218133 Type="EDInput"}
+2002-06-28 17:53:39,184 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:39,184 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:39,234 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301218473 Type="EDInput"} internally
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:10
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:10 - Attempting to reap myself
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:10 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:10 - Enumeration done
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:10 - No more states left, about reap myself
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:11 - StateMachine instantiated
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:11.tempstate - Being born
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:11.tempstate - Being born for the first time
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:11.tempstate - Subscribing...
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:11.tempstate - Subscription complete
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:11.tempstate - Successfully born
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:10 successful!
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:11
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:11 - Attempting to reap myself
+2002-06-28 17:53:39,345 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:11
+2002-06-28 17:53:39,475 [Thread-1] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=3.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301218473 Type="EDInput"}
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@99f91c interested, notifying subscriber
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:11.tempstate - Received event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301218473 Type="EDInput"}
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:11.tempstate - Starting succeed()
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:11.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:11.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:11.tempstate - Succeed finished
+2002-06-28 17:53:39,505 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:39,575 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:39,575 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:39,575 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:39,575 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:39,575 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0} sent externally!
+2002-06-28 17:53:39,575 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:39,735 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=2.0 DiskQueueRunLength=0 Host="varick" RAMFree=79464 SystemRunLength=0 Timestamp=1025301219164 Type="EDInput"} internally
+2002-06-28 17:53:40,166 [Thread-2] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=6.0 DiskQueueRunLength=0 Host="varick" RAMFree=79460 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:40,206 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:40,206 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=2.0 DiskQueueRunLength=0 Host="varick" RAMFree=79464 SystemRunLength=0 Timestamp=1025301219164 Type="EDInput"}
+2002-06-28 17:53:40,206 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:40,206 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:40,236 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=3.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301219475 Type="EDInput"} internally
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:11
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:11 - Attempting to reap myself
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:11 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:11 - Enumeration done
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:11 - No more states left, about reap myself
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:12 - StateMachine instantiated
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:12.tempstate - Being born
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:12.tempstate - Being born for the first time
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:12.tempstate - Subscribing...
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:12.tempstate - Subscription complete
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:12.tempstate - Successfully born
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:11 successful!
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:12
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:12 - Attempting to reap myself
+2002-06-28 17:53:40,356 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:12
+2002-06-28 17:53:40,466 [Thread-3] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124456 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=3.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301219475 Type="EDInput"}
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@3f3045 interested, notifying subscriber
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:12.tempstate - Received event{ CPU=3.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124464 SystemRunLength=0 Timestamp=1025301219475 Type="EDInput"}
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:12.tempstate - Starting succeed()
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:12.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=3.0}
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:12.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:12.tempstate - Succeed finished
+2002-06-28 17:53:40,506 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:40,576 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:40,576 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=3.0}
+2002-06-28 17:53:40,576 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:40,576 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:40,576 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=3.0} sent externally!
+2002-06-28 17:53:40,576 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:40,736 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=6.0 DiskQueueRunLength=0 Host="varick" RAMFree=79460 SystemRunLength=0 Timestamp=1025301220166 Type="EDInput"} internally
+2002-06-28 17:53:41,167 [Thread-4] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79424 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:41,207 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:41,207 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=6.0 DiskQueueRunLength=0 Host="varick" RAMFree=79460 SystemRunLength=0 Timestamp=1025301220166 Type="EDInput"}
+2002-06-28 17:53:41,207 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:41,207 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:41,237 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124456 SystemRunLength=0 Timestamp=1025301220476 Type="EDInput"} internally
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:12
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:12 - Attempting to reap myself
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:12 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:12 - Enumeration done
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:12 - No more states left, about reap myself
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:13 - StateMachine instantiated
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:13.tempstate - Being born
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:13.tempstate - Being born for the first time
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:13.tempstate - Subscribing...
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:13.tempstate - Subscription complete
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:13.tempstate - Successfully born
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:12 successful!
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:13
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:13 - Attempting to reap myself
+2002-06-28 17:53:41,357 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:13
+2002-06-28 17:53:41,477 [Thread-5] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:41,507 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:41,507 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124456 SystemRunLength=0 Timestamp=1025301220476 Type="EDInput"}
+2002-06-28 17:53:41,507 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:41,507 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@434234 interested, notifying subscriber
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:13.tempstate - Received event{ CPU=2.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124456 SystemRunLength=0 Timestamp=1025301220476 Type="EDInput"}
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:13.tempstate - Starting succeed()
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:13.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=2.0}
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:13.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:13.tempstate - Succeed finished
+2002-06-28 17:53:41,537 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:41,577 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:41,577 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=2.0}
+2002-06-28 17:53:41,577 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:41,577 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:41,577 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=2.0} sent externally!
+2002-06-28 17:53:41,577 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:41,737 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79424 SystemRunLength=0 Timestamp=1025301221167 Type="EDInput"} internally
+2002-06-28 17:53:42,168 [Thread-1] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=3.0 DiskQueueRunLength=0 Host="varick" RAMFree=79340 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:42,238 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=0 Timestamp=1025301221477 Type="EDInput"} internally
+2002-06-28 17:53:42,238 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:42,248 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79424 SystemRunLength=0 Timestamp=1025301221167 Type="EDInput"}
+2002-06-28 17:53:42,248 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:42,248 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:13
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:13 - Attempting to reap myself
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:13 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:13 - Enumeration done
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:13 - No more states left, about reap myself
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:14 - StateMachine instantiated
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:14.tempstate - Being born
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:14.tempstate - Being born for the first time
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:14.tempstate - Subscribing...
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:14.tempstate - Subscription complete
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:14.tempstate - Successfully born
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:13 successful!
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:14
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:14 - Attempting to reap myself
+2002-06-28 17:53:42,358 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:14
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=0 Timestamp=1025301221477 Type="EDInput"}
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@d80be3 interested, notifying subscriber
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:14.tempstate - Received event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=0 Timestamp=1025301221477 Type="EDInput"}
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:14.tempstate - Starting succeed()
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:14.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:14.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDState.temperaturepassthru:14.tempstate - Succeed finished
+2002-06-28 17:53:42,559 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:42,569 [Thread-2] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:42,609 [Thread-8] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:42,609 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:42,609 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:42,609 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+2002-06-28 17:53:42,609 [Thread-8] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0} sent externally!
+2002-06-28 17:53:42,609 [Thread-8] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:42,739 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=3.0 DiskQueueRunLength=0 Host="varick" RAMFree=79340 SystemRunLength=0 Timestamp=1025301222168 Type="EDInput"} internally
+2002-06-28 17:53:43,169 [Thread-3] DEBUG psl.xues.ed.EventDistiller - Received notification event{ CPU=4.0 DiskQueueRunLength=0 Host="varick" RAMFree=79340 SystemRunLength=0 Type="EDInput"}
+2002-06-28 17:53:43,199 [Thread-7] DEBUG psl.xues.ed.EDBus - Dispatcher beginning dequeue
+2002-06-28 17:53:43,199 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=3.0 DiskQueueRunLength=0 Host="varick" RAMFree=79340 SystemRunLength=0 Timestamp=1025301222168 Type="EDInput"}
+2002-06-28 17:53:43,199 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:43,199 [Thread-7] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:43,259 [main] DEBUG psl.xues.ed.EventDistiller - Publishing event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=0 Timestamp=1025301222569 Type="EDInput"} internally
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - About to start another reap tick
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:14
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:14 - Attempting to reap myself
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:14 - Beginning enumeration of individual states to reap
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:14 - Enumeration done
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:14 - No more states left, about reap myself
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:15 - StateMachine instantiated
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:15.tempstate - Being born
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:15.tempstate - Being born for the first time
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:15.tempstate - Subscribing...
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDBus - New subscription with filter{ CPU any Host any}
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDBus - Encountered EDState in dump
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDBus - Finished subscription
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:15.tempstate - Subscription complete
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDState.temperaturepassthru:15.tempstate - Successfully born
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Reap of temperaturepassthru:14 successful!
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateManager.reaper - Attempting to reap temperaturepassthru:15
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateMachine.temperaturepassthru:15 - Attempting to reap myself
+2002-06-28 17:53:43,359 [Thread-9] DEBUG psl.xues.ed.EDStateManager - Did not reap temperaturepassthru:15
+2002-06-28 17:53:43,490 [Thread-6] INFO  psl.xues.ed.EventDistiller - Shutting down ED...
+2002-06-28 17:53:43,490 [Thread-6] INFO  psl.xues.ed.EventDistiller - Shutting down
+2002-06-28 17:53:43,490 [Thread-6] DEBUG psl.xues.ed.acme.EDGaugeMgr - shutdown called
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=0 Timestamp=1025301222569 Type="EDInput"}
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@2f0999 interested, notifying subscriber
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDState.temperaturepassthru:15.tempstate - Received event{ CPU=1.0 DiskQueueRunLength=0 Host="broadway" RAMFree=124496 SystemRunLength=0 Timestamp=1025301222569 Type="EDInput"}
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDState.temperaturepassthru:15.tempstate - Starting succeed()
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDState.temperaturepassthru:15.tempstate - Sending notification tempsucceed
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EventDistiller - Sending out event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDState.temperaturepassthru:15.tempstate - State being killed, unsubscribing
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus - Starting unsubscription
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus - Start dumping subscribers:
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus - Encountered manager in dump
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus - Finished dumping subscribers.
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus - Unsubscription finished
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDState.temperaturepassthru:15.tempstate - Succeed finished
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus.dispatch - Starting dispatch of notificationevent{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0}
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber copy complete, beginning enumeration
+2002-06-28 17:53:43,530 [Thread-6] DEBUG psl.xues.ed.EDBus.dispatch - Subscriber psl.xues.ed.EDSubscriber@a37368 interested, notifying subscriber
+Fri Jun 28 17:53:43 EDT 2002: error in packet receiver: siena.PacketReceiverClosed: packet receiver has been closed: java.net.SocketException: socket closed
+Fri Jun 28 17:53:43 EDT 2002: error in packet receiver: siena.PacketReceiverClosed: packet receiver has been closed: java.net.SocketException: socket closed
+Fri Jun 28 17:53:43 EDT 2002: error in packet receiver: siena.PacketReceiverClosed: packet receiver has been closed: java.net.SocketException: Socket closed
+Fri Jun 28 17:53:43 EDT 2002: error in packet receiver: siena.PacketReceiverClosed: packet receiver has been closed: java.net.SocketException: Socket closed
+Fri Jun 28 17:53:43 EDT 2002: error in packet receiver: siena.PacketReceiverClosed: packet receiver has been closed: java.net.SocketException: Socket closed
+Fri Jun 28 17:53:43 EDT 2002: error in packet receiver: siena.PacketReceiverClosed: packet receiver has been closed: java.net.SocketException: Socket closed
+Fri Jun 28 17:53:43 EDT 2002: error in packet receiver: siena.PacketReceiverClosed: packet receiver has been closed: java.net.SocketException: Socket closed
+Fri Jun 28 17:53:43 EDT 2002: error in packet receiver: siena.PacketReceiverClosed: packet receiver has been closed: java.net.SocketException: Socket closed
+Fri Jun 28 17:53:43 EDT 2002: error in packet receiver: siena.PacketReceiverClosed: packet receiver has been closed: java.net.SocketException: Socket closed
+Fri Jun 28 17:53:43 EDT 2002: error in packet receiver: siena.PacketReceiverClosed: packet receiver has been closed: java.net.SocketException: Socket closed
+2002-06-28 17:53:43,550 [Thread-6] DEBUG psl.xues.ed.EventDistiller - Notification event{ Source="EventDistiller" Type="FiredRule" host="broadway" load=1.0} sent externally!
+2002-06-28 17:53:43,550 [Thread-6] DEBUG psl.xues.ed.EDBus.dispatch - Dispatch complete
+
+c:\Janak\psl\workspace\psl\demo\2002\jun\xues>
