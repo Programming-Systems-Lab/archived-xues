@@ -40,7 +40,14 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.33  2001-08-27 17:47:42  eb659
+ * Revision 1.34  2001-08-31 19:21:25  eb659
+ * ok, this may be the last commit for the summer, unless I discover
+ * some bad deficiency over the weekend.
+ * Janak, maybe you should take a look at the GUI, and see if there are
+ * any obvious errors or deficiencies, that you want changed before we finalize
+ * this "summer session"
+ *
+ * Revision 1.33  2001/08/27 17:47:42  eb659
  * more work done on the XML generator
  *
  * Revision 1.29  2001/07/03 21:36:23  eb659
@@ -785,8 +792,11 @@ class EDHandler extends DefaultHandler {
 	}
 
         else if(localName.equals("attribute")) { // Start of new attribute
+            AttributeValue attributevalue =
+                makeAttribute(attributes.getValue("", "value"),
+                              attributes.getValue("", "type"));
 	    // Create the attribute
-            String s5 = attributes.getValue("", "name");
+            /*String s5 = attributes.getValue("", "name");
             AttributeValue attributevalue = null;
             String s6 = attributes.getValue("", "type");
 
@@ -801,6 +811,7 @@ class EDHandler extends DefaultHandler {
                 attributevalue = new AttributeValue(Double.parseDouble(attributes.getValue("", "value")));
             else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[4]))
                 attributevalue = new AttributeValue(Boolean.getBoolean(attributes.getValue("", "value")));
+            */
             short word0 = 1;
             String s7 = attributes.getValue("", "op");
             if(s7 != null)
@@ -813,11 +824,11 @@ class EDHandler extends DefaultHandler {
             switch(currentMode){
             case PARSINGSTATE:
                 AttributeConstraint attributeconstraint = new AttributeConstraint(word0, attributevalue);
-                currentState.addConstraint(s5, attributeconstraint);
+                currentState.addConstraint(attributes.getValue("", "name"), attributeconstraint);
                 break;
 
             case PARSINGACTION:
-                currentAction.putAttribute(s5, attributevalue);
+                currentAction.putAttribute(attributes.getValue("", "name"), attributevalue);
                 break;
 
             default:
@@ -844,6 +855,28 @@ class EDHandler extends DefaultHandler {
                 r.publishError(error);
 	    }
 	}
+    }
+
+    /**
+     * Returns an attribute value, with value and type specified as strings
+     * @param val the string representation of the value
+     * @param type the type of teh value
+     * @return the desired AttributeValue
+     */
+    public static AttributeValue makeAttribute(String value, String type) {
+        AttributeValue attributevalue = null;
+        // wrap the correct type in an attribute
+        if(type == null || type.equals(EDConst.TYPE_NAMES[1]))
+            attributevalue = new AttributeValue(value);
+        else if(type.equals(EDConst.TYPE_NAMES[2]))
+            attributevalue = new AttributeValue(Integer.parseInt(value));
+        else if(type.equals(EDConst.TYPE_NAMES[2]))
+            attributevalue = new AttributeValue(Long.parseLong(value));
+        else if(type.equals(EDConst.TYPE_NAMES[3]))
+            attributevalue = new AttributeValue(Double.parseDouble(value));
+        else if(type.equals(EDConst.TYPE_NAMES[4]))
+            attributevalue = new AttributeValue(Boolean.getBoolean(value));
+        return attributevalue;
     }
 }
 

@@ -31,6 +31,9 @@ interface EDConst {
 
     /** Names for value types. */
     public static final String TYPE_NAMES[] = {
-        "null", "string", "long", "int", "double", "bool"
-    };
+        "null", "string", "long", "int", "double", "bool" };
+
+    /** String representation of comparison operators */
+    public static final String OPERATOR_STRINGS[]
+	= { "null", "=", "<", ">", ">=", "<=", ">*", "*<", "any", "!=", "*" };
 }

@@ -8,9 +8,11 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 import javax.swing.tree.*;
+import javax.swing.table.*;
 
 import org.apache.xerces.parsers.SAXParser;
 import org.xml.sax.*;
+import siena.*;
 
 /**
  * A GUI allowing generation of XML specification for ED rules.
@@ -19,11 +21,13 @@ class RuleDesigner extends JFrame implements Rulebase {
 
     // constants
 
-    final Dimension WINDOW_SIZE = new Dimension(450, 700);
+    final Dimension WINDOW_SIZE = new Dimension(450, 750);
     final Dimension RULES_LIST_SIZE = new Dimension(300, 120);
     final Dimension RULES_BUTTONS_SIZE = new Dimension(100, 120);
-    final Dimension TREE_SIZE = new Dimension(405, 300);
+    final Dimension TREE_SIZE = new Dimension(415, 300);
     final Dimension TREE_BUTTONS_SIZE = new Dimension(405, 25);
+    final Dimension STATE_PANEL_SIZE = new Dimension(425, 150);
+
 
     /** The title for the window. */
     final String TITLE_STRING = "ED rules - XML generator ";
@@ -44,10 +48,11 @@ class RuleDesigner extends JFrame implements Rulebase {
 
     private JTree tree = null;
     private JScrollPane treeScrollPane = new JScrollPane();
-    private JButton treeOptionButton = new JButton("No Option");
+    private JPanel treeButtonPanel = new JPanel();
     private TitledBorder treePanelBorder =
         new TitledBorder(new LineBorder(Color.black), "No Rule Selected");
 
+    private JPanel statePanel = new JPanel();
     private TitledBorder statePanelBorder =
         new TitledBorder(new LineBorder(Color.black), "No Selection");
 
@@ -80,19 +85,19 @@ class RuleDesigner extends JFrame implements Rulebase {
     /** The rule that is currently selected. */
     EDStateMachineSpecification currentSpec = null;
 
-    /** Used for default naming of rules. */
-    private int ruleCounter = 0;
+    /** The node that is currently selected in the tree. */
+    private TreeNode currentNode = null;
 
-    /**
-     * Starts the application.
-     */
+    /********************************************
+        methods called on startup only
+    ********************************************/
+
+    /** Starts the application. */
     public static void main(String[] args) {
         new RuleDesigner();
     }
 
-    /**
-     * Constructs a new RuleDesigner.
-     */
+    /** Constructs a new RuleDesigner. */
     public RuleDesigner() {
         super();
         this.setSize(WINDOW_SIZE);
@@ -122,41 +127,43 @@ class RuleDesigner extends JFrame implements Rulebase {
     }
 
     /** @return the panel with the representation of a state or action. */
-    private JPanel createStatePanel() {
-        JPanel statePanel = new JPanel();
-        treePanel.setLayout(new VerticalLayout());
-        treePanel.setBorder(statePanelBorder);
+    private JPanel createTreePanel() {
+        JPanel treePanel = new JPanel();
+        treePanel.setLayout(new BorderLayout(5, 0));
+        treePanel.setBorder(treePanelBorder);
 
         // buttons
-        JPanel treeButtonPanel = new JPanel();
         treeButtonPanel.setLayout(new GridLayout(1, 0));
 
+        JButton treeOptionButton = new JButton("No Option");
         treeOptionButton.setEnabled(false);
         treeButtonPanel.add(treeOptionButton);
 
         treeButtonPanel.setSize(TREE_BUTTONS_SIZE);
-        treePanel.add(treeButtonPanel);
+        treePanel.add(treeButtonPanel, BorderLayout.NORTH);
 
         // tree representing a rule
         treeScrollPane.setPreferredSize(TREE_SIZE);
-        treePanel.add(treeScrollPane);
+        treePanel.add(treeScrollPane, BorderLayout.CENTER);
 
         return treePanel;
     }
 
     /** @return the panel with the tree representing a rule. */
-    private JPanel createTreePanel() {
-        JPanel treePanel = new JPanel();
-        treePanel.setLayout(new VerticalLayout());
-        treePanel.setBorder(treePanelBorder);
-        return treePanel;
+    private JPanel createStatePanel() {
+        statePanel = new JPanel();
+        statePanel.setLayout(new BorderLayout(5, 5));
+        statePanel.setBorder(statePanelBorder);
+	statePanel.setPreferredSize(STATE_PANEL_SIZE);
+        return statePanel;
     }
 
     /** @return the panel with the list of rules. */
     private JPanel createRulesPanel() {
         JPanel rulesPanel = new JPanel();
-        rulesPanel.setLayout(new HorizontalLayout());
+        rulesPanel.setLayout(new BorderLayout(5, 5));
         rulesPanel.setBorder(new TitledBorder(new LineBorder(Color.black), "Rules"));
+        rulesPanel.setPreferredSize(STATE_PANEL_SIZE);
 
         // list of rules
         rulesList = new JList(new AbstractListModel() {
@@ -174,7 +181,7 @@ class RuleDesigner extends JFrame implements Rulebase {
         });
         JScrollPane rulesScrollPane = new JScrollPane(rulesList);
         rulesScrollPane.setPreferredSize(RULES_LIST_SIZE);
-        rulesPanel.add(rulesScrollPane);
+        rulesPanel.add(rulesScrollPane, BorderLayout.CENTER);
 
         // buttons to modify rule properties
         JPanel ruleButtonPanel = new JPanel();
@@ -185,7 +192,8 @@ class RuleDesigner extends JFrame implements Rulebase {
         newRule.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // add a rule with a default name
-                while(!addSpecification(-1, new EDStateMachineSpecification ("Rule " + (++ruleCounter))));
+                int rc = 0;
+                while(!addSpecification(-1, new EDStateMachineSpecification ("Rule " + (++rc))));
                 rulesList.setSelectedIndex(specifications.size() - 1);
                 rulesList.updateUI();
             }
@@ -275,7 +283,7 @@ class RuleDesigner extends JFrame implements Rulebase {
         ruleButtonPanel.add(moveDownRule);
 
         ruleButtonPanel.setPreferredSize(RULES_BUTTONS_SIZE);
-        rulesPanel.add(ruleButtonPanel);
+        rulesPanel.add(ruleButtonPanel, BorderLayout.EAST);
         return rulesPanel;
     }
 
@@ -363,6 +371,10 @@ class RuleDesigner extends JFrame implements Rulebase {
         this.setJMenuBar(jMenuBar);
     }
 
+    /******************************************************
+       methods that are called anytime during runtime
+    ******************************************************/
+
     /**
      * Changes the current file.
      * @param currentFile the filename to swich to
@@ -373,14 +385,11 @@ class RuleDesigner extends JFrame implements Rulebase {
         this.currentFile = currentFile;
         currentDir = new File(currentFile.getParent());
 
-
 	// reset variables
         if (reset) {
             specifications = new Vector();
-            currentSpec = null;
-	    ruleCounter = 0;
+            setCurrentSpec(null);
         }
-
 	// gui
         this.setTitle(TITLE_STRING + "(" + currentFile.getName() + ")");
         this.repaint();
@@ -388,41 +397,370 @@ class RuleDesigner extends JFrame implements Rulebase {
 
     /**
      * Updates the component, to reflect the element of the tree that is selected.
-     * @param selNode the treeNode currently selected
+     * @param path the treePath currently selected
      */
-    private void updateTreeSelection(TreeNode selNode) {
-        if (selNode instanceof SpecNode) {
-            treeOptionButton.setText("Add Child State");
-            treeOptionButton.setEnabled(true);
-            treeOptionButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    EDState s = StateDialog.showNewStateDialog();
-                    if (s != null) ((SpecNode)selNode).addChildState(s);
-                }
-            });
-        }
-        else if (selNode instanceof StateNode) {
-            treeOptionButton.setText("Add Child State");
-            treeOptionButton.setEnabled(true);
-            treeOptionButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
+    private void setCurrentNode(TreePath path) {
+        final TreePath selPath = path;
 
-                }
-            });
-        }
-        else if (selNode instanceof FolderNode) {
-            treeOptionButton.setText("Add Action");
-            treeOptionButton.setEnabled(true);
-            treeOptionButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
+        if (path != null && (TreeNode)path.getLastPathComponent() == currentNode) return;
+        if (path == null && currentNode == null) return;
 
-                }
-            });
-        }
-        else {
-            treeOptionButton.setText("No Option");
+	statePanel.removeAll();
+        treeButtonPanel.removeAll();
+
+	if (selPath == null) {
+            JButton treeOptionButton = new JButton("No Option");
             treeOptionButton.setEnabled(false);
+            treeButtonPanel.add(treeOptionButton);
+
+	    statePanelBorder.setTitle("No Selection");
+            treeButtonPanel.updateUI();
+            repaint();
+            return;
         }
+
+        currentNode = (TreeNode)path.getLastPathComponent();
+
+        if (currentNode instanceof SpecNode) {
+
+	    // update buttons
+
+            // add an initial state to the rule
+            JButton treeOptionAddChildButton = new JButton("Add Child State");
+            treeOptionAddChildButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+		    // add a new default state to this machine
+                    int count = 0;
+                    TreeNode childNode = null;
+                    while (childNode == null)
+                        childNode = ((SpecNode)RuleDesigner.this.currentNode).addState(new EDState
+                        ("State" + (++count), -1, null, null, null));
+		    // select it in the tree
+                    if (DEBUG) System.out.println("Added state: " +
+                        ((StateNode)childNode).state.getName());
+                    tree.setSelectionPath(selPath.pathByAddingChild(childNode));
+                    tree.updateUI();
+                }
+            });
+            treeButtonPanel.add(treeOptionAddChildButton);
+
+	    // update state panel
+	    statePanelBorder.setTitle("No options available");
+        }
+        else if (currentNode instanceof StateNode) {
+
+            // 1) update tree panel
+
+            // button to add child state to the selected state
+            JButton treeOptionButton = new JButton("Add Child State");
+            treeButtonPanel.add(treeOptionButton);
+            treeOptionButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+		    // add a new default child state
+                    int count = 0;
+                    TreeNode childNode = null;
+                    while (childNode == null)
+                        childNode = ((StateNode)RuleDesigner.this.currentNode).addState(new EDState
+                        ("State" + (++count), -1, null, null, null));
+		    // select it in the tree
+                    if (DEBUG) System.out.println("Added state: " +
+                        ((StateNode)childNode).state.getName());
+                    //tree.setSelectionPath(selPath.pathByAddingChild(childNode));
+                    tree.updateUI();
+                }
+            });
+            // button to remove selected state
+            JButton treeOptionRemoveStateButton = new JButton("Remove");
+            treeOptionRemoveStateButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    //... somewhat complicated
+                }
+            });
+//            treeButtonPanel.add(treeOptionRemoveStateButton);
+
+
+            // 2) update state panel
+	    updateStatePanelForState();
+        }
+        else if (currentNode instanceof FolderNode) {
+            JButton treeOptionButton = new JButton("Add Action");
+            treeButtonPanel.add(treeOptionButton);
+            treeOptionButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+		    // add a new default action
+                    int count = 0;
+                    TreeNode childNode = null;
+                    while (childNode == null)
+                        childNode = ((FolderNode)RuleDesigner.this.currentNode).addAction
+                            ("Action" + (++count), new Notification());
+		    // select it in the tree
+                    if (DEBUG) System.out.println("Added action");
+                    tree.setSelectionPath(selPath.pathByAddingChild(childNode));
+                    tree.updateUI();
+                }
+            });
+
+	    // update state panel
+	    statePanelBorder.setTitle("No options available");
+        }
+        else if (currentNode instanceof ActionNode) {
+            JButton treeOptionButton = new JButton("No options");
+            treeOptionButton.setEnabled(false);
+            treeButtonPanel.add(treeOptionButton);
+
+	    updateStatePanelForAction();
+	    statePanelBorder.setTitle("Action: " + ((ActionNode)RuleDesigner.this.currentNode).name);
+        }
+        repaint();
+        treeButtonPanel.updateUI();
+    }
+
+    /** Updates the statePanel to represent the current action. */
+    private void updateStatePanelForAction() {
+        statePanelBorder.setTitle("Action: " +
+            ((ActionNode)RuleDesigner.this.currentNode).name);
+
+        // table with the attributes
+        final String[] labels = {"Name", "Value"};
+        TableModel dataModel = new AbstractTableModel() {
+            public int getColumnCount() { return labels.length; }
+            public String getColumnName(int col) {return labels[col];}
+            public int getRowCount() { return
+                ((ActionNode)RuleDesigner.this.currentNode).attributes.size();}
+            public boolean isCellEditable(int row, int col) { return true; }
+            public Class getColumnClass(int c) {return String.class;}
+            public Object getValueAt(int row, int col) {
+                if  (col == 0) return
+                    ((ActionNode)RuleDesigner.this.currentNode).attributeNames.get(row);
+                else return ((AttributeValue)((ActionNode)
+                    RuleDesigner.this.currentNode).attributes.get(row)).stringValue();
+            }
+            public void setValueAt(Object newValue, int row, int col) {
+                if  (col == 0) { // edit name
+                    if (!((ActionNode)RuleDesigner.this.currentNode).renameAttribute
+                        (row, newValue.toString())) {
+                        JOptionPane.showMessageDialog(RuleDesigner.this,
+                            "Not a valid name", "Error", JOptionPane.ERROR_MESSAGE);
+                        RuleDesigner.this.statePanel.updateUI();
+                    }
+                }
+                else { // value
+                    ((ActionNode)RuleDesigner.this.currentNode).
+                        changeAttributeVal(row, new AttributeValue(newValue.toString()));
+                }
+            }
+        };
+
+        final JTable constraintsTable = new JTable(dataModel);
+        constraintsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane constraintsScrollPane = new JScrollPane(constraintsTable);
+        constraintsScrollPane.setPreferredSize(RULES_LIST_SIZE);
+        statePanel.add(constraintsScrollPane, BorderLayout.CENTER);
+
+        // buttons
+        JPanel stateButtonPanel = new JPanel();
+        stateButtonPanel.setLayout(new GridLayout(0, 1));
+        stateButtonPanel.setSize(RULES_BUTTONS_SIZE);
+        statePanel.add(stateButtonPanel, BorderLayout.EAST);
+
+        // rename this action
+        JButton renameActionButton = new JButton("Rename");
+        renameActionButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String newName = JOptionPane.showInputDialog(RuleDesigner.this,
+                    "Enter a new name for this state", "Rename State", JOptionPane.QUESTION_MESSAGE);
+                if (newName != null && !((ActionNode)RuleDesigner.this.currentNode).setName(newName))
+                    JOptionPane.showMessageDialog(RuleDesigner.this, "Invalid Name",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                repaint();
+            }
+        });
+//        stateButtonPanel.add(renameStateButton);
+
+        // add attribute
+        JButton addAttrButton = new JButton("Add Attr.");
+        addAttrButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int i = 0;
+                while (!((ActionNode)RuleDesigner.this.currentNode).addAttribute(
+                    "Attr" + (++i), new AttributeValue("")));
+                constraintsTable.updateUI();
+            }
+        });
+        stateButtonPanel.add(addAttrButton);
+
+        // remove attribute
+        JButton remAttrButton = new JButton("Rem. Attr.");
+        remAttrButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int i = constraintsTable.getSelectedRow();
+                if (i == -1) JOptionPane.showMessageDialog(RuleDesigner.this,
+                    "No attribute was selected", "Error", JOptionPane.ERROR_MESSAGE);
+                else {
+                    ((ActionNode)RuleDesigner.this.currentNode).removeAttribute(i);
+                    constraintsTable.updateUI();
+                }
+            }
+        });
+        stateButtonPanel.add(remAttrButton);
+    }
+
+    /** Updates the statePanel to represent the current state. */
+    private void updateStatePanelForState() {
+        final EDState state = ((StateNode)currentNode).state;
+        statePanelBorder.setTitle("State: " + state.getName());
+
+        // table with the constraints
+        final String[] labels = {"Name", "Oper", "Value", "Type"};
+        final Vector constraints = ((StateNode)currentNode).constraints;
+        final Vector constraintNames = ((StateNode)currentNode).constraintNames;
+
+        TableModel dataModel = new AbstractTableModel() {
+            public int getColumnCount() { return labels.length; }
+            public String getColumnName(int col) {return labels[col];}
+            public int getRowCount() { return (constraints.size());}
+            public boolean isCellEditable(int row, int col) { return true; }
+            public Class getColumnClass(int c) {return String.class;}
+            public Object getValueAt(int row, int col) {
+                if  (col == 0) return
+                    constraintNames.get(row);
+                else if (col == 1) return
+                    Op.operators[((AttributeConstraint)constraints.get(row)).op];
+                else if (col == 2) return
+                    ((AttributeConstraint)constraints.get(row)).value.stringValue();
+                else return
+                    EDConst.TYPE_NAMES[((AttributeConstraint)constraints.get(row)).value.getType()];
+            }
+            public void setValueAt(Object newValue, int row, int col) {
+                if  (col == 0) { // edit name
+                    if (!((StateNode)RuleDesigner.this.currentNode).renameConstraint
+                        (row, newValue.toString())) {
+                        JOptionPane.showMessageDialog(RuleDesigner.this,
+                            "Not a valid name", "Error", JOptionPane.ERROR_MESSAGE);
+                        RuleDesigner.this.statePanel.updateUI();
+                    }
+                }
+                else if (col == 1) { // change operator
+                    ((AttributeConstraint)constraints.get(row)).op = Op.op(newValue.toString());
+                }
+                else if (col == 2) { // value
+                    ((AttributeConstraint)constraints.get(row)).value =
+                        EDHandler.makeAttribute(
+                         newValue.toString(), getValueAt(row, 3).toString());
+                }
+                else { // type
+                    ((AttributeConstraint)constraints.get(row)).value =
+                        EDHandler.makeAttribute(
+                         getValueAt(row, 2).toString(), newValue.toString());
+                }
+            }
+        };
+
+        final JTable constraintsTable = new JTable(dataModel);
+        constraintsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // column properties
+//        TableColumn nameColumn = levelsTable.getColumn("Level");
+//        nameColumn.setPreferredWidth(75);
+
+        TableColumn operColumn = constraintsTable.getColumn("Oper");
+        JComboBox operComboBox = new JComboBox(EDConst.OPERATOR_STRINGS);
+        operColumn.setCellEditor(new DefaultCellEditor(operComboBox));
+
+        TableColumn typeColumn = constraintsTable.getColumn("Type");
+        JComboBox typeComboBox = new JComboBox(EDConst.TYPE_NAMES);
+        typeColumn.setCellEditor(new DefaultCellEditor(typeComboBox));
+
+        // add to the panel
+        JScrollPane constraintsScrollPane = new JScrollPane(constraintsTable);
+        constraintsScrollPane.setPreferredSize(RULES_LIST_SIZE);
+        statePanel.add(constraintsScrollPane, BorderLayout.CENTER);
+
+        // buttons
+        JPanel stateButtonPanel = new JPanel();
+        stateButtonPanel.setLayout(new GridLayout(0, 1));
+        stateButtonPanel.setSize(RULES_BUTTONS_SIZE);
+        statePanel.add(stateButtonPanel, BorderLayout.EAST);
+
+        // rename this state
+        JButton renameStateButton = new JButton("Rename");
+        renameStateButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String newName = JOptionPane.showInputDialog(RuleDesigner.this,
+                    "Enter a new name for this state", "Rename State", JOptionPane.QUESTION_MESSAGE);
+                // etc.
+            }
+        });
+//        stateButtonPanel.add(renameStateButton);
+
+        // add a new, default constraint
+        JButton addConstrButton = new JButton("Add Constr.");
+        addConstrButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int i = 0;
+                while (!((StateNode)RuleDesigner.this.currentNode).addConstraint
+                        ("Constr" + (++i), new AttributeConstraint(Op.ANY, ""))) ;
+                constraintsTable.updateUI();
+            }
+        });
+        stateButtonPanel.add(addConstrButton);
+
+        // remove the constraint selected in the table
+        JButton remConstrButton = new JButton("Rem. Constr.");
+        remConstrButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int i = constraintsTable.getSelectedRow();
+                if (i == -1) JOptionPane.showMessageDialog(RuleDesigner.this,
+                    "No constraint was selected", "Error", JOptionPane.ERROR_MESSAGE);
+                else {
+                    ((StateNode)RuleDesigner.this.currentNode).removeConstraint(i);
+                    constraintsTable.updateUI();
+                }
+            }
+        });
+        stateButtonPanel.add(remConstrButton);
+
+        // set count
+        JButton setCountButton = new JButton("Set Count");
+        setCountButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String s = JOptionPane.showInputDialog(RuleDesigner.this,
+                    "Enter the count for this state", "Rename State", JOptionPane.QUESTION_MESSAGE);
+                if (s != null) {
+                    boolean valid = true;
+                    int newCount = 0;
+                    try { newCount = Integer.parseInt(s); }
+                    catch(NumberFormatException ex) { valid = false; }
+                    if (!valid || (newCount < 1 && newCount != -1))
+                        JOptionPane.showMessageDialog(RuleDesigner.this, "Not a valid input",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                    else state.setCount(newCount);
+                }
+            }
+        });
+        stateButtonPanel.add(setCountButton);
+
+        // set timebound
+        JButton setTbButton = new JButton("Timebound");
+        setTbButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String s = JOptionPane.showInputDialog(RuleDesigner.this,
+                    "Enter the timebound for this state", "Set Timebound",
+                    JOptionPane.QUESTION_MESSAGE);
+                if (s != null) {
+                    boolean valid = true;
+                    int newCount = 0;
+                    try { newCount = Integer.parseInt(s); }
+                    catch(NumberFormatException ex) { valid = false; }
+                    if (!valid || (newCount < 1 && newCount != -1))
+                        JOptionPane.showMessageDialog(RuleDesigner.this, "Not a valid input",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                    else state.setTimebound(newCount);
+                }
+            }
+        });
+        stateButtonPanel.add(setTbButton);
+
     }
 
     /**
@@ -436,12 +774,11 @@ class RuleDesigner extends JFrame implements Rulebase {
         this.currentSpec = currentSpec;
 
         // update panels
-        treeOptionButton.setText("No Option");
-        treeOptionButton.setEnabled(false);
+        setCurrentNode(null);
 
         treeScrollPane.getViewport().removeAll();
         if (currentSpec != null) {
-            treePanelBorder.setText(currentSpec.getName());
+            treePanelBorder.setTitle(currentSpec.getName());
 
             tree = new JTree(new SpecNode(currentSpec));
             treeScrollPane.getViewport().add(tree);
@@ -451,12 +788,13 @@ class RuleDesigner extends JFrame implements Rulebase {
                     int selRow = tree.getRowForLocation(e.getX(), e.getY());
                     TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
                     if(selRow != -1) {
-                        updateTreeSelection((TreeNode)selPath.getLastPathComponent());
+                        setCurrentNode(selPath);
                     }
                 }
             });
         }
-        else treePanelBorder.setText("No Rule Selected");
+        else treePanelBorder.setTitle("No Rule Selected");
+	repaint();
     }
 
     /**************************************************
@@ -533,7 +871,7 @@ class RuleDesigner extends JFrame implements Rulebase {
     }
 }
 
-/** Dialog to create or edit a state. */
+/** UNUSED Dialog to create or edit a state. */
 class StateDialog extends JDialog {
 
     /** The source to which the input is added. */

@@ -16,7 +16,14 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.15  2001-08-27 17:47:42  eb659
+ * Revision 1.16  2001-08-31 19:21:25  eb659
+ * ok, this may be the last commit for the summer, unless I discover
+ * some bad deficiency over the weekend.
+ * Janak, maybe you should take a look at the GUI, and see if there are
+ * any obvious errors or deficiencies, that you want changed before we finalize
+ * this "summer session"
+ *
+ * Revision 1.15  2001/08/27 17:47:42  eb659
  * more work done on the XML generator
  *
  * Revision 1.11  2001/06/28 20:58:42  eb659
@@ -273,32 +280,42 @@ public class EDStateMachineSpecification {
 
     /**
      * Add a state.
-     *
-     * NOTE! For this specification to become active, you must subscribe()
-     * AFTER adding states.
-     *
-     * @param e The state.
+     * @param e the state to add
+     * @return false if the state could not be added due to a
+     *         naming conflict (another state with this name)
      */
-    public void addState(EDState e) {
+    public boolean addState(EDState e) {
+        if (states.get(e.getName()) != null)
+            return false;
 	states.put(e.getName(), e);
+        return true;
     }
 
     /**
-     * Add a state in intitial position
-     * @param e The state.
+     * Add a state in intitial position.
+     * @param e the state to add
+     * @return false if the state could not be added due to a
+     *         naming conflict (another state with this name)
      */
-    public void addInitialState(EDState e) {
+    public boolean addInitialState(EDState e) {
+        if (states.get(e.getName()) != null)
+            return false;
 	states.put(e.getName(), e);
         initialStates.add(e);
+        return true;
     }
 
     /**
      * Add an Action
      * @param name the name for this action
      * @param action the action
+     * @return false if the action could not be added
+     *         due to a naming conflict
      */
-    public void addAction(String name, Notification action) {
+    public boolean addAction(String name, Notification action) {
+        if (actions.get(name) != null) return false;
 	actions.put(name, action);
+        return true;
     }
 
     /**
@@ -549,46 +566,3 @@ public class EDStateMachineSpecification {
     }
 }
 
-
-/**
- * Represents a SMSpec in the tree of the RuleDesigner.
- */
-class SpecNode implements TreeNode {
-
-    /** The specification represented. */
-    EDStateMachineSpecification spec;
-
-    /** The children nodes. */
-    private Vector children = new Vector();
-
-    /**
-     * Constructs a new SpecNode
-     * @param spec the represented specification
-     */
-    public SpecNode(EDStateMachineSpecification spec) {
-        this.spec = spec;
-        for (int i = 0; i < spec.getInitialStates().size(); i++)
-            children.add(new StateNode((EDState)spec.getInitialStates().get(i), this));
-    }
-
-    /** @param the string representation of this object */
-    public String toString() { return spec.getName(); }
-
-    /********************************************************
-        methods inherited from the TreeNode interface
-    ********************************************************/
-
-    public Enumeration children() { return children.elements(); }
-
-    public boolean getAllowsChildren() { return true; }
-
-    public TreeNode getChildAt(int childIndex) { return (TreeNode)children.get(childIndex); }
-
-    public int getChildCount() { return children.size(); }
-
-    public int getIndex(TreeNode node) { return children.indexOf(node); }
-
-    public TreeNode getParent() { return null; }
-
-    public boolean isLeaf() { return (children.size() == 0); }
-}
