@@ -19,7 +19,10 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.6  2001-01-30 06:26:18  jjp32
+ * Revision 1.7  2001-03-14 20:45:15  png3
+ * replaced deprecated call to Notification.iterator()
+ *
+ * Revision 1.6  2001/01/30 06:26:18  jjp32
  *
  * Lots and lots of updates.  EventDistiller is now of demo-quality.
  *
@@ -181,7 +184,9 @@ public class EDStateMachine implements Notifiable {
 
     // Do we need to amend the Notification?  Iterate through all
     // attribute values and fill in any wildcard hashes in.
-    Iterator i = action.iterator();
+    // png 14 Mar 2001  replaced deprecated method
+    // Iterator i = action.iterator();
+    Iterator i = action.attributeNamesIterator();
 
     while(i.hasNext()) {
       String attr = (String)i.next();
