@@ -15,14 +15,10 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.6  2001-04-03 01:09:14  eb659
+ * Revision 1.7  2001-04-08 22:10:09  jjp32
  *
- *
- * OK this is my first upload...
- * Basically, most of the dynamic rulebase stuff has been accomplished.
- * the principal methods are in EDStatemanaged, but most of the files in ED
- * had to be modified, at least in some small way
- * enrico
+ * Restored previous revisions on main branch after Enrico's accidental
+ * commit (see xues-eb659 branch for those)
  *
  * Revision 1.5  2001/01/30 06:26:18  jjp32
  *
@@ -49,29 +45,23 @@ import siena.*;
  *
  */
 class EDStateMachineSpecification implements Notifiable {
-    private Vector stateArray;
-    private Notification action;
-    private Siena siena;
-    private EDStateManager edsm;
-    
-    /** the name of the rule represented. */
-    private String name;
-
-    /** ID of this specification - an integer */
-    private String myID = null;
-    /** Counter for ID tagging of EDStateMachines */
-    private int counter = 0;
+  private Vector stateArray;
+  private Notification action;
+  private Siena siena;
+  private EDStateManager edsm;
+  private String myID = null;
+  /** Counter for ID tagging of EDStateMachines */
+  private int counter = 0;
 
   /**
    * Basic CTOR.  Make sure to add states.
    */
-  public EDStateMachineSpecification(String name, String myID,
+  public EDStateMachineSpecification(String myID,
 				     Siena siena, EDStateManager edsm) {
-      this.name = name;
-      this.myID = myID;
-      this.siena = siena;
-      this.edsm = edsm;
-      stateArray = new Vector();
+    this.myID = myID;
+    this.siena = siena;
+    this.edsm = edsm;
+    stateArray = new Vector();
   }
 
   /** Demo test factory, don't use otherwise */
@@ -79,7 +69,7 @@ class EDStateMachineSpecification implements Notifiable {
 							  EDStateManager edsm)
   { 
     EDStateMachineSpecification edsms = 
-      new EDStateMachineSpecification("demoTest", "foo",siena,edsm);
+      new EDStateMachineSpecification("foo",siena,edsm);
     EDState e = new EDState(-1);
     e.add("temperature","60");
     edsms.stateArray.addElement(e);
@@ -140,59 +130,11 @@ class EDStateMachineSpecification implements Notifiable {
       System.err.println("EDStateManagerSpecification: Received notification " + n);
     // Create the appropriate state machine(s).  We assume the state
     // machine will register itself with the manager.
-    EDStateMachine sm = new EDStateMachine(this, myID + ":" + (counter++),
+    EDStateMachine sm = new EDStateMachine(myID + ":" + (counter++),
 					   siena, edsm, stateArray, n,
 					   action);
   }
 
-    /** Unused Siena construct. */
-    public void notify(Notification[] s) { ; }
-
-    /**
-     * Returns the name of this SMSpecification.
-     * @return the name of this SMSpecification
-     */
-    public String getName(){
-	return name;
-    }
-
-    /** Unsubscribe from siena. */
-    public void unsubscribe(){
-	try { siena.unsubscribe(this); } 
-	catch(SienaException e) { e.printStackTrace(); }
-    }
-
-    /** @return the XML representation of this object */
-    public String toXML(){
-	String s = "<rule name=\"" + name + "\">\n<states>\n";
-	
-	// add states
-	for (int i = 0; i < stateArray.size(); i++){
-	    s = s + ((EDState)stateArray.get(i)).toXML();
-	}
-	s += "</states>\n <actions>";
-
-	// add action
-	s += notificationToXML(action);
-	s += "</states>\n <actions>\n";
-
-	return s;
-    }
-
-    /** 
-     * Returns the XML representation of a Notification.
-     * @param the notification to represent
-     * @return the XML representation of a Notification
-     */
-    public static String notificationToXML(Notification n){
-	String s = "<notification>\n";
-	Iterator iterator = n.attributeNamesIterator();
-	while (iterator.hasNext()){
-	    String notifName = iterator.next().toString();
-	    s = s + "\t<attribute name=\"" + notifName + "\" value=\"" + 
-		n.getAttribute(notifName).stringValue() + "\"/>\n";
-	      }
-	s += "</notification>\n";
-	return s;
-    }
+  /** Unused Siena construct. */
+  public void notify(Notification[] s) { ; }
 }

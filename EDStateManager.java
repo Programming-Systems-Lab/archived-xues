@@ -34,20 +34,11 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Janak J Parekh (jjp32@cs.columbia.edu)
  * @version 1.0
  *
- * Revision 1.13 eb659
- * Now subscribes to internal siena to be notified of
- * changes to be made to the rulebase.
- * added dynamicAddMachine() method
- *
  * $Log$
- * Revision 1.13  2001-04-03 01:09:14  eb659
+ * Revision 1.14  2001-04-08 22:10:09  jjp32
  *
- *
- * OK this is my first upload...
- * Basically, most of the dynamic rulebase stuff has been accomplished.
- * the principal methods are in EDStatemanaged, but most of the files in ED
- * had to be modified, at least in some small way
- * enrico
+ * Restored previous revisions on main branch after Enrico's accidental
+ * commit (see xues-eb659 branch for those)
  *
  * Revision 1.12  2001/02/28 18:02:45  jjp32
  * Removed ^M :)
@@ -98,39 +89,30 @@ import org.xml.sax.helpers.DefaultHandler;
  * First full Siena-aware build of XUES!
  *
  */
-public class EDStateManager extends DefaultHandler implements Runnable, Notifiable {
-  
+public class EDStateManager extends DefaultHandler implements Runnable {
   private EventDistiller ed = null;
   private Siena siena = null;
-  
-    /** Counts EDStateMachines for ID tagging */
-    private int idCounter = 0;
+  /** Counts EDStateMachines for ID tagging */
+  private int idCounter = 0;
+  /** This hashes vectors with EDStateMachineSpecifications */
+  private Vector stateMachineTemplates = null;
+  private Vector stateMachines = null;
+  /** SAX parser reference */
+  private SAXParser sxp = null;
+  /** The current statemachine being built. */
+  private EDStateMachineSpecification currentEdsms = null;
+  /** The current state being built. */
+  private EDState currentState = null;
+  /** The current action being built.  Unused right now - see code
+   * where currentAction is commented out */
+  //  private Notification currentAction = null;
+  /** What are we currently parsing? */
+  private int currentMode = -1;
 
-    /** This hashes vectors with EDStateMachineSpecifications */
-    private Vector stateMachineTemplates = null;
-    private Vector stateMachines = null;
-
-    /** SAX parser reference */
-    private SAXParser sxp = null;
-
-    /** The current statemachine being built. */
-    private EDStateMachineSpecification currentEdsms = null;
-
-    /** The current state being built. */
-    private EDState currentState = null;
-
-    /** The current action being built.  Unused right now - see code
-     * where currentAction is commented out */
-    //  private Notification currentAction = null;
-
-    /** What are we currently parsing? */
-    private int currentMode = -1;
-    
-    /** Currently parsing state */
-    private static final int PARSINGSTATE = 1;
-
-    /** Currently parsing action */
-    private static final int PARSINGACTION = 2;
+  /** Currently parsing state */
+  private static final int PARSINGSTATE = 1;
+  /** Currently parsing action */
+  private static final int PARSINGACTION = 2;
   
   /**
    * XML main test
@@ -161,10 +143,6 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
     this.siena = siena;
     this.stateMachineTemplates = new Vector();
     this.stateMachines = new Vector();
-    
-    // subscribe to internal siena
-    subscribe();
-
     // Do we have a spec filename?
     if(specFilename == null) return; // No further
     // Initialize SAX parser and run it on the file
@@ -248,11 +226,12 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
     if(EventDistiller.DEBUG) System.out.println("parsing " + localName + "," + 
 						qName);
     if(localName.equals("rule")) { // Start of new EDSMS
-	currentEdsms = new EDStateMachineSpecification(attributes.getValue("", "name"),
-						       "" + (idCounter++),
-						       siena, this);
+      currentEdsms = new EDStateMachineSpecification("" + (idCounter++),
+						     siena,this);
       stateMachineTemplates.addElement(currentEdsms);
     }
+
+    /////
 
     if(localName.equals("state")) { // Start of new state
       if(EventDistiller.DEBUG) {
@@ -272,6 +251,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
       }	
     }
 
+    /////
     
     if(localName.equals("notification")) { // Start of new notification
       // We don't create a new notification, since action can only be
@@ -311,9 +291,9 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
 	System.exit(-1);
       }
     }
-  } 
+  }
 
-  /*
+  /**
    * Handle the end of a SAX element.
    */
   public void endElement(String namespaceURI, String localName, String qName) 
@@ -326,161 +306,4 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
       currentEdsms.subscribe();
     }
   }
-
-  /**
-   * Subscribe, so that we can get notifications asking us to 
-   * dynamically modify the state machines.
-   * @author enrico buonanno
-   */
-  public void subscribe() {
-    try {
-	//specify what notifications we are interested in
-	Filter f =  new Filter();
-	f.addConstraint("Type", "EDInput");
-	f.addConstraint("EDInput", "ManagerInstruction");
-	siena.subscribe(f, this);
-	if(EventDistiller.DEBUG)
-	    System.err.println("EDStateManager: Subscribing with filter " + f);
-    } catch(SienaException e) {
-	e.printStackTrace();
-    }
-  }
-
-  /**
-   * Siena Callback.  We receive callbacks to dynamically
-   * change or query the state of the rules.
-   * @param n the notification received
-   */
-  public void notify(Notification n) {
-      if(EventDistiller.DEBUG) System.out.println("EDStateManager: Received notification "+n);
-      // What kind of notification is it?
-      String a = n.getAttribute("Action").stringValue();
-
-      if(a.equals("AddRule")) {
-	  dynamicAddRule(n.getAttribute("Rule").stringValue());
-      } else if(a.equals("RemoveRule")) {
-	  dynamicRemoveRule(n.getAttribute("Rule").stringValue());
-      } else if(a.equals("QueryRule")) {
-	  dynamicQueryRule(n.getAttribute("Rule").stringValue());
-      }
-  }
-		
-  /** Unused Siena construct. */
-  public void notify(Notification[] s) { ; }
-
-  /**
-   * Dynamically add a rule.
-   * @param s the XML representation of the new rule
-   * @author enrico buonanno
-   */
-  public void dynamicAddRule(String s){
-      if (EventDistiller.DEBUG) System.out.println("EDStateManager: adding rule");
-      if(s == null) return; 
-    
-      // Initialize SAX parser if we don-t have one
-      if (sxp == null) {
-	  sxp = new SAXParser();
-	  sxp.setContentHandler(this);
-      }
-      // parse the string - this effectively adds the rule
-      try {
-	  sxp.parse(new InputSource(new StringReader(s)));
-      } catch(Exception e) {
-	  System.err.println("EDStateManager: could not parse rule specification:");
-	  e.printStackTrace();
-	  return;
-      }
-      EDStateMachineSpecification added = 
-	  (EDStateMachineSpecification)stateMachineTemplates.lastElement();
-      if (EventDistiller.DEBUG) 
-	  System.out.println("EDStateManager: adding rule\n" + added.getName());
-
-      // we don't allow duplicate names - or duplicate definitions
-      for (int i = 0; i < stateMachines.size(); i++)
-	  if (((EDStateMachineSpecification)stateMachineTemplates.get(i)).getName
-	      ().equalsIgnoreCase(added.getName())) {
-	      stateMachineTemplates.remove(added);
-	      if (EventDistiller.DEBUG)  System.out.println("EDStateManager: cannot add rule "
-							    + added.getName() + ": name exists");
-	  }
-      // here there may be a problem: what if the spec has already precreated?
-  }
-
-  /**
-   * Dynamically remove a rule.
-   * NOTE: we remove the 1st SMspec with the given name - we assume only one spec per name
-   *       also, matching the given name is NOT case-sensitive
-   * @param s the name of the rule
-   */
-  public void dynamicRemoveRule(String s) {
-      if (EventDistiller.DEBUG) System.out.println("EDStateManager: removing rule " + s);
-      if(s == null) return; 
-
-      EDStateMachineSpecification spec = null;     
-
-      // remove the specification
-      int i = 0;
-
-      while (i < stateMachineTemplates.size()) {
-	  if (((EDStateMachineSpecification)stateMachineTemplates.get
-	       (i)).getName().equalsIgnoreCase(s)) {
-	      // remember
-	      spec = (EDStateMachineSpecification)stateMachineTemplates.get(i);
-	      // unsubscribe
-	      spec.unsubscribe();
-	      // remove
-	      stateMachineTemplates.remove(i);
-	      if (EventDistiller.DEBUG) 
-		  System.out.println("EDStateManager: successfully removed rule " + i + " !");
-	      break; // we assume there's only one spec for each name
-	  }
-	  else i++;
-      }
-	      
-	     
-      // remove all stateMachines with this specification
-      int j = 0;
-      while (j < stateMachines.size()) {
-	  if (((EDStateMachine)stateMachines.get(j)).getSpecification() == spec) {
-	      // unsubscribe
-	      ((EDStateMachine)stateMachines.get(j)).unsubscribe();
-	      // remove
-	      stateMachines.remove(j);
-	      if (EventDistiller.DEBUG) 
-		  System.out.println("EDStateManager: successfully removed state machine " + 
-				     i + ":" + j + " !");
-	  }
-	  else i++;
-      }
-  }
-
-    /**
-     * Dynamically query a rule.
-     * Sends out a notification containing the XML representation of 
-     * the specified rule.
-     * @param s the name of the rule to query
-     */
-    private void dynamicQueryRule(String s) {
-	if (EventDistiller.DEBUG) System.out.println("EDStateManager: queried rule " + s);
-	EDStateMachineSpecification sm = null;
-
-	// find it
-	for (int i = 0; i < stateMachineTemplates.size(); i++) 
-	    if (((EDStateMachineSpecification)stateMachineTemplates.get(i)).getName
-		().equalsIgnoreCase(s))
-		sm = (EDStateMachineSpecification)stateMachineTemplates.get(i);
-
-	// send it
-	if (sm != null) {
-	    Notification n = new Notification();
-	    n.putAttribute("Rule", sm.toXML());
-	    /* wrap it in KX form, for now the generic type.
-	       eventually, we should distinguish this from the rule fired events;
-	       also, we need to look at how to address the sender... */
-	    ed.sendPublic(KXNotification.EDOutputKXNotification(12345, n));
-	}
-    }
 }
-
-
-

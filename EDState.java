@@ -16,14 +16,10 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.8  2001-04-03 01:09:14  eb659
+ * Revision 1.9  2001-04-08 22:10:09  jjp32
  *
- *
- * OK this is my first upload...
- * Basically, most of the dynamic rulebase stuff has been accomplished.
- * the principal methods are in EDStatemanaged, but most of the files in ED
- * had to be modified, at least in some small way
- * enrico
+ * Restored previous revisions on main branch after Enrico's accidental
+ * commit (see xues-eb659 branch for those)
  *
  * Revision 1.7  2001/03/21 18:14:02  jjp32
  *
@@ -56,19 +52,20 @@ import siena.*;
  * 
  */
 public class EDState {
-    /* Hash of attribute/value pairs relevant to this state */
-    private Hashtable attributes;
-  
-    /** Relative timebound from previous state. */
-    private long tb;
-
+  /* Hash of attribute/value pairs relevant to this state */
+  private Hashtable attributes;
+  /**
+   * Relative timebound from previous state.
+   */
+  private long tb;
   /** 
    * Timestamp this state has fired in.  Created and used during
    * timebound validation.
    */
   private long ts;
-
-  /** The state machine that "ownes" us. */
+  /**
+   * The state machine that "ownes" us.
+   */
   private EDStateMachine sm = null;
 
   /**
@@ -343,20 +340,4 @@ public class EDState {
       return false;
     }
   }
-
-    /** @return the XML representation of this object */
-    public String toXML(){
-	String s = "<state timebound=\"" + tb + "\">\n";
-	
-	Enumeration keys = attributes.keys();
-	Enumeration objs = attributes.elements();
-	while(keys.hasMoreElements()) {
-	    String attr = (String)keys.nextElement();
-	    AttributeValue val = (AttributeValue)objs.nextElement();
-	    s = s + "\t<attribute attribute =\"" + attr + 
-		"\" value=\"" + val + "\"/>\n";
-	}
-	s += "</state>\n";
-	return s;
-    }
 }

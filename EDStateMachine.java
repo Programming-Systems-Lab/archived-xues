@@ -19,14 +19,10 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.8  2001-04-03 01:09:14  eb659
+ * Revision 1.9  2001-04-08 22:10:09  jjp32
  *
- *
- * OK this is my first upload...
- * Basically, most of the dynamic rulebase stuff has been accomplished.
- * the principal methods are in EDStatemanaged, but most of the files in ED
- * had to be modified, at least in some small way
- * enrico
+ * Restored previous revisions on main branch after Enrico's accidental
+ * commit (see xues-eb659 branch for those)
  *
  * Revision 1.7  2001/03/14 20:45:15  png3
  * replaced deprecated call to Notification.iterator()
@@ -60,8 +56,6 @@ import java.util.*;
  *
  */
 public class EDStateMachine implements Notifiable {
-    /** the specification on which this machine is built. */
-    private EDStateMachineSpecification specification;
   private int currentState;
   private Vector states = null;
   private Siena siena = null;
@@ -75,20 +69,18 @@ public class EDStateMachine implements Notifiable {
    */ 
   Hashtable wildHash = null;
 
-    /**
-     * CTOR.  EDStateMachines *must* be launched through a StateManager,
-     * and must be handed the first match that launched this state machine.
-     *
-     * @param myID My ID (just for debugging)
-     */
-    EDStateMachine(EDStateMachineSpecification specification,
-		   String myID,
-		   Siena siena, 
-		   EDStateManager el, 
-		   Vector stateArray,
-		   Notification firstNotification,
-		   Notification action) {
-	this.specification = specification;
+  /**
+   * CTOR.  EDStateMachines *must* be launched through a StateManager,
+   * and must be handed the first match that launched this state machine.
+   *
+   * @param myID My ID (just for debugging)
+   */
+  EDStateMachine(String myID,
+		 Siena siena, 
+		 EDStateManager el, 
+		 Vector stateArray,
+		 Notification firstNotification,
+		 Notification action) {
     this.siena = siena;
     this.el = el;
     this.myID = myID;
@@ -247,32 +239,13 @@ public class EDStateMachine implements Notifiable {
     }
     
     /* Now, shall we reap?  :) */
-    if(reap) unsubscribe();
+    if(reap) {
+      // Let's go
+      try {
+	siena.unsubscribe(this);
+      } catch(SienaException e) { e.printStackTrace(); }
+    }
 
     return reap;    
   }
-
-    /**
-     * Returns the specification for this machine
-     * @return the specification for this machine
-     */
-    public EDStateMachineSpecification getSpecification(){
-	return specification;
-    }
-
-    /**
-     * Unsubscribe from siena
-     */
-    public void unsubscribe(){
-	try {
-	     siena.unsubscribe(this);
-	} catch(SienaException e) { e.printStackTrace(); }
-    }
 }
-
-
-
-
-
-
-
