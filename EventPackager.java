@@ -34,7 +34,11 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.25  2001-08-01 13:44:14  aq41
+ * Revision 1.26  2001-08-06 17:29:35  aq41
+ * Reorganized code, shifted some of the code from EventPackager.java to EPHandler.java
+ * Doesn't compile though.
+ *
+ * Revision 1.25  2001/08/01 13:44:14  aq41
  * Minor code cleanup.
  *
  * Revision 1.24  2001/07/31 19:13:36  aq41
@@ -243,7 +247,13 @@ public class EventPackager implements Notifiable {
 		    else if(word.endsWith(";") && wordCount % 3 == 0){
 			third = word;
 			third = third.substring(0, third.length() -1);
-			filterName.addConstraint(first, third);
+			/*this needs to be in the form :
+			 *filterName.addConstraint(first, second, third);
+			 *becuase need to have constrains with more options than simply "="
+			 *will figure it out later! therefore a hack follows:
+			 */
+			
+			filterName.addConstraint(first, third);//filter needs to be 
 			if(DEBUG)System.out.println("filter constrain: " + filterName);
 			try{
 			    siena.subscribe(filterName, this);
@@ -299,8 +309,19 @@ public class EventPackager implements Notifiable {
 	catch(IOException e){
 	    System.out.println("Error: " + e);
 	}
-	if(DEBUG)System.out.println("hashtable: " + actions);
-        handler = new EPHandler(actions);
+	if(DEBUG){
+	    System.out.println("hashtable: " + actions);
+	    if(actions == null)System.out.println("actions is null");
+	    if(statement == null)System.out.println("statement is null");
+	    if(siena == null)System.out.println("siena is null");
+	}
+
+	handler = new EPHandler(actions, statement, siena);
+	
+	if(DEBUG){
+	    System.out.println("handler formed: " + handler);
+	    if(handler== null)System.out.println("handler is null" );
+	}
     }//constructor
     
     /**
@@ -397,7 +418,7 @@ public class EventPackager implements Notifiable {
 	   // Direct Siena thing, just send it out
 	   q = KXNotification.EventPackagerKXNotification(11111,22222,n);
 	   }
-	
+	   
 	   try {
 	   if(DEBUG) System.err.println("EventPackager: sending notification " + q);
 	   
