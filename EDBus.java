@@ -100,7 +100,7 @@ public class EDBus {
     private long waitTime;
 
 
-    private boolean VERBOSE = true;
+    private boolean VERBOSE = false;
 
     private EDErrorManager em;
 
@@ -469,5 +469,11 @@ class Subscriber implements Comparable{
 	}
     }
 }// Subscriber
+
+
+
+
+
+
 
 
