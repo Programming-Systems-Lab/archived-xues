@@ -3,6 +3,4 @@ Event Distiller Stable Trunk TODO:
 
 1. (Janak) Roll in latest dev work after testing.
 
-1a. (Janak) Higher priority: roll in embeddable stuff.
-
 2. (Janak) Documentation
