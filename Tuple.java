@@ -51,13 +51,13 @@ public class Tuple {
 	long time = -1;
 	String source = null;
 	String type = null;
-
+	
 	Vector v = new Vector();
-
+	
 	try {
 	    ResultSetMetaData m=r.getMetaData();
 	    int col=m.getColumnCount();
-
+	    
 	    if ( col != NUM_ATTRIB ) {
 		System.err.println("ERROR: RESULT SET HAS INCOMPATIBLE NUMBER OF COLUMNS.");
 		System.err.println("We have "+col+ "columns");

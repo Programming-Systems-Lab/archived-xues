@@ -9,9 +9,9 @@ import org.hsql.util.*;
 import psl.kx.*;
 //import org.jdom.*;
 //import org.jdom.input.*;
+
 import java.sql.*;
 import java.util.*;
-
 
 /** 
  * EventPackager for Xues.  Now Siena-compliant(TM).
@@ -34,7 +34,11 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.22  2001-06-29 19:27:45  aq41
+ * Revision 1.23  2001-07-23 02:45:44  aq41
+ * Configuration file containing filter properties added instead of being
+ * hardcoded within EventPackager.java
+ *
+ * Revision 1.22  2001/06/29 19:27:45  aq41
  *
  * Put Rose's version in CVS, added Tuple, removed jdom reference
  *
@@ -158,13 +162,16 @@ public class EventPackager implements Notifiable {
      * @param listeningPort Port to establish listening on.
      * @param spoolFile File to spool events to.
      */
+    
     public EventPackager(int listeningPort, String spoolFilename) { 
 	this.listeningPort = listeningPort;
 	this.spoolFilename = spoolFilename;
+	BufferedReader in = null;
+	
 	if(this.spoolFilename != null) { 
 	    try {
 		this.spoolFile = new ObjectOutputStream(new
-							FileOutputStream(this.spoolFilename,true));	
+		    FileOutputStream(this.spoolFilename,true));	
 	    } catch(Exception e) { 
 		System.err.println("Error creating spool file");
 		e.printStackTrace();
@@ -175,19 +182,19 @@ public class EventPackager implements Notifiable {
 	connectDB("DB", "sa", "");
 	/* Add a shutdown hook */
 	Runtime.getRuntime().addShutdownHook(new Thread() {
-	    public void run() {      
-		/* Clean up the file streams */
-		if(spoolFile != null) {
-		    System.err.println("EventPackager: shutting down");
-		    try {
-			spoolFile.close();
-			spoolFile = null;
-			((HierarchicalDispatcher)siena).shutdown();
-			disconnectDB(); // **
-		    } catch(Exception e) { e.printStackTrace(); }
+		public void run() {      
+		    /* Clean up the file streams */
+		    if(spoolFile != null) {
+			System.err.println("EventPackager: shutting down");
+			try {
+			    spoolFile.close();
+			    spoolFile = null;
+			    ((HierarchicalDispatcher)siena).shutdown();
+			    disconnectDB(); // **
+			} catch(Exception e) { e.printStackTrace(); }
+		    }
 		}
-	    }
-	});
+	    });
 	
 	// Now create a Siena node
 	siena = new HierarchicalDispatcher();
@@ -200,23 +207,87 @@ public class EventPackager implements Notifiable {
 	// Set up listening.  We listen for SmartEvents (which have a data
 	// field with all the data), DirectEvents (which have the
 	// attributes inline), and EPLookup events 
-	Filter f = new Filter();
-	f.addConstraint("Type","SmartEvent");
-	try {
-	    siena.subscribe(f, this);
-	} catch(SienaException e) { e.printStackTrace(); }
 	
-	Filter g = new Filter();
-	g.addConstraint("Type","DirectEvent");
-	try {
-	    siena.subscribe(g, this);
-	} catch(SienaException e) { e.printStackTrace(); }
+	try{
+	    FileReader reader = new FileReader("EventPackager.cfg");
+	    in = new BufferedReader(reader);
+	    String inputLine = in.readLine();
+	    int numberOfFilters =0;
+	    Filter filterName = null;	    
+	    StringTokenizer st = new StringTokenizer (inputLine);
+	    
+	    while(inputLine != null && inputLine.length() > 0){
+		numberOfFilters++;
+		String word = null;
+		String first = null;
+		String second = null;
+		String third = null;
+		int wordCount = 0;
+		while(st.hasMoreTokens()){
+		    word = st.nextToken();
+		    wordCount++;
+		    //String filterName= "filter"+numberOfFilters;
+		    if (word.endsWith(",") && wordCount  == 1){
+			filterName  = new Filter();
+			wordCount--;
+		    }
+		    else if(word.endsWith(";") && wordCount % 3 == 0){
+			third = word;
+			filterName.addConstraint(first, third);
+			try{
+			    siena.subscribe(filterName, this);
+			}
+			catch(SienaException e){
+			    e.printStackTrace();
+			}
+		    }
+		    else{
+			if (word.endsWith(",") && wordCount % 3 == 1){
+			    first = word;
+			}
+			else if(word.endsWith(",") && wordCount % 3 == 2){
+			    second = word;
+			}
+			//else if (word.endsWith(",") && wordCount % 3 == 0){
+			//third = word;
+			//}
+		    }//else
+		    
+		}//while more tokens
+		in.readLine();
+	    }//while 
+	}//try
+	catch (IOException e){
+	    System.out.println("Error: " + e);
+	}
+	finally{
+	    try{
+		if(in != null)
+		    in.close();
+	    }
+	    catch (IOException e){
+		System.out.println("Error "+ e);
+	    }
+	}//finally
 	
-	Filter h = new Filter();
-	h.addConstraint("Type","EPLookup");
-	try {
-	    siena.subscribe(h, this);
-	} catch(SienaException e) { e.printStackTrace(); }    
+	/*	
+		Filter f = new Filter();
+		f.addConstraint("Type","SmartEvent");
+		try {
+		siena.subscribe(f, this);
+		} catch(SienaException e) { e.printStackTrace(); }
+		
+		Filter g = new Filter();
+		g.addConstraint("Type","DirectEvent");
+		try {
+		siena.subscribe(g, this);
+		} catch(SienaException e) { e.printStackTrace(); }
+		Filter h = new Filter();
+		h.addConstraint("Type","EPLookup");
+		try {
+		siena.subscribe(h, this);
+		} catch(SienaException e) { e.printStackTrace(); }    
+	*/
     }
     
     /**
@@ -238,7 +309,8 @@ public class EventPackager implements Notifiable {
 		Socket newSock = listeningSocket.accept();
 		/* Hand the hot potato off! */
 		new Thread(new EPClientThread(srcIDCounter++,newSock)).start();
-	    } catch(Exception e) {
+	    } 
+	    catch(Exception e) {
 		System.err.println("EventPackager: Failed in accept from "+
 				   "serverSocket");
 	    }
@@ -349,7 +421,7 @@ public class EventPackager implements Notifiable {
 	    /* Build the streams */
 	    try {
 		this.in = new BufferedReader(new 
-					     InputStreamReader(clientSocket.getInputStream()));
+		    InputStreamReader(clientSocket.getInputStream()));
 		
 	    } catch(Exception e) {
 		System.err.println("Error establishing client connection: " +
@@ -358,7 +430,7 @@ public class EventPackager implements Notifiable {
 	    }
 	}
 	
-
+	
 	public void run() {
 	    int bufLen = 100; // num of chars read in at a time
 	    String newInput="";
@@ -483,11 +555,7 @@ public class EventPackager implements Notifiable {
 	
 	
 	try {
-	    Vector v = Tuple.parseResultSet(statement.executeQuery(
-								   "select * from EVENTS E where E.time >" + starttime +
-								   "AND E.time < " + endtime + " AND E.type = '"+
-								   typ +"' order by E.time") );
-	    
+	    Vector v = Tuple.parseResultSet(statement.executeQuery("select * from EVENTS E where E.time >"+ starttime + "AND E.time < " + endtime + " AND E.type = '" + typ + "' order by E.time") );
 	    if (v.size() > max) {
 		for (int k= v.size()-1; k >= max; k--)
 		    v.removeElementAt(k);
@@ -508,8 +576,9 @@ public class EventPackager implements Notifiable {
 		n.putAttribute("DataPath", ((Tuple)v.elementAt(k)).getId());
 		
 		siena.publish(n);
-	    }		
-	} catch (Exception e) {
+	    } 	
+	} 
+	catch (Exception e) {
 	    System.err.println(e);
 	}
 	
@@ -576,9 +645,13 @@ public class EventPackager implements Notifiable {
         }
 	
     }//end::createNewDataFile
-    
-    
 }
+
+
+
+
+
+
 
 
 
