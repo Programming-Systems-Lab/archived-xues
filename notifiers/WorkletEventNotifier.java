@@ -20,12 +20,17 @@ import java.util.*;
  * Copyright (c) 2000: The Trustees of Columbia University and the
  * City of New York.  All Rights Reserved.
  *
- * @author Janak J Parekh and Gaurav S Kc
+ * @author Janak J Parekh and Gaurav S. Kc
  * @version 0.9
  *
  * $Log$
- * Revision 1.3  2001-02-07 01:47:43  gskc
- * Something that was hardcoded _even_ in Monterey.
+ * Revision 1.4  2001-02-08 23:11:35  gskc
+ * Not much
+ *
+ * VS: ----------------------------------------------------------------------
+ *
+ * Revision 1.3  2001/02/07 01:47:43  gskc
+ * Something that was hardcoded _even_ for Monterey.
  *
  * Revision 1.2  2001/02/07 01:45:25  gskc
  * Changes made in Monterey.
@@ -116,7 +121,7 @@ public class WorkletEventNotifier implements Notifiable {
     wkl.addJunction(wj);
     System.out.println("Deploying WKL w/ CERWJ");
     wkl.deployWorklet(wvmRef);
-}
+  }
 
   public void notify(Notification[] n) {
     ;
