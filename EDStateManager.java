@@ -40,7 +40,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.21  2001-06-20 20:49:32  eb659
+ * Revision 1.22  2001-06-27 19:43:39  eb659
+ * momentsrily finalized EDErrorManager. Output goes there...
+ *
+ * Revision 1.21  2001/06/20 20:49:32  eb659
  * two options: time-driven, or event-driven
  * a. options interface
  * b. flush event in shutdown when using event-based time
@@ -295,25 +298,9 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
     private static final int PARSINGSTATE = 1;
     /** Currently parsing action */
     private static final int PARSINGACTION = 2;
-  
-    /** XML main test 
-    public static void main(String[] args) {
-	if(args.length == 0) {
-	    System.err.println("Must supply XML filename");
-	    System.exit(-1);
-	}
-	new EDStateManager(null, null, args[0]);
-	}*/
 
-    /** Test CTOR.  Initialize with test state machine. 
-    public EDStateManager(Siena siena, EventDistiller ed) {
-	this(siena,ed,null);
-	stateMachineTemplates.
-	    addElement(EDStateMachineSpecification.buildDemoSpec(siena,this));
-	    }*/
-  
     /**
-     * Regular CTOR.  Utilize XML specification file to build state machines.
+     * Constructs a new manager.
      * @param ed the EventDistiller that ownes us.
      */
     public EDStateManager(EventDistiller ed) {
@@ -326,7 +313,6 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	
 	// Do we have a spec filename?
 	if(specFileName != null) {
-	    if (EventDistiller.DEBUG) System.out.println("parsing file: " + specFileName);
 	    // Initialize SAX parser and run it on the file
 	    sxp = new SAXParser();
 	    sxp.setContentHandler(this);
@@ -334,11 +320,11 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 		sxp.parse(new InputSource(new FileInputStream(specFileName)));
 	    } 
 	    catch(Exception e) {
-		System.err.println("FATAL: EDStateManager init failed:");
+		ed.getErrorManager().println("FATAL: EDStateManager init failed:", 
+				      EDErrorManager.ERROR);
 		e.printStackTrace();
 	    }
 	}
-	
 	// Start da reapah.  In a new thread.
 	new Thread(this).start();
     }
@@ -346,7 +332,6 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
     /**
      * Subscribe, so that we can get notifications asking us to 
      * dynamically modify the state machines.
-     * @author enrico buonanno
      */
     private void subscribe() {
 	//specify what notifications we are interested in
@@ -356,27 +341,17 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	bus.subscribe(f, this, this);
     }
 
-    /** OLD -- carried out directly by the stateMachine when it starts
-     * Called when a new machine of the given specification needs to be created.
-     * @param spec the type of machine that needs to be constructed
-     *
-    public void addStateMachine(EDStateMachineSpecification spec) {
-	synchronized(stateMachines) {
-	    stateMachines.addElement(new EDStateMachine(spec));
+    /** The reaper thread. Disposes state machines that have timed out. */
+    public void run() {
+	while(!ed.inShutdown) {
+	    try { Thread.currentThread().sleep(EDConst.REAP_INTERVAL);  }
+	    catch(InterruptedException ex) { ; }
+	    reap();
 	}
-	}*/
-
-  /** The reaper thread. Disposes state machines that have timed out. */
-  public void run() {
-      while(!ed.inShutdown) {
-	  try { Thread.currentThread().sleep(EDConst.REAP_INTERVAL);  }
-	  catch(InterruptedException ex) { ; }
-	  reap();
-      }
-  }
+    }
 
     void reap() { 
-	if(EventDistiller.DEBUG) System.err.print("%");
+	ed.getErrorManager().print("%", EDErrorManager.REAPER);
 	
 	synchronized(stateMachineTemplates) {
 	    for (int i = 0; i < stateMachineTemplates.size(); i++) {
@@ -385,131 +360,97 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 		
 		int offset = 0;	  
 		while(offset < stateMachines.size()) {
-		      EDStateMachine e = (EDStateMachine)stateMachines.elementAt(offset);
-		      if(EventDistiller.DEBUG)
-			  System.err.println("EDStateManager: Attempting to reap " + e.myID);
-		      
-		      if(e.reap()) {
-			  if(EventDistiller.DEBUG)
-			      System.err.println("EDStateManager: Reaped." + e.myID);
-			  stateMachines.removeElementAt(offset);
-		      } else offset++;
+		    EDStateMachine e = (EDStateMachine)stateMachines.elementAt(offset);
+		    ed.getErrorManager().println("EDStateManager: Attempting to reap " + e.myID,
+						 EDErrorManager.REAPER);
+		    
+		    if(e.reap()) {
+			ed.getErrorManager().println("EDStateManager: Reaped " + e.myID, EDErrorManager.REAPER);
+			synchronized(stateMachines) {
+			    stateMachines.removeElementAt(offset);
+			}
+		    } 
+		    else offset++;
 		}
 	    }
 	}
     }
-      
-  /* We don't hav ethis any more... now states handle their own notifications
-   * and when all states are dead, the machine is reaped
-   *
-   * Method call made by EDStateMachines to indicate completion.
-   * @param m the state machine that makes the call
-   * @param a the Vector containing the notifications to be sent
-   *
-  void finish(EDStateMachine m, Vector a) {
-      // send all the notifications/actions
-      for (int i = 0; i < a.size(); i++) {
-	  Notification n = (Notification)a.get(i);
-
-	  if (n.getAttribute("Internal") != null && n.getAttribute("Internal").booleanValue()) {
-	      /* if this is an internal notification
-	       * we just send it through to ourselves. 
-	      try { siena.publish(KXNotification.EDInternalNotification(n)); }
-	      catch (SienaException se) { se.printStackTrace(); }
-	  }
-	  else { // Propagate the notification up, but wrap it in KX form
-	      ed.sendPublic(KXNotification.EDOutputKXNotification(12345,n));
-	  }
-      }
-
-      // Garbage-collect the State Machine
-      synchronized(stateMachines) {
-	  stateMachines.removeElement(m);
-      }
-  }*/
 
     // methods for parsing
 
-  /** Handle the beginning of a SAX element. */
-  public void startElement(String uri, String localName, String qName,
-			   Attributes attributes) throws SAXException {
-      //if(EventDistiller.DEBUG) System.out.println("parsing " + localName + "," + 
-      //					qName);
-    if(localName.equals("rule")) { // Start of new EDSMS
-	currentEdsms = new EDStateMachineSpecification
-	    (attributes.getValue("", "name"), this);
-	String s = attributes.getValue("", "position");
-	if (s != null) currentPosition = Integer.parseInt(s);
-	s = attributes.getValue("", "instantiation");
-	if (s != null) try { currentEdsms.setInstantiationPolicy(Integer.parseInt(s)); } 
-	catch(IllegalArgumentException ex) { System.err.println(ex); }
-    }
-
-    if(localName.equals("state")) { // Start of new state
-      try {
-	currentMode = PARSINGSTATE;
-	currentState = new 
-	  EDState(attributes.getValue("", "name"), 
-		  Integer.parseInt(attributes.getValue("","timebound")),
-		  attributes.getValue("", "children"),
-		  attributes.getValue("", "actions"),
-		  attributes.getValue("", "fail_actions"));
-	// absorb
-	String s = attributes.getValue("", "absorb");
-	if (s != null && s.equals("true")) currentState.setAbsorb(true);
-	// count
-	s = attributes.getValue("", "count");
-	if (s != null) currentState.setCount(Integer.parseInt(s));
-
-	currentEdsms.addState(currentState);
-      } catch(Exception e) {
-	System.err.println("FATAL: EDStateManager init failed:");
-	e.printStackTrace();
-	System.exit(-1);
-      }	
-    }
-
-    if(localName.equals("notification")) { 
-	// Start of new notification
-	currentAction = new Notification();
-	currentEdsms.addAction(attributes.getValue("", "name"), currentAction);
-	currentMode = PARSINGACTION;
-    }
-
-    if(localName.equals("attribute")) { // Start of new attribute
-	if(EventDistiller.DEBUG) {
-	//System.out.println("--> name = " + 
-	//		   attributes.getValue("","name"));
-	//System.out.println("--> value = " + 
-	//		   attributes.getValue("","value"));
+    /** Handle the beginning of a SAX element. */
+    public void startElement(String uri, String localName, String qName,
+			     Attributes attributes) throws SAXException {
+	
+	if(localName.equals("rule")) { // Start of new EDSMS
+	    currentEdsms = new EDStateMachineSpecification
+		(attributes.getValue("", "name"), this);
+	    String s = attributes.getValue("", "position");
+	    if (s != null) currentPosition = Integer.parseInt(s);
+	    s = attributes.getValue("", "instantiation");
+	    if (s != null) try { currentEdsms.setInstantiationPolicy(Integer.parseInt(s)); } 
+	    catch(IllegalArgumentException ex) { System.err.println(ex); }
 	}
-      // Create the attribute
-      String attr = attributes.getValue("","name");
-      AttributeValue val = new AttributeValue(attributes.getValue("","value"));
-
-      // Add it (somewhere)
-      switch(currentMode) {
-      case PARSINGSTATE:
-	currentState.putAttribute(attr, val);
-	break;
-      case PARSINGACTION:
-	currentAction.putAttribute(attr,val);
-	break;
-      default:
-	System.err.println("FATAL: EDStateManager init failed in determining mode");
-	System.exit(-1);
-      }
-    }
-  } 
+	
+	if(localName.equals("state")) { // Start of new state
+	    try {
+		currentMode = PARSINGSTATE;
+		currentState = new 
+		    EDState(attributes.getValue("", "name"), 
+			    Integer.parseInt(attributes.getValue("","timebound")),
+			    attributes.getValue("", "children"),
+			    attributes.getValue("", "actions"),
+			    attributes.getValue("", "fail_actions"));
+		// absorb
+		String s = attributes.getValue("", "absorb");
+		if (s != null && s.equals("true")) currentState.setAbsorb(true);
+		// count
+		s = attributes.getValue("", "count");
+		if (s != null) currentState.setCount(Integer.parseInt(s));
+		
+		currentEdsms.addState(currentState);
+	    } catch(Exception e) {
+		ed.getErrorManager().println("FATAL: EDStateManager init failed:", EDErrorManager.ERROR);
+		e.printStackTrace();
+		System.exit(-1);
+	    }	
+	}
+	
+	if(localName.equals("notification")) { 
+	    // Start of new notification
+	    currentAction = new Notification();
+	    currentEdsms.addAction(attributes.getValue("", "name"), currentAction);
+	    currentMode = PARSINGACTION;
+	}
+	
+	if(localName.equals("attribute")) { // Start of new attribute
+	    // Create the attribute
+	    String attr = attributes.getValue("","name");
+	    AttributeValue val = new AttributeValue(attributes.getValue("","value"));
+	    
+	    // Add it (somewhere)
+	    switch(currentMode) {
+	    case PARSINGSTATE:
+		currentState.putAttribute(attr, val);
+		break;
+	    case PARSINGACTION:
+		currentAction.putAttribute(attr,val);
+		break;
+	    default:
+		ed.getErrorManager().println("FATAL: EDStateManager init failed in determining mode", 
+					     EDErrorManager.ERROR);
+		System.exit(-1);
+	    }
+	}
+    } 
 
     /** Handle the end of a SAX element. */
     public void endElement(String namespaceURI, String localName, String qName) 
       throws SAXException {
-	//if(EventDistiller.DEBUG) System.out.println("parsed " + localName + "," + 
-	//					    qName);
+
 	if(localName.equals("rule")) {
-	    if (EventDistiller.DEBUG)
-		System.out.println("parsed rule:\n" + currentEdsms.toXML());
+	    ed.getErrorManager().println("parsed rule:\n" + currentEdsms.getName(), 
+					 EDErrorManager.MANAGER);
 
 	    // is the specified rule legal?
 	    String error = currentEdsms.checkConsistency();
@@ -529,8 +470,9 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 		}
 	    } 
 	    else { // specification is ill-defined
-		System.err.println("ERROR: EDStateManager: cannot add rule "
-				   + currentEdsms.getName() + " :\n" + error);
+		ed.getErrorManager().println("ERROR: EDStateManager: cannot add rule "
+				     + currentEdsms.getName() + " :\n" + error,
+				     EDErrorManager.ERROR);
 		// send an error notification
 		ed.sendPublic(KXNotification.EDError(KXNotification.EDERROR_RULEBASE, error));
 	    }
@@ -546,7 +488,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
      * @param n the notification received
      */
     public boolean notify(Notification n) {
-	if(EventDistiller.DEBUG) System.out.println("EDStateManager: Received notification "+n);
+	ed.getErrorManager().println("EDStateManager: Received notification "+ n, EDErrorManager.MANAGER);
 	// What kind of notification is it?
 	String a = n.getAttribute("Action").stringValue();
 	
@@ -588,7 +530,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
      * @author enrico buonanno
      */
     public void dynamicAddRule(String s){
-	if (EventDistiller.DEBUG) System.out.println("EDStateManager: adding rule");
+	ed.getErrorManager().println("EDStateManager: adding rule", EDErrorManager.MANAGER);
 	if(s == null) return; 
 	
 	// Initialize SAX parser if we don-t have one
@@ -600,15 +542,13 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	try {
 	    sxp.parse(new InputSource(new StringReader(s)));
 	} catch(Exception e) {
-	    System.err.println("EDStateManager: could not parse rule specification:");
+	    ed.getErrorManager().println("EDStateManager: could not parse rule specification:",
+					 EDErrorManager.ERROR);
 	    e.printStackTrace();
 	    return;
 	}
 	EDStateMachineSpecification added = 
 	    (EDStateMachineSpecification)stateMachineTemplates.lastElement();
-	if (EventDistiller.DEBUG) 
-	    System.out.println("EDStateManager: adding rule\n" + added.getName());
-	
     }
 
   /**
@@ -618,7 +558,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
    * @param s the name of the rule
    */
   public void dynamicRemoveRule(String s) {
-      if (EventDistiller.DEBUG) System.out.println("EDStateManager: removing rule " + s);
+      ed.getErrorManager().println("EDStateManager: removing rule " + s, EDErrorManager.MANAGER);
       if(s == null) return; 
 
       EDStateMachineSpecification spec = null;     
@@ -641,7 +581,8 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 		  // remove the spec
 		  stateMachineTemplates.remove(i);
 		  if (EventDistiller.DEBUG) 
-		  System.out.println("EDStateManager: successfully removed rule " + i + " !");
+		  ed.getErrorManager().println("EDStateManager: successfully removed rule " + i + " !", 
+					       EDErrorManager.MANAGER);
 		  break; // we assume there's only one spec for each name
 	      }
 	  }
@@ -649,7 +590,8 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 
       // if not found
       if(spec == null){
-	  System.out.println("ERROR: could not remove rule: name '" + s + "' not found");
+	  ed.getErrorManager().println("ERROR: could not remove rule: name '" + s + "' not found",
+				       EDErrorManager.MANAGER);
 	  ed.sendPublic(KXNotification.EDError
 			(KXNotification.EDERROR_RULEBASE, 
 			 "could not remove rule: name '" + s + "' not found"));
@@ -664,7 +606,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
      * @param s the name of the rule to query
      */
     private void dynamicQueryRule(String s) {
-	if (EventDistiller.DEBUG) System.out.println("EDStateManager: queried rule " + s);
+	ed.getErrorManager().println("EDStateManager: queried rule " + s, EDErrorManager.MANAGER);
 
 	// find it
 	for (int i = 0; i < stateMachineTemplates.size(); i++) 

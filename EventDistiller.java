@@ -19,9 +19,8 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.30  2001-06-27 18:39:07  eb659
- *
- * EDErrorManager debugged and updated
+ * Revision 1.31  2001-06-27 19:43:39  eb659
+ * momentsrily finalized EDErrorManager. Output goes there...
  *
  * Revision 1.29  2001/06/20 20:49:32  eb659
  * two options: time-driven, or event-driven
@@ -223,7 +222,7 @@ public class EventDistiller implements Runnable, Notifiable {
      * We maintain a stack of events to process - this way incoming
      * callbacks don't get tied up - they just push onto the stack.
      */
-    private Vector eventProcessQueue = null;
+    private Vector eventProcessQueue = new Vector();
     
     /** My main execution context */
     private Thread edContext = null;
@@ -284,7 +283,7 @@ public class EventDistiller implements Runnable, Notifiable {
     private boolean hasShutdown = false;
 
     /** Whether the output goes to a graphical window. */
-    static boolean outputToGUI = true; //false;
+    static boolean outputToGUI = true;//false;
 
     /** The error manager where we send debug statements. */
     EDErrorManager errorManager;
@@ -400,7 +399,9 @@ public class EventDistiller implements Runnable, Notifiable {
     
     /** Initializes ED, creating internal bus and manager. */
     private void init() {
-	eventProcessQueue = new Vector();
+	// Initialize error manager
+	if (outputToGUI) errorManager = new EDErrorGUI(DEBUG);
+	else errorManager = new EDErrorConsole(DEBUG);
 
 	/* Add a shutdown hook */
 	Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -429,10 +430,6 @@ public class EventDistiller implements Runnable, Notifiable {
 	
 	// Initialize state machine manager.
 	manager = new EDStateManager(this);
-
-	// Initialize error manager
-	if (outputToGUI) errorManager = new EDErrorGUI(DEBUG);
-	else errorManager = new EDErrorConsole(DEBUG);
     }
 	
     /** Start execution of the new EventDistiller. */
@@ -456,7 +453,7 @@ public class EventDistiller implements Runnable, Notifiable {
 		synchronized(eventProcessQueue) {
 		    if(eventProcessQueue.size() != 0) {
 			Notification n = (Notification)eventProcessQueue.remove(0);
-			errorManager.print("EventDistiller: Publishing internally " + n, 
+			errorManager.println("EventDistiller: Publishing internally " + n, 
 					   EDErrorManager.DISPATCHER);
 			bus.publish(n);
  
@@ -489,7 +486,7 @@ public class EventDistiller implements Runnable, Notifiable {
     /** Shutdown hook. */
     private void finish() {
 	hasShutdown = true;
-	errorManager.print("EventDistiller: shutting down", EDErrorManager.ERROR);
+	errorManager.println("EventDistiller: shutting down", EDErrorManager.ERROR);
 
 	/* Shut down the dispatchers */
 	if (owner == null) try {
@@ -526,7 +523,7 @@ public class EventDistiller implements Runnable, Notifiable {
      * event packager, and interpreted results from the metaparser.
      */
     public void notify(Notification n) {
-	errorManager.print("EventDistiller: Received notification "+ n, EDErrorManager.DISPATCHER);
+	errorManager.println("EventDistiller: Received notification "+ n, EDErrorManager.DISPATCHER);
 
 	// if this is called directly, just take it
 	if (owner != null) queue(n);
@@ -565,7 +562,7 @@ public class EventDistiller implements Runnable, Notifiable {
 	}
 	
 	// Add the event onto the queue 
-	errorManager.print("EventDistiller: Putting event on queue"+ n, 
+	errorManager.println("EventDistiller: Putting event on queue"+ n, 
 			   EDErrorManager.DISPATCHER);
 	synchronized(eventProcessQueue) {
 	    eventProcessQueue.addElement(n);
@@ -582,7 +579,7 @@ public class EventDistiller implements Runnable, Notifiable {
      *          must be in already wrapped format
      */
     void sendPublic(Notification n) {
-	errorManager.print("YES! EventDistiller: sending event " + n, 
+	errorManager.println("YES! EventDistiller: sending event " + n, 
 			   EDErrorManager.STATE);
 	
 	try {

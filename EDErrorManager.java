@@ -30,6 +30,13 @@ interface EDErrorManager {
      * @param type type of message
      */
     void print(String message, int type);
+
+    /**
+     * Prints message to output.
+     * @param message the message to print
+     * @param type type of message
+     */
+    void println(String message, int type);
 }
 
 
@@ -52,9 +59,17 @@ class EDErrorConsole implements EDErrorManager {
      * @param message the message to print
      * @param type type of message
      */
+    public void println(String message, int type) {
+	print(message + "\n", type); }
+
+    /**
+     * Prints message to output.
+     * @param message the message to print
+     * @param type type of message
+     */
     public void print(String message, int type) {
 	if (!debug && type >= 0) return;
-	System.out.println(message);
+	System.out.print(message);
     }
 }
 
@@ -83,6 +98,14 @@ class EDErrorGUI extends JFrame implements EDErrorManager {
 	getContentPane().add(scrollPane, BorderLayout.CENTER);
 	show();
     }
+
+    /**
+     * Prints message to output.
+     * @param message the message to print
+     * @param type type of message
+     */
+    public void println(String message, int type) {
+	print(message + "\n", type); }
 
     /**
      * Prints message to output.
