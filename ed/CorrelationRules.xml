@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- EventDistiller 2.0 rules for AIDE probing of AMICO
+     By Elio Paschetta (elio.paschetta@tilab.com)
+
+     All Rights Reserved.
+-->
+
+<!-- The time expressed in timeboud means milliseconds -->
+
+<rulebase xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd">
+
+<rule name="DB_working_from_PS">
+   <states>
+      <state name="newPresenceServer" timebound="-1" children="DBException" actions="" fail_actions="">
+        <attribute name="classname" value="cselt.im.server.presence.PresenceServer"/>
+        <attribute name="methodname" value="PresenceServer(int,int,String,String,String)"/>
+        <attribute name="callback" value="before"/>
+        <attribute name="ipAddr" value="*ipaddr"/>
+        <attribute name="ipPort" value="*ipport"/>
+        <attribute name="time" value="*time"/>
+      </state>
+      <state name="DBException" timebound="10000" children="" actions="dummy" fail_actions="DBOK">
+        <attribute name="classname" value="cselt.im.dbexec.DBException"/>
+        <attribute name="methodname" value="DBException()"/>
+        <attribute name="callback" value="before"/>
+        <attribute name="ipAddr" value="*ipaddr"/>
+        <attribute name="ipPort" value="*ipport"/>
+       </state>
+   </states>
+   <actions>
+      <notification name="dummy">
+         <attribute name="WFType" value="DataToNobody"/>
+      </notification>
+      <notification name="DBOK">
+         <attribute name="WFType" value="DataToWorkflow"/>
+         <attribute name="Message" value="DB_server_working"/>
+         <attribute name="Timestamp" value="*time"/>
+      </notification>
+   </actions>
+</rule>
+
+<rule name="PresenceServer_start">
+   <states>
+      <state name="newPresenceServer" timebound="-1" children="Run" actions="" fail_actions="">
+        <attribute name="classname" value="cselt.im.server.presence.PresenceServer"/>
+        <attribute name="methodname" value="PresenceServer(int,int,String,String,String)"/>
+        <attribute name="callback" value="before"/>
+        <attribute name="ipAddr" value="*ipaddr"/>
+        <attribute name="ipPort" value="*ipport"/>
+        <attribute name="time" value="*time"/>
+      </state>
+      <state name="Run" timebound="10000" children="" actions="Started" fail_actions="FailedPS">
+        <attribute name="classname" value="cselt.im.server.presence.PresenceServer"/>
+        <attribute name="methodname" value="run()"/>
+        <attribute name="callback" value="before"/>
+        <attribute name="ipAddr" value="*ipaddr"/>
+        <attribute name="ipPort" value="*ipport"/>
+        <attribute name="time" value="*time2"/>
+      </state>
+   </states>
+   <actions>
+      <notification name="Started">
+         <attribute name="WFType" value="DataToWorkflow"/>
+         <attribute name="Message" value="Started_PresenceServer"/>
+         <attribute name="Timestamp" value="*time2"/>
+         <attribute name="IPaddress" value="*ipaddr"/>
+         <attribute name="IPport" value="*ipport"/>
+      </notification>
+      <notification name="FailedPS">
+         <attribute name="WFType" value="DataToWorkflow"/>
+         <attribute name="Message" value="Failed_Starting_PresenceServer"/>
+         <attribute name="Timestamp" value="*time"/>
+         <attribute name="IPaddress" value="*ipaddr"/>
+         <attribute name="IPport" value="*ipport"/>
+      </notification>
+   </actions>
+</rule>
+
+<rule name="DB_not_working">
+   <states>
+      <state name="DBException0" timebound="-1" children="" actions="DBnotOK" fail_actions="">
+        <attribute name="classname" value="cselt.im.dbexec.DBException"/>
+        <attribute name="methodname" value="DBException()"/>
+        <attribute name="callback" value="before"/>
+        <attribute name="time" value="*time"/>
+       </state>
+   </states>
+   <actions>
+      <notification name="DBnotOK">
+         <attribute name="WFType" value="DataToWorkflow"/>
+         <attribute name="Message" value="DB_server_not_working"/>
+         <attribute name="Timestamp" value="*time"/>
+       </notification>
+   </actions>
+</rule>
+
+<rule name="DB_working_from_Client">
+   <states>
+      <state name="login" timebound="-1" children="DBException" actions="" fail_actions="">
+        <attribute name="classname" value="cselt.im.server.presence.PresenceServer"/>
+        <attribute name="methodname" value="login(LoginParameters)"/>
+        <attribute name="callback" value="before"/>
+        <attribute name="ipAddr" value="*ipaddr"/>
+        <attribute name="ipPort" value="*ipport"/>
+        <attribute name="time" value="*time"/>
+      </state>
+      <state name="DBException" timebound="20000" children="" actions="dummy" fail_actions="DBOK">
+        <attribute name="classname" value="cselt.im.dbexec.DBException"/>
+        <attribute name="methodname" value="DBException()"/>
+        <attribute name="callback" value="before"/>
+        <attribute name="ipAddr" value="*ipaddr"/>
+        <attribute name="ipPort" value="*ipport"/>
+       </state>
+   </states>
+   <actions>
+      <notification name="dummy">
+         <attribute name="WFType" value="DataToNobody"/>
+      </notification>
+      <notification name="DBOK">
+         <attribute name="WFType" value="DataToWorkflow"/>
+         <attribute name="Message" value="DB_server_working"/>
+         <attribute name="Timestamp" value="*time"/>
+      </notification>
+   </actions>
+</rule>
+
+<rule name="PresenceServer_shutdown">
+   <states>
+      <state name="RemovedPS" timebound="-1" children="" actions="PSdown" fail_actions="">
+        <attribute name="classname" value="cselt.im.server.presence.PresenceServer"/>
+        <attribute name="methodname" value="remoteServerRemoved(String,ModifiableMap)"/>
+        <attribute name="param0" value="*serverId"/>
+        <attribute name="callback" value="before"/>
+        <attribute name="time" value="*time"/>
+       </state>
+   </states>
+   <actions>
+      <notification name="PSdown">
+         <attribute name="WFType" value="DataToWorkflow"/>
+         <attribute name="Message" value="Shutdown_PresenceServer"/>
+         <attribute name="ServerId" value="*serverId"/>
+         <attribute name="Timestamp" value="*time"/>
+       </notification>
+   </actions>
+</rule>
+
+<rule name="PresenceServer_not_started">
+   <states>
+      <state name="PS_launched" timebound="-1" children="newPresenceServer" actions="" fail_actions="">
+        <attribute name="RealSource" value="Workflow"/>
+        <attribute name="Task" value="Starting_PS"/>
+        <attribute name="ipAddr" value="*ipaddr"/>
+        <attribute name="time" value="*time"/>
+      </state>
+      <state name="newPresenceServer" timebound="10000" children="" actions="dummy" fail_actions="PSNOK">
+        <attribute name="classname" value="cselt.im.server.presence.PresenceServer"/>
+        <attribute name="methodname" value="PresenceServer(int,int,String,String,String)"/>
+        <attribute name="callback" value="before"/>
+        <attribute name="ipAddr" value="*ipaddr"/>
+      </state>
+   </states>
+   <actions>
+      <notification name="dummy">
+         <attribute name="WFType" value="DataToNobody"/>
+      </notification>
+      <notification name="PSNOK">
+         <attribute name="WFType" value="DataToWorkflow"/>
+         <attribute name="Message" value="Unbootable_PresenceServer"/>
+         <attribute name="IPaddress" value="*ipaddr"/>
+         <attribute name="Timestamp" value="*time"/>
+      </notification>
+   </actions>
+</rule>
+
+</rulebase>

@@ -11,7 +11,12 @@ import siena.*;
  * @version 0.1
  *
  * $Log$
- * Revision 1.4  2002-01-23 02:05:28  jjp32
+ * Revision 1.1  2002-01-23 02:17:15  jjp32
+ *
+ * Another massive update - repackaging xues so I can release
+ * EventDistiller separately (jar time coming up tomorrow :-))
+ *
+ * Revision 1.4  2002/01/23 02:05:28  jjp32
  * Massive update:
  * - Converted error handling completely to log4j
  * - Fixed several small bugs

@@ -24,7 +24,12 @@ import java.util.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.4  2001-02-08 23:11:35  gskc
+ * Revision 1.1  2002-01-23 02:17:16  jjp32
+ *
+ * Another massive update - repackaging xues so I can release
+ * EventDistiller separately (jar time coming up tomorrow :-))
+ *
+ * Revision 1.4  2001/02/08 23:11:35  gskc
  * Not much
  *
  * VS: ----------------------------------------------------------------------

@@ -16,7 +16,12 @@ import java.util.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.4  2001-01-30 07:18:42  jjp32
+ * Revision 1.1  2002-01-23 02:17:15  jjp32
+ *
+ * Another massive update - repackaging xues so I can release
+ * EventDistiller separately (jar time coming up tomorrow :-))
+ *
+ * Revision 1.4  2001/01/30 07:18:42  jjp32
  *
  * Sienaified
  *

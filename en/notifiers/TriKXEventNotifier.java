@@ -17,7 +17,12 @@ import psl.trikx.impl.TriKXUpdateObject;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.1  2000-12-26 22:26:54  jjp32
+ * Revision 1.1  2002-01-23 02:17:16  jjp32
+ *
+ * Another massive update - repackaging xues so I can release
+ * EventDistiller separately (jar time coming up tomorrow :-))
+ *
+ * Revision 1.1  2000/12/26 22:26:54  jjp32
  *
  * Some rearrangements.
  *
