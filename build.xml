@@ -32,12 +32,15 @@
   </target>
 
   <target name="ep" depends="xues">
-    <javac srcdir="ep" classpath="${classpath}" />
+    <javac srcdir="ep" classpath="${classpath}" excludes="transform/TimeSynchronizer.java" />
   </target>
 
   <!-- Common XUES stuff -->
   <target name="xues">
-    <javac srcdir="util" classpath="${classpath}" />
+    <javac srcdir="util" classpath="${classpath}" 
+           excludes="Siena14Utils.java" />
+    <javac srcdir="util" classpath="${rootdir}/tools/siena-1.4.2/siena-1.4.2.jar;${rootdir}/tools/log4j-1.2.4/dist/lib/log4j-1.2.4.jar" 
+           includes="Siena14Utils.java" />
   </target>
   
   <target name="ed-jar" depends="ed">
