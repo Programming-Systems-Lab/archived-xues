@@ -1,7 +1,9 @@
 package psl.xues.ep.store;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import org.w3c.dom.Element;
 import psl.xues.ep.event.EPEvent;
 
@@ -34,6 +36,8 @@ public class JDBCStore extends EPStore {
   private String password = null;
   /** JDBC connection */
   private Connection conn = null;
+  /** JDBC statement */
+  private Statement st = null;
   
   /**
    * CTOR.
@@ -71,15 +75,27 @@ public class JDBCStore extends EPStore {
     try {
       conn = DriverManager.getConnection("jdbc:" + dbType + ":" + 
       dbName, username, password);
-      // TODO: anonymous connections?
     } catch(Exception e) {
       debug.error("Can't connect to database", e);
     }
     
     // Connection successful
     debug.debug("Initialization complete");
+
+    // Do we have our necessary table?
+    try {
+      ResultSet tableList = conn.getMetaData().getTables(null, null, tableName, 
+      null);
+      if(tableList.first() == false) {
+        // Create the table
+        debug.debug("Table \"" + tableName + "\" doesn't exist, creating");
+        Statement s = conn.createStatement();
+        s.executeUpdate("CREATE TABLE " + tableName + 
+        " (SOURCE VARCHAR(100), TIMESTAMP " +
+        "  
+    
   }
-  
+ 
   /**
    * Request an individual event given its (opaque) reference.
    *
