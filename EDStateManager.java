@@ -35,7 +35,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * @version 1.0
  *
  * $Log$
- * Revision 1.11  2001-02-05 06:43:14  png3
+ * Revision 1.12  2001-02-28 18:02:45  jjp32
+ * Removed ^M :)
+ *
+ * Revision 1.11  2001/02/05 06:43:14  png3
  * Modified to use Apache Xerces instead of Oracle XML parser
  *
  * Revision 1.10  2001/01/30 06:26:18  jjp32
