@@ -6,6 +6,7 @@ import java.io.*;
 import java.util.*;
 
 import psl.xues.ed.acme.EDGaugeMgr;
+import psl.xues.util.SienaUtils;
 
 import siena.*;
 
@@ -32,8 +33,9 @@ import org.apache.log4j.PropertyConfigurator;
  */
 public class EventDistiller implements Runnable, Notifiable {
   /** Log4j logging class */
-  static Logger debug =
-  Logger.getLogger(EventDistiller.class.getName());
+  static Logger debug = Logger.getLogger(EventDistiller.class.getName());
+  /** Is debugging enabled? */
+  private static boolean debugEnabled = false;
   
   /**
    * We maintain a stack of events to process - this way incoming
@@ -47,8 +49,16 @@ public class EventDistiller implements Runnable, Notifiable {
   /** Reference to state machine manager. */
   EDStateManager manager;
   
+  // BUSES ///////////////////////////////////////////////////////////////////
+  
   /** Internal event dispatcher. */
-  private EDBus bus;
+  private EDBus internalBus = null;
+  
+  /**
+   * Internal event output bus.  We pass all stuff to be outputted through
+   * HERE first to support ED plugins that take ED results synchronously.
+   */
+  private EDBus outputBus = null;
   
   /** Public (KX) siena to communicate with the outside world */
   private Siena publicSiena = null;
@@ -96,7 +106,7 @@ public class EventDistiller implements Runnable, Notifiable {
   
   /** Whether the ED has been shut down. */
   private boolean hasShutdown = false;
-
+  
   /** ACME support? */
   private String acmeBus = null;
   
@@ -219,16 +229,17 @@ public class EventDistiller implements Runnable, Notifiable {
     
     // Subscribe to the "master" Siena
     publicSiena = new HierarchicalDispatcher();
-
+    
     if(sienaHost == null && sienaPort == null) {
       debug.warn("Siena host and receive port not specified, operating in standalone mode");
     }
     
     // Set receiver and master properties
     try {
-      ((HierarchicalDispatcher)publicSiena).
-      setReceiver(new TCPPacketReceiver(
-      (sienaPort == null) ? 0 : Integer.parseInt(sienaPort)));
+      if(sienaPort != null) {
+        ((HierarchicalDispatcher)publicSiena).setReceiver(
+        SienaUtils.newTCPPacketReceiver(Integer.parseInt(sienaPort)));
+      }
       if(sienaHost != null)
         ((HierarchicalDispatcher)publicSiena).setMaster(sienaHost);
     } catch(Exception e) {
@@ -251,21 +262,13 @@ public class EventDistiller implements Runnable, Notifiable {
       setOutputFile(new File(outputFile));
     }
     
-    
-    // Initialize gauge manager for ACME, if necessary
-    if(acmeBus != null) {
-      debug.debug("Starting gauge manger");
-      this.acmeBus = acmeBus;
-      // Create the ACME gauge manager
-      acmeGM = new EDGaugeMgr(acmeBus, debugging, publicSiena);
-    }
-    
     init();
     run(); /* Don't need to create new thread */
   }
   
   /** Initialize debugging */
   private static void initDebug(boolean debug, String debugFile) {
+    debugEnabled = debug;
     // Set up logging
     if(debug == true && debugFile == null) {
       BasicConfigurator.configure();             // Basic (all) debugging)
@@ -292,10 +295,45 @@ public class EventDistiller implements Runnable, Notifiable {
     //edContext = Thread.currentThread();
     
     // Create internal dispatcher
-    bus = new EDBus();
+    internalBus = new EDBus();
+    
+    // Create output bus
+    outputBus = new EDBus();
+    
+    // Add one subscriber for ALL events to outputBus - this proxies the
+    // results to the outside world.
+    outputBus.subscribe(new Filter(),
+    new EDNotifiable() {
+      public boolean notify(Notification n) {
+        try {
+          // if we have an owner, send him the notification
+          if (owner != null) owner.notify(n);
+          // else send it to the public siena
+          else publicSiena.publish(n);
+          debug.debug("Notification " + n + " sent externally!");
+          return true;
+        } catch(Exception e) {
+          debug.error("Could not publish to outside world", e);
+          return true; // Still continue through
+        }
+      }
+    },
+    new Comparable() {
+      public int compareTo(Object o) {
+        return 0; // Don't care about order
+      }
+    });
     
     // Initialize state machine manager.
     manager = new EDStateManager(this);
+    
+    // Initialize gauge manager for ACME, if necessary
+    if(acmeBus != null) {
+      debug.debug("Starting gauge manger");
+      this.acmeBus = acmeBus;
+      // Create the ACME gauge manager
+      acmeGM = new EDGaugeMgr(acmeBus, debugEnabled, outputBus);
+    }
   }
   
   /** Start execution of the new EventDistiller. */
@@ -316,7 +354,7 @@ public class EventDistiller implements Runnable, Notifiable {
         if(eventProcessQueue.size() != 0) {
           Notification n = (Notification)eventProcessQueue.remove(0);
           debug.debug("Publishing " + n + " internally");
-          bus.publish(n);
+          internalBus.publish(n);
           
           // advance event counter
           processedEvents++;
@@ -375,8 +413,9 @@ public class EventDistiller implements Runnable, Notifiable {
       debug.warn("Couldn't process Siena shutdown request", e);
     }
     
-    // Shut down EDBus
-    bus.shutdown();
+    // Shut down EDBuses
+    internalBus.shutdown();
+    outputBus.shutdown();
     
     // fail all states, if in the event-driven mode
     if (eventDriven) failAll();
@@ -428,21 +467,14 @@ public class EventDistiller implements Runnable, Notifiable {
   void sendPublic(Notification n) {
     debug.debug("Sending out " + n);
     
-    try {
-      // If this is an internal notification, we just send it through to
-      // ourselves.
-      if (n.getAttribute("internal") != null &&
-      n.getAttribute("internal").booleanValue())
-        bus.publish(KXNotification.EDInternalNotification(n, getTime()));
-      else { // the notification goes outside
-        // if we have an owner, send him the notification
-        if (owner != null) owner.notify(n);
-        // else send it to the public siena
-        else publicSiena.publish(n);
-        debug.debug("Notification " + n + " sent externally!");
-      }
+    // If this is an internal notification, we just send it through to
+    // ourselves.
+    if (n.getAttribute("internal") != null &&
+    n.getAttribute("internal").booleanValue()) {
+      internalBus.publish(KXNotification.EDInternalNotification(n, getTime()));
+    } else { // the notification goes outside
+      outputBus.publish(n);
     }
-    catch(SienaException e) { e.printStackTrace(); }
   }
   
   // standard methods
@@ -472,13 +504,13 @@ public class EventDistiller implements Runnable, Notifiable {
   }
   
   /**
-   * Return the internal EDBus.
-   *
-   * XXX - why is this needed?
+   * Return the internal EDBus.  Needed by various ED subcomponents to publish
+   * & subscribe on.  XXX - should remove this and pass everything around
+   * via references.
    *
    * @return our EDBus instance.
    */
-  EDBus getBus() { return this.bus; }
+  EDBus getBus() { return this.internalBus; }
   
   /** @return the specification file */
   String getSpecFile() { return this.stateSpecFile; }

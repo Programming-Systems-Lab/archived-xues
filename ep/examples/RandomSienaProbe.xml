@@ -13,6 +13,8 @@
   </Inputters>
   <Outputters>
     <Outputter Name="ConsoleOutput1" Type="psl.xues.ep.output.ConsoleOutput" />
+    <Outputter Name="SienaOutput1" Type="psl.xues.ep.output.SienaOutput" 
+        SienaMaster="senp://localhost:7890" />
   </Outputters>
   <Transforms>
   </Transforms>
@@ -25,7 +27,8 @@
       </Inputs>
       <Transforms />
       <Outputs>
-	<Output Name="ConsoleOutput1"></Output>
+	<Output Name="ConsoleOutput1" />
+        <Output Name="SienaOutput1" />
       </Outputs>
     </Rule>
   </Rules>

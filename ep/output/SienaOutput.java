@@ -4,9 +4,9 @@ import org.w3c.dom.Element;
 
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
+import psl.xues.util.SienaUtils;
 
 import siena.HierarchicalDispatcher;
-import siena.TCPPacketReceiver;
 import siena.Notification;
 import siena.SienaException;
 
@@ -59,12 +59,11 @@ public class SienaOutput extends EPOutput {
     // Now actually try and connect
     hd = new HierarchicalDispatcher();
     try {
-      if(sienaPort != null) {
-        hd.setReceiver(new TCPPacketReceiver(Integer.parseInt(sienaPort)));
-      } else { // Random port number
-        hd.setReceiver(new TCPPacketReceiver(0));
+      if(sienaPort != null && sienaPort.length() > 0) {
+        // Specify a custom receiver
+        hd.setReceiver(SienaUtils.newTCPPacketReceiver(Integer.parseInt(sienaPort)));
       }
-      if(sienaHost != null) hd.setMaster(sienaHost);
+      if(sienaHost != null && sienaHost.length() > 0) hd.setMaster(sienaHost);
     } catch(Exception ex) {
       debug.error("Cannot establish Siena node", ex);
       hd = null;

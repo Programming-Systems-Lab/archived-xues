@@ -9,11 +9,11 @@ import siena.Notifiable;
 import siena.HierarchicalDispatcher;
 import siena.SienaException;
 import siena.Notification;
-import siena.TCPPacketReceiver;
 import siena.Op;
 
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
+import psl.xues.util.SienaUtils;
 
 /**
  * Siena input filter for EP.
@@ -61,9 +61,8 @@ public class SienaInput extends EPInput implements Notifiable {
     hd = new HierarchicalDispatcher();
     try {
       if(sienaPort != null) {
-        hd.setReceiver(new TCPPacketReceiver(Integer.parseInt(sienaPort)));
-      } else { // Random port number
-        hd.setReceiver(new TCPPacketReceiver(0));
+        // Custom port
+        hd.setReceiver(SienaUtils.newTCPPacketReceiver(Integer.parseInt(sienaPort)));
       }
       if(sienaHost != null) hd.setMaster(sienaHost);
     } catch(Exception ex) {

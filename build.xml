@@ -2,54 +2,126 @@
   <!-- This is very, very weird.  I can't figure out why I need three sets
     of dots... -->
   <property name="rootdir" value="{$basedir}/../../.." />
-  <!-- Set our classpath and tell Ant to ignore the environment classpath -->
-  <property name="classpath" 
-	    value="${rootdir}:${rootdir}/jars/psl-all.jar"/>
+  <!-- Which jars does xues require? -->
+  <patternset id="xues.jars">
+    <include name="tools/siena-1.3.0/siena-1.3.0.jar" />
+    <include name="tools/hsqldb-1.61/lib/hsqldb.jar" />
+    <include name="tools/log4j-1.2.4/dist/lib/log4j-1.2.4.jar" />
+    <include name="cmu/classes/gaugeInfrastructure.jar" />
+    <include name="cmu/classes/gaugeInfrastructureSiena.jar" />
+  </patternset>
+  <!-- Now build our classpath and tell Ant to ignore the environment 
+       classpath -->
+  <path id="xues.classpath">
+    <fileset dir="${rootdir}">
+      <patternset refid="xues.jars" />
+    </fileset>
+    <pathelement path="${rootdir}" />
+  </path>
+  <property name="classpath" refid="xues.classpath"/>
   <property name="build.sysclasspath" value="ignore" />
-  <property name="dist" value="${basedir}/dist" />
+  <!-- Target directory for built jars -->
+  <property name="distdir" value="${basedir}/dist" />
   <property name="build.compiler" value="modern" />
 
   <target name="all" depends="ed, ep"/>
 
-  <target name="ed" depends="common">
+  <target name="ed" depends="xues">
     <javac srcdir="ed" classpath="${classpath}" />
-  </target>
-
-  <target name="ep" depends="common" />
-  <target name="common" depends="kx" />
-
-  <target name="kx">
     <javac srcdir="${rootdir}/psl/kx" classpath="${classpath}" 
 	   includes="KXNotification.java" />
   </target>
 
+  <target name="ep" depends="xues">
+    <javac srcdir="ep" classpath="${classpath}" />
+  </target>
+
+  <!-- Common XUES stuff -->
+  <target name="xues">
+    <javac srcdir="util" classpath="${classpath}" />
+  </target>
+  
   <target name="ed-jar" depends="ed">
-    <jar jarfile="dist/EventDistiller.jar" basedir="${rootdir}/" 
-	 includes="psl/kx/*, psl/xues/ed/*" />
+    <jar jarfile="${distdir}/EventDistiller.jar" basedir="${rootdir}/" 
+         includes="psl/kx/KXNotification*, psl/xues/ed/**, psl/xues/util/*"
+         excludes="**/.nbattrs" />
+  </target>
+  
+  <target name="ep-jar" depends="ep">
+    <jar jarfile="${distdir}/EventPackager.jar" basedir="${rootdir}/" 
+         includes="psl/xues/ep/**, psl/xues/util/*"
+         excludes="**/.nbattrs" />
+  </target>
+
+  <target name="ed-support-jar">
+    <!-- Unjar them all, then jar them back together into one jar.
+         Broken behavior until Ant 1.5 (we can use the aforementioned pattern 
+         then) -->
+    <unjar src="${rootdir}/tools/siena-1.3.0/siena-1.3.0.jar" 
+           dest="${distdir}/ed-classes" />
+    <unjar src="${rootdir}/tools/log4j-1.2.4/dist/lib/log4j-1.2.4.jar" 
+           dest="${distdir}/ed-classes" />
+    <unjar src="${rootdir}/cmu/classes/gaugeInfrastructure.jar" 
+           dest="${distdir}/ed-classes" />
+    <unjar src="${rootdir}/cmu/classes/gaugeInfrastructureSiena.jar" 
+           dest="${distdir}/ed-classes" />
+    <jar jarfile="${distdir}/ed-support.jar" basedir="${distdir}/ed-classes" />
+  </target>
+  
+  <target name="ep-support-jar">
+    <unjar src="${rootdir}/tools/siena-1.3.0/siena-1.3.0.jar" 
+           dest="${distdir}/ep-classes" />
+    <unjar src="${rootdir}/tools/log4j-1.2.4/dist/lib/log4j-1.2.4.jar" 
+           dest="${distdir}/ep-classes" />
+    <unjar src="${rootdir}/tools/hsqldb-1.61/lib/hsqldb.jar"
+           dest="${distdir}/ep-classes" />
+    <jar jarfile="${distdir}/ep-support.jar" basedir="${distdir}/ep-classes" />
   </target>
 
   <target name="ed-docs" depends="ed">
     <javadoc sourcepath="${rootdir}" destdir="dist/ed-docs" 
-	     packagenames="psl.xues.ed.*" access="public" />
+             packagenames="psl.xues.ed.*" access="public" 
+             classpath="${classpath}" />
   </target>
+  
+  <target name="ep-docs" depends="ep">
+    <javadoc sourcepath="${rootdir}" destdir="dist/ep-docs"
+             packagenames="psl.xues.ep.*" access="public"
+             classpath="${classpath}" />
+  </target>
+             
+  <target name="dist" depends="ed-dist, ep-dist" />
 
-  <target name="dist" depends="ed-dist" />
-
-  <target name="ed-dist" depends="ed-jar, ed-docs">
+  <target name="ed-dist" depends="ed-jar, ed-support-jar, ed-docs">
     <zip zipfile="dist/EventDistiller.zip">
-      <zipfileset dir="${basedir}/dist/"
-		  includes="EventDistiller.jar" />
-      <zipfileset dir="${rootdir}/jars/" 
-		  includes="psl-all.jar" />
+      <zipfileset dir="${distdir}"
+                  includes="EventDistiller.jar, ed-support.jar" />
+      <zipfileset dir="${basedir}"
+                  includes="LICENSE" />
       <zipfileset dir="${basedir}/ed/"
-		  includes="EventDistiller.html, LICENSE" />
+                  includes="EventDistiller.html" />
       <zipfileset dir="${basedir}/ed/" prefix="samples/"
-		  includes="*.xml, *.xsd" />
+                  includes="**/*.xml, **/*.xsd" />
       <zipfileset dir="${basedir}/dist/ed-docs/" prefix="docs/"
-		  includes="**/*.html" />
+                  includes="**/*.html" />
     </zip>
   </target>
 
+  <target name="ep-dist" depends="ep-jar, ep-support-jar, ep-docs">
+    <zip zipfile="dist/EventPackager.zip">
+      <zipfileset dir="${distdir}"
+                  includes="EventPackager.jar, ep-support.jar" />
+      <zipfileset dir="${basedir}"
+                  includes="LICENSE" />
+      <!--<zipfileset dir="${basedir}/ed/"
+		  includes="EventDistiller.html" />-->
+      <zipfileset dir="${basedir}/ep/" prefix="samples/"
+                  includes="**/*.xml, **/*.xsd" />
+      <zipfileset dir="${basedir}/dist/ep-docs/" prefix="docs/"
+                  includes="**/*.html" />
+    </zip>
+  </target>
+  
   <target name="clean">
     <delete>
       <fileset dir="dist" includes="*.jar, *.zip" casesensitive="false" />
@@ -57,5 +129,8 @@
 	       casesensitive="false" defaultexcludes="no" />
     </delete>
     <delete dir="dist/ed-docs" includeEmptyDirs="true" />
+    <delete dir="dist/ep-docs" includeEmptyDirs="true" />
+    <delete dir="dist/ed-classes" includeEmptyDirs="true" />
+    <delete dir="dist/ep-classes" includeEmptyDirs="true" />
   </target>
 </project>

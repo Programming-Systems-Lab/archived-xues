@@ -10,6 +10,8 @@ import edu.cmu.cs.able.gaugeInfrastructure.Siena.*;
 
 import org.apache.log4j.Logger;
 
+import psl.xues.ed.EDBus;
+
 import siena.Siena;
 
 /**
@@ -40,7 +42,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
   /** Log4j debugger */
   private Logger debug = Logger.getLogger(EDGaugeMgr.class.getName());
   /** ED output bus */
-  private Siena EDOutputBus = null;
+  private EDBus EDOutputBus = null;
   
   /**
    * CTOR.
@@ -49,7 +51,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    * @param debugging Enable CMU debugging?
    * @param EDOutputBus The ED output bus to watch for gauge values.
    */
-  public EDGaugeMgr(String gaugeBusURL, boolean debugging, Siena EDOutputBus) {
+  public EDGaugeMgr(String gaugeBusURL, boolean debugging, EDBus EDOutputBus) {
     super();
     
     this.EDOutputBus = EDOutputBus;

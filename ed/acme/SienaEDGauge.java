@@ -7,6 +7,7 @@ import edu.cmu.cs.able.gaugeInfrastructure.*;
 
 import org.apache.log4j.Logger;
 import siena.Siena;
+import psl.xues.ed.EDBus;
 
 /**
  * Siena transport layer for ED architectural gauges.
@@ -36,7 +37,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGauge {
    */
   public SienaEDGauge(GaugeID gaugeID, String creatorID,
   StringPairVector setupParams, StringPairVector mappings,
-  Siena EDOutputBus) {
+  EDBus EDOutputBus) {
     super(gaugeID, creatorID, setupParams, mappings);
     debug.debug("Creating implementation");
     impl = new EDGaugeImpl(gaugeID, setupParams, mappings, gaugeBus,

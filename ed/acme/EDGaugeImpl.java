@@ -11,6 +11,10 @@ import siena.Filter;
 import siena.Siena;
 import siena.Notifiable;
 import siena.Op;
+import siena.Notification;
+
+import psl.xues.ed.EDBus;
+import psl.xues.ed.EDNotifiable;
 
 /**
  * Event Distiller ACME Gauge Bus implementation.  This maps to a given
@@ -30,19 +34,17 @@ import siena.Op;
  * @author Janak J Parekh
  * @version $Revision$
  */
-public class EDGaugeImpl extends GaugeImpl implements Notifiable {
+public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
   /** Debugging logger */
   private Logger debug = Logger.getLogger(EDGaugeImpl.class.getName());
   /** ED output bus */
-  private Siena EDOutputBus = null;
-  /** Mappings hash */
-  private HashMap mappings = null;
+  private EDBus EDOutputBus = null;
   
   /**
    * CTOR.
    */
   public EDGaugeImpl(GaugeID gid, StringPairVector setupParams, 
-  StringPairVector mappings, GaugeReportingBus bus, Siena EDOutputBus) {
+  StringPairVector mappings, GaugeReportingBus bus, EDBus EDOutputBus) {
     super(gid, setupParams, mappings, bus);
 
     // Store reference to EDOutputBus, and then subscribe to the values
@@ -52,23 +54,20 @@ public class EDGaugeImpl extends GaugeImpl implements Notifiable {
     // Insert code to check setup parameters
     debug.debug("Called with mappings " + mappings);
 
-    // We don't handle setup parameters at this moment, we assume gauges are
-    // precreated
-    //debug.debug("Called with setupParams " + setupParams);
-    
-    // Copy the mappings into a hash so we can quickly rewrite the results.
-    // At the same time, build the subscription filter.
-    this.mappings = new HashMap();
+    // Build the subscription filter.
     Filter sienaFilter = new Filter();
     for(int i=0; i < mappings.size(); i++) {
-      this.mappings.put(mappings.nameAt(i), mappings.valueAt(i));
-      sienaFilter.addConstraint(mappings.nameAt(i), Op.ANY, (String)null);
+      sienaFilter.addConstraint(mappings.nameAt(i), Op.ANY, "");
     }
     
     // Create a subscription for the left-hand-side of the mappings.  
     // For now, we assume a conjoined set with ONE subscription.
     try {
-      EDOutputBus.subscribe(sienaFilter, this);
+      EDOutputBus.subscribe(sienaFilter, this, new Comparable() {
+        public int compareTo(Object o) {
+          return 0; // Doesn't matter
+        }
+      });
     } catch(Exception e) {
       debug.warn("Could not create subscription for gauge bridging", e);
     }
@@ -103,10 +102,8 @@ public class EDGaugeImpl extends GaugeImpl implements Notifiable {
    * @return A boolean indicating success.
    */
   public boolean configure(StringPairVector configParams) {
-    // At this moment, we do nothing, since we implicitly assume the
-    // subscription is all we need.  In the future, this might contain
-    // the information we need to create the ED gauge.
-    // debug.warn("Configure not implemented");
+    // At this moment, since no configuration is allowed, just ignore anything
+    // we're given.
     return true;
   }
   
@@ -117,8 +114,7 @@ public class EDGaugeImpl extends GaugeImpl implements Notifiable {
    * @return A boolean indicating success.
    */
   public boolean queryAllValues(GaugeValueVector values) {
-    // Insert code to fill values with the current value of all values that 
-    // the gauge reports.
+    // We can't supply values we don't have, so report nothing
     debug.warn("QueryAllValues not supported");
     return false;
   }
@@ -133,18 +129,17 @@ public class EDGaugeImpl extends GaugeImpl implements Notifiable {
    */
   public boolean queryState(StringPairVector setupParams, 
   StringPairVector configParams, StringPairVector mappings) {
-    debug.warn("QueryState not implemented");
-    
-    /*this.setupParams.copyInto(setupParams);*/
-    
-    // Do a deep copy of the mappings SPV.  This is needed because we are
-    // returning the values by reference.
-    /*Enumeration enum = this.mappings.keys();
+    // Copy the setup parameters out opaquely
+    this.setupParams.copyInto(setupParams);
+
+    // Copy out the latest mapping references
+    Enumeration enum = this.mappings.keys();
     while (enum.hasMoreElements()) {
       String key = (String)enum.nextElement();
       mappings.addElement(key, (String)this.mappings.get(key));
-    }*/
-    
+    }
+
+    // Nothing to configure, so leave it empty
     return true;
   }
   
@@ -159,9 +154,8 @@ public class EDGaugeImpl extends GaugeImpl implements Notifiable {
    * @return The corresponding value of the gauge. 
    */
   public String queryValue(String valueName) {
-    // Insert code to return the current value of the value referred to 
-    // by valueName
-    debug.warn("QueryValue not implemented");
+    // We can't handle queryValue
+    debug.warn("QueryValue not supported");
     return null;
   }
   
@@ -171,7 +165,7 @@ public class EDGaugeImpl extends GaugeImpl implements Notifiable {
    */
   public void reportNewValue() {
     // Insert code to report a new value
-    debug.warn("ReportNewValue not implemented");
+    debug.warn("ReportNewValue not supported");
     return;
   }
   
@@ -182,8 +176,26 @@ public class EDGaugeImpl extends GaugeImpl implements Notifiable {
     return; // Do nothing for now.
   }
   
-  public void notify(siena.Notification notification) {
+  /**
+   * Siena notify mechanism.  Rewrite the attributes in the attribute-value
+   * pairs and send it out to the gauge reporting bus.
+   *
+   * @param n The notification.
+   */
+  public boolean notify(Notification n) {
+    Iterator values = n.attributeNamesIterator();
+    GaugeValueVector gvv = new GaugeValueVector();
+    while(values.hasNext()) {
+      String attr = (String)values.next();
+      if(mappings.get(attr) != null) { 
+        // We have an architecturally-interesting data element
+        gvv.addElement(attr, (String)mappings.get(attr), 
+        n.getAttribute(attr).stringValue());
+      }
+    }
+
+    // Now report
+    gaugeBus.reportMultipleValues(gaugeID, gvv);
+    return true; // Keep on going
   }
-  
-  public void notify(siena.Notification[] notification) { ; }
 }

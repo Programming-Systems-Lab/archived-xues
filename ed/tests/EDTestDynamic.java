@@ -32,13 +32,9 @@ public class EDTestDynamic {
     
     hd = new HierarchicalDispatcher();
     try {
-      hd.setReceiver(new TCPPacketReceiver(0));
       hd.setMaster(args[0]);
-    } catch (InvalidSenderException ise) {
-      System.err.println("Invalid Sender:" + ise);
-      return;
-    } catch (IOException ioe) {
-      System.err.println("Unable to set hd receiver:" + ioe);
+    } catch(Exception e) {
+      e.printStackTrace();
       return;
     }
 
