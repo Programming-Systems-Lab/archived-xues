@@ -13,19 +13,23 @@ import javax.swing.*;
  */
 interface EDErrorManager {
 
-    /** Error message type. */
-    public static final int ERROR_MESSAGE = 0;
-
-    /** Debug/status message type. */
-    public static final int DEBUG_MESSAGE = 1;
+    /* types of messages, by source
+     *
+     * NOTE: only ERROR type messages will be printed
+     * if debug is set to false 
+     */
+    public static final int ERROR = -1;
+    public static final int REAPER = 0;
+    public static final int MANAGER = 1;
+    public static final int STATE = 2;
+    public static final int DISPATCHER = 3;
 
     /**
      * Prints message to output.
      * @param message the message to print
-     * @param source the thread where the message originates
      * @param type type of message
      */
-    void print(String message, Object source, int type);
+    void print(String message, int type);
 }
 
 
@@ -46,12 +50,11 @@ class EDErrorConsole implements EDErrorManager {
     /**
      * Prints message to output.
      * @param message the message to print
-     * @param source the threac where the message originates
      * @param type type of message
      */
-    public void print(String message, Object source, int type) {
-	if (debug || type == EDErrorManager.ERROR_MESSAGE) 
-	    System.out.println(message);
+    public void print(String message, int type) {
+	if (!debug && type >= 0) return;
+	System.out.println(message);
     }
 }
 
@@ -73,20 +76,21 @@ class EDErrorGUI extends JFrame implements EDErrorManager {
      */
     public EDErrorGUI(boolean debug) { 
 	this.debug = debug; 
+
 	setTitle("Event Distiller output");
 	setSize(500, 500);
 	JScrollPane scrollPane = new JScrollPane(textArea);
 	getContentPane().add(scrollPane, BorderLayout.CENTER);
+	show();
     }
 
     /**
      * Prints message to output.
      * @param message the message to print
-     * @param source the threac where the message originates
      * @param type type of message
      */
-    public void print(String message, Object source, int type) {
-	if (!debug && type == EDErrorManager.DEBUG_MESSAGE) return;
+    public void print(String message, int type) {
+	if (!debug && type >= 0) return;
 	textArea.append(message);
     }
 }
