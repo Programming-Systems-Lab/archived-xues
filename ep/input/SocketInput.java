@@ -33,20 +33,21 @@ import siena.Notification;
  * <li><b>Port</b>: specify the port to listen on for client connections</li>
  * <li><b>SocketType</b>: specify socket type, either "tcp" or "udp" (tcp is
  * default)</li>
- * <li><b>DataType</b>: specify structure of events to listen for (currently
- * only <b>JavaObject</b> is supported)</li>
+ * <li><b>DataType</b>: specify structure of events to listen for</li>
  * </ol>
  *
  * Data types currently supported:<ol>
- * <li>Java objects (via type <b>JavaObject</b>)</li>.  Note
+ * <li>Serialized Java objects (via type <b>JavaObject</b>)</li>.  Note
  * that, while this is technically supported under UDP, TCP is strongly
  * recommended to support large objects.
- * <p>Java objects are treated opaquely, with the following exceptions:
+ * <p>The following Java object types are currently supported:
  * <ol>
+ *  <li>psl.xues.ep.event.EPEvent: the serialized EPEvent is automatically
+ *      used.</li>
  *  <li>siena.Notification: a SienaEvent is automatically created.</li>
  *  <li>org.w3c.dom.Document: a DOMEvent is automatically created.</li>
  *  <li>org.w3c.dom.Element: a DOMEvent is automatically created.</li>
- * </ol>
+ * </ol></li>
  * <li>String input (via type <b>StringObject</b>).  Note that String input
  * is currently line-delimited.</li>
  * <li>XML plaintext input (via type <b>XMLObject</b>).
@@ -59,6 +60,7 @@ import siena.Notification;
  *
  * <!--
  * TODO:
+ * - Rename input types to correspond to event types
  * - Support simple XML Siena representations in addition to serialized Java
  * - Consider using NBIO instead for lots of clients
  * - Support non-serialized for non-Java-specific objects

@@ -102,6 +102,9 @@ public class DOMEvent extends EPEvent {
   
   /**
    * Convert this DOMEvent to an event of a different format.
+   *
+   * @param newFormat The new requested format.
+   * @return The new event, or null.
    */
   public EPEvent convertEvent(String newFormat) {
     // TO STRING FORMAT ///////////////////////////////////////////////
@@ -127,8 +130,6 @@ public class DOMEvent extends EPEvent {
     
     // Not supported
     debug.warn("DOMEvent can't be converted to \"" + newFormat + "\"");
-    return super.convertEvent(newFormat);
-  
+    return null;
   }
-
 }

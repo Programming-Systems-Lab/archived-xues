@@ -10,7 +10,7 @@ import siena.Notification;
  *
  * <!--
  * TODO:
- * - Support conversion to basic formats.  (Where should this be?)
+ * - Support conversion to XML.
  * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
@@ -21,14 +21,14 @@ public class SienaEvent extends EPEvent {
   private final String format = "SienaEvent";
   /** Associated data */
   private Notification n = null;
-    
+  
   /**
    * Base CTOR.
    *
    * @param source The generator ("source") of these events.
    */
   public SienaEvent(String source) { this(source, null); }
-
+  
   /**
    * CTOR given an existing Siena notification.
    *
@@ -39,7 +39,7 @@ public class SienaEvent extends EPEvent {
     super(source);
     this.n = n;
   }
-
+  
   /**
    * CTOR given an existing Siena notification and a timestamp.
    *
@@ -61,7 +61,7 @@ public class SienaEvent extends EPEvent {
   public Notification getSienaEvent() {
     return n;
   }
-
+  
   /**
    * Convert this Siena event to a (new) FlatEvent.  NOTE that this may be
    * slow, as each attribute must be enumerated over and converted manually.
@@ -74,7 +74,7 @@ public class SienaEvent extends EPEvent {
     return null;
   }
   
-  /** 
+  /**
    * Get the format (type) of this event.
    *
    * @return A string indicating the type.
@@ -89,7 +89,23 @@ public class SienaEvent extends EPEvent {
    * @return The string representation
    */
   public String toString() {
-    return "psl.xues.ep.event.SienaEvent - source \"" + source + 
+    return "psl.xues.ep.event.SienaEvent - source \"" + source +
     "\", timestamp \"" + timestamp + "\", notification " + n;
+  }
+  
+  /**
+   * Convert this DOMEvent to an event of a different format.
+   *
+   * @param newFormat The new requested format.
+   * @return The new event, or null.
+   */
+  public EPEvent convertEvent(String newFormat) {
+    // To string format: just use Notification.toString().
+    if(newFormat.equalsIgnoreCase("StringEvent")) {
+      return new StringEvent(getSource(), n.toString());
+    } else { // (Currently) unsupported
+      debug.warn("DOMEvent can't be converted to \"" + newFormat + "\"");
+      return null;
+    }
   }
 }
