@@ -6,7 +6,7 @@ import psl.xues.util.EDConst;
 import java.io.*;
 import java.util.*;
 
-import psl.xues.ed.acme.EDGaugeMgr;
+//import psl.xues.ed.acme.EDGaugeMgr;
 import psl.xues.util.SienaUtils;
 
 import siena.*;
@@ -112,7 +112,7 @@ public class EventDistiller implements Runnable, Notifiable {
   private String acmeBus = null;
   
   /** ACME gauge manager */
-  private EDGaugeMgr acmeGM = null;
+  //private EDGaugeMgr acmeGM = null;
   
   /** Main. */
   public static void main(String args[]) {
@@ -335,7 +335,7 @@ public class EventDistiller implements Runnable, Notifiable {
       debug.debug("Starting gauge manger");
       this.acmeBus = acmeBus;
       // Create the ACME gauge manager
-      acmeGM = new EDGaugeMgr(acmeBus, debugEnabled, internalBus);
+      //acmeGM = new EDGaugeMgr(acmeBus, debugEnabled, internalBus);
     }
   }
   
@@ -407,7 +407,7 @@ public class EventDistiller implements Runnable, Notifiable {
     debug.info("Shutting down");
     
     // Shut down the ACME stuff, if it's around
-    if(acmeGM != null) acmeGM.shutdown();
+    //if(acmeGM != null) acmeGM.shutdown();
     
     // Shut down the dispatchers
     if (owner == null) try {
