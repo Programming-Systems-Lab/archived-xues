@@ -14,7 +14,11 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.2  2000-09-07 23:15:25  jjp32
+ * Revision 1.3  2000-09-08 02:09:44  jjp32
+ *
+ * Some minor updates
+ *
+ * Revision 1.2  2000/09/07 23:15:25  jjp32
  *
  * Added EventNotifier code; updated previous event code
  *
@@ -46,6 +50,7 @@ public class EventDistiller implements GroupspaceService,
     this.gcRef.registerRole(roleName, this);
     // Subscribe to EventPackager events
     this.gcRef.subscribeEvent(this,"EventPackagerIncoming");
+    this.gcRef.subscribeEvent(this,"MetaparserResult");
     return true;
   }
 
