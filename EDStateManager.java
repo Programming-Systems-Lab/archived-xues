@@ -6,8 +6,11 @@ import java.io.*;
 import java.util.*;
 import siena.*;
 
-import oracle.xml.parser.v2.SAXParser;
+// png3
+//import oracle.xml.parser.v2.SAXParser;
+import org.apache.xerces.parsers.SAXParser;
 import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -32,7 +35,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * @version 1.0
  *
  * $Log$
- * Revision 1.10  2001-01-30 06:26:18  jjp32
+ * Revision 1.11  2001-02-05 06:43:14  png3
+ * Modified to use Apache Xerces instead of Oracle XML parser
+ *
+ * Revision 1.10  2001/01/30 06:26:18  jjp32
  *
  * Lots and lots of updates.  EventDistiller is now of demo-quality.
  *
@@ -135,7 +141,9 @@ public class EDStateManager extends DefaultHandler implements Runnable {
     sxp = new SAXParser();
     sxp.setContentHandler(this);
     try {
-      sxp.parse(new FileInputStream(specFilename));
+      // png3
+      // sxp.parse(new FileInputStream(specFilename));
+      sxp.parse(new InputSource(new FileInputStream(specFilename)));
     } catch(Exception e) {
       System.err.println("FATAL: EDStateManager init failed:");
       e.printStackTrace();
