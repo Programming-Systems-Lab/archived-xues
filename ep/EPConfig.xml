@@ -6,6 +6,17 @@
     <EventFormats>
         <EventFormat Name="HierarchicalEvent"></EventFormat>
         <EventFormat Name="SienaEvent"></EventFormat>
+        <EventFormat Name="FlatEvent"></EventFormat>
     </EventFormats>
+    <Inputters>
+        <Inputter Name="Siena1" Type="SienaInput" SienaHost="senp://localhost:7890">
+            <SienaFilter Name="TestFilter1">
+                <SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue"></SienaConstraint>
+            </SienaFilter>
+            <SienaFilter Name="TestFilter2">
+                <SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue"></SienaConstraint>
+            </SienaFilter>
+        </Inputter>
+    </Inputters>
 </EventPackagerConfiguration>
 

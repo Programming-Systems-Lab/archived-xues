@@ -2,6 +2,8 @@ package psl.xues.ep.event;
 
 import siena.Notification;
 
+import org.apache.log4j.Category;
+
 /**
  * Simple Siena event representation.  Embeds a Siena Notification for speed.
  *
@@ -11,6 +13,7 @@ import siena.Notification;
 public class SienaEvent extends EPEvent {
   private final String format = "SienaEvent";
   private Notification n = null;
+  private Category debug = Category.getInstance(SienaEvent.class.getName());
   
   /**
    * Empty CTOR.
@@ -44,6 +47,8 @@ public class SienaEvent extends EPEvent {
    * @return The new FlatEvent
    */
   public FlatEvent toFlatEvent() {
-    
+    // Not implemented right now
+    debug.warn("Not yet implemented");
+    return null;
   }
 }

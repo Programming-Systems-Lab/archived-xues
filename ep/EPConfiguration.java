@@ -8,8 +8,15 @@ import org.apache.log4j.Category;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.PropertyConfigurator;
 
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import psl.xues.ep.event.EPEvent;
+import psl.xues.ep.input.EPInput;
+import psl.xues.ep.input.EPInputInterface;
+import psl.xues.ep.output.EPOutput;
 
 /**
  * Event packager configuration parser.  Uses JAXP to handle the XML-formatted
@@ -79,7 +86,7 @@ class EPConfiguration {
     
     for(int i=0; i < eventFormats.getLength(); i++) {
       // Load via reflection and store in event format hash
-      Element eventFormat = eventFormats.item(i);
+      Element eventFormat = (Element)eventFormats.item(i);
       String eventFormatName = eventFormat.getAttribute("Name");
       if(eventFormatName == null) {
         debug.warn("Invalid event format detected, ignoring");
@@ -109,10 +116,12 @@ class EPConfiguration {
     }
     
     for(int i=0; i < inputters.getLength(); i++) {
-      Element inputter = inputters.item(i);
+      Element inputter = (Element)inputters.item(i);
       String inputterName = inputter.getAttribute("Name");
-      if(inputterName = null) {
-        debug.warn("Invalid inputter detected, ignoring");
+      String inputterType = inputter.getAttribute("Type");
+      if(inputterName == null || inputterType == null ||
+      inputterName.length() == 0 || inputterType.length() == 0) {
+        debug.warn("Invalid inputter name or type detected, ignoring");
         continue;
       }
       
@@ -120,8 +129,11 @@ class EPConfiguration {
       EPInput epi = null;
       try {
         debug.debug("Loading inputter \"" + inputterName + "\"...");
-        epi = (EPInput)Class.forName(inputterName).getConstructor(new Object[]
-        { EPConfiguration.getClass() }).newInstance(new Object[] { this });
+        // XXX - Should we be making a deep copy of the inputter element,
+        // since we'return handing it to a potentially unknown constructor.
+        epi = (EPInput)Class.forName(inputterType).getConstructor(new Class[]
+        { inputter.getClass(), EPInputInterface.class }).newInstance(new Object[] 
+        { inputter, (EPInputInterface)ep });
         ep.inputters.put(inputterName, epi);
       } catch(Exception e) {
         debug.warn("Failed in loading inputter \"" + inputterName +
@@ -138,10 +150,12 @@ class EPConfiguration {
     }
     
     for(int i=0; i < outputters.getLength(); i++) {
-      Element outputter = outputters.item(i);
+      Element outputter = (Element)outputters.item(i);
       String outputterName = outputter.getAttribute("Name");
-      if(outputterName = null) {
-        debug.warn("Invalid outputter detected, ignoring");
+      String outputterType = outputter.getAttribute("Type");
+      if(outputterName == null || outputterType == null ||
+      outputterName.length() == 0 || outputterType.length() == 0) {
+        debug.warn("Invalid outputter name or type detected, ignoring");
         continue;
       }
       
@@ -149,8 +163,8 @@ class EPConfiguration {
       EPOutput epo = null;
       try {
         debug.debug("Loading outputter \"" + outputterName + "\"...");
-        epo = (EPOutput)Class.forName(outputterName).getConstructor(new Object[]
-        { EPConfiguration.getClass() }).newInstance(new Object[] { this });
+        epo = (EPOutput)Class.forName(outputterName).getConstructor(new Class[]
+        { outputter.getClass() }).newInstance(new Object[] { outputter });
         ep.outputters.put(outputterName, epo);
       } catch(Exception e) {
         debug.warn("Failed in loading outputter \"" + outputterName +

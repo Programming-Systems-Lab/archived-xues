@@ -4,6 +4,11 @@ import org.apache.log4j.Category;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.PropertyConfigurator;
 
+import java.util.HashMap;
+
+import psl.xues.ep.event.EPEvent;
+import psl.xues.ep.input.EPInputInterface;
+
 /**
  * Event Packager for XUES.
  *
@@ -13,7 +18,7 @@ import org.apache.log4j.PropertyConfigurator;
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-public class EventPackager implements Runnable {
+public class EventPackager implements Runnable, EPInputInterface {
   /** log4j category class */
   static Category debug =
   Category.getInstance(EventPackager.class.getName());
@@ -112,4 +117,39 @@ public class EventPackager implements Runnable {
       Category.getDefaultHierarchy().disableDebug();
     }
   }
+
+  /**
+   * Inject an event into the Event Packager.  Use any supported EPEvent
+   * format.
+   *
+   * @param e The EPEvent you wish to inject.
+   * @return A boolean indicating success.
+   */
+  public boolean injectEvent(EPEvent e) {
+    debug.warn("injectEvent not implemented yet");
+    return false;
+  }
+
+  /**
+   * Get a list of supported EPEvent-based event formats.
+   *
+   * @return A list of Strings with the types of event formats.
+   */
+  public String[] getSupportedEventFormats() {
+    debug.warn("getSupportedEventFormats not implemented yet");
+    return null;
+  }
+
+  /**
+   * Report an error, which will probably get passed to EventPackager's
+   * logger verbatim.  ONLY use this if you don't have your own logger
+   * (yet) for a good reason.  (You should consider instantiating log4j
+   * somewhere...)
+   *
+   * @param err The error to report.
+   */
+  public void error(String src, String err) {
+    debug.error(src + ": " + err);
+  }
+
 }

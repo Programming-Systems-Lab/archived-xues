@@ -28,4 +28,15 @@ public interface EPInputInterface {
    * @return A list of Strings with the types of event formats.
    */
   public String[] getSupportedEventFormats();
+
+  /**
+   * Report an error, which will probably get passed to EventPackager's
+   * logger verbatim.  ONLY use this if you don't have your own logger
+   * (yet) for a good reason.  (You should consider instantiating log4j
+   * somewhere...)
+   *
+   * @param err The error to report.
+   */
+  public void error(String src, String err);
+
 }
