@@ -22,6 +22,7 @@ import psl.xues.ep.transform.EPTransform;
  * TODO:
  * - Consider getting rid of EventPackager reference
  * - Separate debuggers for each rule (as opposed to one for all rules)
+ * - Handle sourceID changes more gracefully (perhaps two different ID's?)
  * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>

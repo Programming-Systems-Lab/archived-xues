@@ -11,9 +11,11 @@ import psl.xues.ep.event.EPEvent;
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO:
  * - Consider making a thread (but first figure out if there is any advantage
  *   to this, since transforms have implied orderings)
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -27,6 +29,8 @@ public abstract class EPTransform {
   /**
    * CTOR.  The element is provided for any special customizations on this
    * transform.
+   *
+   * @param el The element with initialization info for this transform.
    */
   public EPTransform(Element el) throws InstantiationException {
     // Attempt to obtain our transformID
@@ -52,6 +56,8 @@ public abstract class EPTransform {
 
   /**
    * Handle a transform request.  You must implement this to be of any use.
+   * NOTE: Unless you have a good reason, copy the existing sourceID...
+   * otherwise EP might confused.
    *
    * @param original The EPEvent that needs transformation.
    * @return The transformed EPEvent, or null if you can't handle the 
