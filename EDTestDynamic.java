@@ -29,7 +29,7 @@ public class EDTestDynamic {
     
     hd = new HierarchicalDispatcher();
     try {
-      hd.setReceiver(new TCPPacketReceiver(61981));
+      hd.setReceiver(new TCPPacketReceiver(0));
       hd.setMaster(args[0]);
     } catch (InvalidSenderException ise) {
       System.err.println("Invalid Sender:" + ise);

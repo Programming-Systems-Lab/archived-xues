@@ -11,7 +11,14 @@ import siena.*;
  * @version 0.1
  *
  * $Log$
- * Revision 1.3  2001-06-18 17:44:51  jjp32
+ * Revision 1.4  2002-01-23 02:05:28  jjp32
+ * Massive update:
+ * - Converted error handling completely to log4j
+ * - Fixed several small bugs
+ * - Removed hardcoding in preparation for release
+ * - Began improving comments
+ *
+ * Revision 1.3  2001/06/18 17:44:51  jjp32
  *
  * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
  * trunk is now development again, and the aforementioned branches are
@@ -68,7 +75,7 @@ public class EDTest implements Notifiable {
     
     HierarchicalDispatcher hd = new HierarchicalDispatcher();
     try {
-      hd.setReceiver(new TCPPacketReceiver(61981));
+      hd.setReceiver(new TCPPacketReceiver(0));
       hd.setMaster(args[0]);
     } catch (InvalidSenderException ise) {
       System.err.println("Invalid Sender:" + ise);

@@ -45,7 +45,8 @@ public class EDTestConstruct implements Notifiable {
   public EDTestConstruct() {
     
     // instantiate new ED
-    ed = new EventDistiller(this, "psl/xues/SampleRules.xml", true, true, true);
+    ed = new EventDistiller(this, "psl/xues/SampleRules.xml", true, null, 
+    true, null);
     
     // and an output -- optional
     if (output) ed.setOutputFile(new File("psl/xues/currentRulebase.xml"));

@@ -2,11 +2,16 @@
 package psl.xues;
 
 import java.util.*;
-import javax.swing.tree.*;
 import siena.*;
 
+import org.apache.log4j.Category;
+
 /**
- * things to do:
+ * Individual Event Distiller state machine state.  A state is matched
+ * against a String attribute-String value pair.  A upper bound
+ * timestamp may be applied.
+ *
+ * TODO:
  * -the bear method:
  * set parent, subscribe, wait...
  * -the kill/reap method
@@ -15,260 +20,15 @@ import siena.*;
  * if succeed, send notifs, and bear children
  * etc...
  *
- * Individual Event Distiller state machine state.  A state is matched
- * against a String attribute-String value pair.  A upper bound
- * timestamp may be applied.
- *
  * Copyright (c) 2001: The Trustees of Columbia University and the
  * City of New York.  All Rights Reserved.
  *
  * @author Janak J Parekh (jjp32@cs.columbia.edu)
- * @version 1.0
- *
- * $Log$
- * Revision 1.32  2002-01-16 23:19:23  jjp32
- * Fixed bug where "time" copied into "timestamp"; and where a "String" was being pulled out of the WildHash, not an AttributeValue
- *
- * Revision 1.31  2001/09/05 18:57:39  eb659
- *
- * just a couple of bug fixes
- *
- * Revision 1.29  2001/08/27 17:47:42  eb659
- * more work done on the XML generator
- *
- * Revision 1.25  2001/07/03 21:36:23  eb659
- * Improved problems in race conditions. The application now hangs in the subscribe()
- * method in EDBus. Run EDTestConstruct: sometimes it works impeccably, other times
- * it hangs in EDBus.subscribe. James, Janak, do you want to have a look at it?
- *
- * Revision 1.24  2001/07/03 00:29:42  eb659
- * identified and fixed race condition. Others remain
- *
- * Revision 1.23  2001/06/30 21:13:17  eb659
- * *** empty log message ***
- *
- * Revision 1.22  2001/06/29 21:38:43  eb659
- * thoroughly tested counter-feature:
- * - success and failure
- * - event-based and time-based modes
- * - timestamps using currentTime() and hard-coded
- *
- * individuated disfunction due to race/threading condition,
- * I Will try to fix during the weekend
- *
- * Revision 1.21  2001/06/29 00:03:18  eb659
- * timestamp validation for loop doesn't work correctly, darn
- * reaper thread sometimes dies when a new machine is instantiated
- * (this only happens when dealing with an instantiation
- *
- * tested counter feature - works correctly
- * tested flush on shutdown (event-based mode)
- * changed skew to depend entirely on skew of last event,
- * this seems to work better for the moment
- *
- * Revision 1.20  2001/06/28 20:58:42  eb659
- * Tested and debugged timeout, different instantiation policies,
- * improved ED shutdown
- * added functionality to sed an event that fails all events during runtime
- *
- * timestamp validation for loop-rules doesn't work correctly, needs revision
- *
- * Revision 1.19  2001/06/27 22:08:43  eb659
- * color-coded error output for ED
- *
- * Revision 1.18  2001/06/27 17:46:53  eb659
- * added EDErrorManager, so James can have a look. We'll use implementors of
- * this class for the output of ED
- *
- * Revision 1.16  2001/06/20 20:07:21  eb659
- * time-based and event-based timekeeping
- *
- * Revision 1.15  2001/06/20 18:54:44  eb659
- * handle self-comparison
- *
- * Revision 1.14  2001/06/18 20:58:36  eb659
- *
- * integrated version of ED. compiles, no testing done
- *
- * Revision 1.13  2001/06/18 17:44:51  jjp32
- *
- * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
- * trunk is now development again, and the aforementioned branches are
- * hereby closed.
- *
- * Revision 1.7.4.15  2001/06/06 19:52:09  eb659
- * tested loop feature. Works, but identified other issues, to do with new
- * implementation of timestamp validation:
- * - keeping the time based on last received event has the inconvenience that we
- * do not send failure notifs if we do not get events (i.e. time stops moving)
- * - should there be different scenarios for real-time and non-realtime?
- *
- * Revision 1.7.4.14  2001/06/05 00:16:30  eb659
- *
- * wildHash handling corrected - (but slightly different than stable version)
- * timestamp handling corrected. Requests that all notifications be timestamped
- * reap based on last event processed internally
- * improved state reaper
- *
- * Revision 1.7.4.13  2001/06/01 22:31:19  eb659
- *
- * counter feature implemented and tested
- *
- * Revision 1.7.4.12  2001/05/31 22:36:38  eb659
- *
- * revision of timebound check: initial states can now have a specified bound.
- * allow values starting with '*'. Add an initial '*' as escape character...
- * preparing the ground for single-instance rules, and countable states
- *
- * Revision 1.7.4.11  2001/05/30 21:34:52  eb659
- *
- * rule consistency check: the following are implemented and thoroughly
- * tested (You don't need a source file to test: just mess up the spec file):
- * - specification of non-defined actions/fail_actions
- * - specification of non-defined children
- * - specification of non-defined wildcards
- * Also, fixed potential bug in wildcard binding...
- *
- * Revision 1.7.4.10  2001/05/29 20:47:07  eb659
- *
- * various fixes. embedded constructor thoroughly tested,
- * in particular the following features:
- * - standard constructor
- * - specification-less constructor
- * - sending events
- * - recieving notifications
- * - shutdown features (when shutdown() is called and when it is not)
- *
- * ED looks for a free address to place private siena.
- *
- * Revision 1.7.4.9  2001/05/28 22:22:14  eb659
- *
- * added EDTestConstruct to test embedded constructor. Can construct ED using
- * a Notifiable owner, and optionally, a spec file and/or a debug flag.
- * There's a bug having to do with the wildcard binding, I'll look at that
- * in more detail tomorrow.
- *
- * Revision 1.7.4.8  2001/05/24 21:01:12  eb659
- *
- * finished rule consistency check (all points psecified in the todo list)
- * current rulebase is written to a file, on shutdown
- * compiles, not tested
- *
- * Revision 1.7.4.7  2001/05/23 21:40:41  eb659
- *
- *
- * DONE Direct (non-Siena) interface: new constructor taking a notifialbe object
- * DONE 2) allow states to absorb events - but waiting for the bus and XML
- *
- * ADDED rule consistency check, and error handling:
- * DONE checkConsistency() method in edsms
- * DONE KXNotification for EDError
- * DONE 1) no duplicate rules - checks against duplicate names
- * DONE 2) What happens if state parameters are missing, e.g., fail_actions?
- * DONE 3) check that all children and actions specified in the states are specified in the rule
- * more checks to be done - wildcards, etc.
- *
- * Revision 1.7.4.6  2001/05/06 03:54:27  eb659
- *
- * Added support for checking multiple parents, and independent wild hashtables
- * for different paths. ED now has full functionality, and resiliency.
- * Now doing some additional testing for event sequences that actually use
- * the OR representation, and re-testing the dynamic rulebase, to make sure
- * it still works after the changes made.
- *
- * Revision 1.7.4.5  2001/05/02 00:04:27  eb659
- *
- * Tested and fixed a couple of things.
- * New architecture works, and can be tested using EDTest.
- * Reaper thread needs revision...
- * Can we get rid of internal 'loopback' notifications?
- *
- * Revision 1.7.4.4  2001/05/01 04:21:55  eb659
- *
- * Added revised reaper thread and re-enabled validation.
- * New version compiles and has 95% of the expected functionality. Next:
- * 1) testing & debugging
- * 2) if time permits, cool stuff like allowing multiple parents for each state, etc.
- *
- * Revision 1.7.4.3  2001/04/21 06:57:11  eb659
- *
- *
- * A lot of changes (oh boy it's 3am already).
- * Basically, the new architecture is in place, in terms of data
- * structure. Next we will add the functionality.
- *
- * Made the following changes:
- * - states and actions are parsed and stores in hashtables
- * - well with the new non-sequential states you may well have
- * multiple starting states. but then the thing of subscribing
- * the smSpecification and waiting for the first event is not so
- * neat anymore. Instead, for every spec, a new stateMachine is
- * made. Then, as soon as it starts (one of the initial states is met)
- * a new one is placed
- * - neither smSpecification nor stateMachines subscribe.
- * only the states currently waiting for a match.
- * - etc. etc.
- *
- * compiles - but no testing done so far
- *
- * coming next:
- * - new validation method for states (so that it works)
- * - new reaper method (with failure notifs, etc.)
- *
- * Revision 1.7.4.2  2001/04/18 04:37:54  eb659
- *
- *
- * New representation for states!
- *
- * added TestRules2.xml (the spamblocker rule in the new format, and a new hexagonal rule to test OR representation...
- * Updated DistillerRule.xsd to reflect the new representation.
- * modified EDStateManager (the parser) to parse the new information about the states; and, of course, EDState - the constructor, and the toXML() method, and new fields and so on
- *
- * Tested: the new states are parsed correctly.
- * Coming next:
- * 1) read in notifications and failure notifications (all happily sharing the same hashtable!)
- * 2) the new architecture... or, the new representation becomes operative
- *
- * Revision 1.7.4.1  2001/04/03 01:09:13  eb659
- *
- *
- * OK this is my first upload...
- * Basically, most of the dynamic rulebase stuff has been accomplished.
- * the principal methods are in EDStatemanaged, but most of the files in ED
- * had to be modified, at least in some small way
- * enrico
- *
- * Revision 1.7  2001/03/21 18:14:02  jjp32
- *
- * Fixed comment
- *
- * Revision 1.6  2001/01/30 06:26:18  jjp32
- *
- * Lots and lots of updates.  EventDistiller is now of demo-quality.
- *
- * Revision 1.5  2001/01/30 02:39:36  jjp32
- *
- * Added loopback functionality so hopefully internal siena gets the msgs
- * back
- *
- * Revision 1.4  2001/01/29 04:58:55  jjp32
- *
- * Each rule can now have multiple attr/value pairs.
- *
- * Revision 1.3  2001/01/29 04:18:42  jjp32
- *
- * Lots of updates.  Doesn't compile yet, hopefully it will by the time I'm home :)
- *
- * Revision 1.2  2001/01/28 22:58:58  jjp32
- *
- * Wildcard support has been added
- *
- * Revision 1.1  2001/01/22 02:11:54  jjp32
- *
- * First full Siena-aware build of XUES!
- *
+ * @version $Revision$
  */
 public class EDState implements EDNotifiable {
+  /** Logger.  Set when we have our own ID */
+  private Category debug = null;
   
   /** The name of this state. */
   private String name;
@@ -345,21 +105,12 @@ public class EDState implements EDNotifiable {
   /** The state machine that "ownes" us. */
   private EDStateMachine sm = null;
   
-  /**
-   * Stores names and values for wildcard values temporarily,
-   * while the state checks that all constraints are matched
-   */
-  //private Vector tempNames, tempValues;
-  
   /** How many times this event will be matched, before it passes. */
   private int count = 1;
   
   /** Whether this event has started. Only used for events that loop:
    *  i.e. that can occur an indefinite number of times. */
   private boolean hasStarted = false;
-  
-  /** Error manager for output. */
-  private EDErrorManager errorManager;
   
   /**
    * Constructs a new EDState. This constructor is used in the definition
@@ -375,18 +126,19 @@ public class EDState implements EDNotifiable {
    * @param actionsList the list of actions to fire when this node is matche
    * @param failActionList the list of actions to fire if this node is not matched
    */
-  public EDState(String name, int tb,
-  String childrenList,
-  String actionsList,
+  public EDState(String name, int tb, String childrenList, String actionsList,
   String failActionsList) {
     this.name = name;
     this.tb = tb;
-    this.ts = -1;  // Unvalidated state.
+    this.ts = -1;                                // Unvalidated state
     this.constraints = new Hashtable();
     
     children = listToArray(childrenList);
     actions = listToArray(actionsList);
     fail_actions = listToArray(failActionsList);
+    
+    // Build a generic debugger
+    debug = Category.getInstance(EDState.class.getName());
   }
   
   /**
@@ -406,21 +158,24 @@ public class EDState implements EDNotifiable {
     this.sm = sm;
     this.myID = sm.myID + ":" + name;
     this.bus = sm.getSpecification().getManager().getEventDistiller().getBus();
-    this.errorManager = sm.getSpecification().getManager().getEventDistiller().getErrorManager();
     
     this.children = e.children;
     this.actions = e.actions;
     this.fail_actions = e.fail_actions;
+    
+    // Build the debugger
+    debug = Category.getInstance(EDState.class.getName() + ":" + myID);
   }
   
   /**
    * Adds a constraint.
+   *
    * @param s the identifier name of the attribute value
    * @param attributeconstraint the constraint to put on the value
    * @return false if the constraint could not be added due to a
    *         naming conflict
    */
-  boolean addConstraint(String s, AttributeConstraint attributeconstraint){
+  boolean addConstraint(String s, AttributeConstraint attributeconstraint) {
     if (constraints.get(s) != null) return false;
     constraints.put(s, attributeconstraint);
     return true;
@@ -472,36 +227,37 @@ public class EDState implements EDNotifiable {
    *               or null, if this is an initial state
    */
   void bear(EDState parent) {
-    errorManager.println("EDState: " + myID + " being born", EDErrorManager.STATE);
+    debug.debug("Being born");
     if (!alive) {
       // initialize vectors
       parents = new Vector();
       subscribers = new Vector();
       
-            /* make sure there is a hashtable defined at any time,
-             * for handling wildcards in failure notifications.
-             * Also see note in fail() */
-      if(parent == null)
-        wildHash = new Hashtable();
+      /* make sure there is a hashtable defined at any time, for handling
+       * wildcards in failure notifications. Also see note in fail()
+       */
+      if(parent == null) wildHash = new Hashtable();
       else wildHash = parent.getWildHash();
       
-      errorManager.println("EDState: " + myID + " being born for the first time",
-      EDErrorManager.STATE);
+      debug.debug("Being born for the first time");
     }
     
     // timebound for matching this state, given this parent
     long l;
     if(tb == -1) l = Long.MAX_VALUE; // forever
-    else l = sm.getSpecification().getManager().getEventDistiller().getTime() + tb;
+    else l = sm.getSpecification().getManager().getEventDistiller().getTime()
+    + tb;
     
-    //errorManager.print("EDState: " + myID + " checking parent...", EDErrorManager.STATE);
+    //errorManager.print("EDState: " + myID + " checking parent...", 
+    //EDErrorManager.STATE);
     
-    // have we already been born by this parent? -- this can be the case in counter or loop states
+    // Have we already been born by this parent? -- this can be the case in 
+    // counter or loop states
     int i = parents.indexOf(parent);
     
     //errorManager.println("done", EDErrorManager.STATE);
     if(i != -1) { // parent is already in the list, just reset timebound
-      errorManager.println("EDState: " + myID + " extending subscription timebound", EDErrorManager.STATE);
+      debug.debug("Extending subscription timebound");
       if(tb != -1) {
         // this is how it should be
         //((EDSubscriber)subscribers.get(i)).resetTimebound(l);
@@ -517,25 +273,26 @@ public class EDState implements EDNotifiable {
       if(parents.size() == 0) wc = wildHash;
       else wc = parent.getWildHash();
       
-      errorManager.println("EDState: " + myID + " subscribing...", EDErrorManager.STATE);
+      debug.debug("Subscribing...");
       
-      EDSubscriber edsubscriber = new EDSubscriber(createFilter(wc, l), this, sm);
+      EDSubscriber edsubscriber = new EDSubscriber(createFilter(wc, l), this, 
+      sm);
       bus.subscribe(edsubscriber);
-      
-      errorManager.println("EDState: " + myID + " done subscribing ", EDErrorManager.STATE);
+
+      debug.debug("Subscription complete");
       
       // put most recent parent at the end of the list
       parents.add(parent);
       subscribers.add(edsubscriber);
     }
     
-    errorManager.println("EDState: " + myID + " born successfully ", EDErrorManager.STATE);
+    debug.debug("Successfully born");
     this.alive = true;
   }
   
   /** Kills this state: unsubscribe and set alive to false. */
   public void kill() {
-    errorManager.println("EDState: " + myID + " being KILLED", EDErrorManager.STATE);
+    debug.debug("State being killed, unsubscribing");
     this.alive = false;
     bus.unsubscribe(this);
   }
@@ -547,15 +304,12 @@ public class EDState implements EDNotifiable {
    * All we need to do is register the timestamp and the wildcard values.
    */
   public synchronized boolean notify(Notification n) {
-    errorManager.println("EDState " + myID + ": Received: " + n,
-    EDErrorManager.STATE);
+    debug.debug("Received " + n);
     synchronized(sm){
-      
       // check time - this is a hack, see createFilter()
       if (n.getAttribute(EDConst.TIME_ATT_NAME).longValue() > tl){
         // notif is too late
-        errorManager.println("EDState: " + myID + " rejecting late notification",
-        EDErrorManager.STATE);
+        debug.warn("Rejecting late notification");
         kill();
         return false;
       }
@@ -585,7 +339,8 @@ public class EDState implements EDNotifiable {
       // state machine progress
       succeed();
       
-      if(absorb) errorManager.println("EDState:" + myID + ": ABSORBING event", 2);
+      if(absorb) 
+        debug.debug("Absorbing event");
       return absorb;
     }// synch
   }
@@ -595,35 +350,34 @@ public class EDState implements EDNotifiable {
    * now lives the climax of its brief existence.
    */
   private void succeed() {
-    errorManager.println("EDState: " + myID + ": starting succeed()", EDErrorManager.STATE);
+    debug.debug("Starting succeed()");
     
     // the machine has started
     sm.setStarted();
     // this state may be breaking the loop of its parent
     for (int i = 0; i < parents.size(); i++) {
       EDState parent = (EDState)parents.get(i);
-      if (parent != null && parent != this && parent.getCount() == -1) parent.kill();
+      if (parent != null && parent != this && parent.getCount() == -1) 
+        parent.kill();
     }
     
     if (count > 1) { // counter feature
       if (!hasStarted) {
-                /*synchronized(parents)*/ {
-                  parents.removeAllElements();
-                  parents.add(this);
-                }
-                hasStarted = true;
+        /*synchronized(parents)*/ {
+          parents.removeAllElements();
+          parents.add(this);
+        }
+        hasStarted = true;
       }
-      count --;
+      count--;
       
-      errorManager.println
-      ("EDState: " + myID + ": decreased count to " + count,
-      EDErrorManager.STATE);
+      debug.debug("Decreased count to " + count);
     }
     else if (count < 0) { // loop feature
-      errorManager.println("EDState: " + myID + ": LOOP state bearing itself", EDErrorManager.STATE);
-            /* bear children, and myself */
+      debug.debug("Loop state bearing itself");
+      /* bear children, and myself */
       bear(this);
-      errorManager.println("EDState: " + myID + ": LOOP state bearing children", EDErrorManager.STATE);
+      debug.debug("Loop state bearing children");
       for (int i = 0; i < children.length; i++)
         sm.getState(children[i]).bear(this);
       // the kids will kill me, if they make it
@@ -636,15 +390,14 @@ public class EDState implements EDNotifiable {
       }
       // 5. tell the world we succeeded
       for (int i = 0; i < actions.length; i++) {
-        errorManager.println("EDState: " + myID + ": sending notification: " + actions[i],
-        EDErrorManager.STATE);
+        debug.debug("Sending notification " + actions[i]);
         sm.sendAction(actions[i], wildHash);
       }
       // 6. commit suicide
       kill();
     }
     
-    errorManager.println("EDState: " + myID + ": finishing succeed()\n", EDErrorManager.STATE);
+    debug.debug("Succeed finished");
     
     // reap will instantiate new machine, if necessary
     //if (sm.getSpecification().getInstantiationPolicy() == EDConst.ONE_AT_A_TIME) sm.reap();
@@ -679,160 +432,32 @@ public class EDState implements EDNotifiable {
     
     long currentTime =  sm.getSpecification().getManager().getEventDistiller().getTime();
     
-        /* we're at the end of time, we must fail...
-         * time is set to MAX_VALUE when flushing */
+    /* we're at the end of time, we must fail...
+     * time is set to MAX_VALUE when flushing */
     if (currentTime == Long.MAX_VALUE) {
       kill();
       return true;
     }
     
-    errorManager.println("checking live state: " + myID, EDErrorManager.REAPER);
+    debug.debug("Reap - checking live state " + myID);
     
-        /* can we still be matched? check the last (most recent) parent.
-         * NOTE: this assumes that events are processed sequentially,
-         * else we would need to check all the parents */
+    /* can we still be matched? check the last (most recent) parent.
+     * NOTE: this assumes that events are processed sequentially,
+     * else we would need to check all the parents */
     if(validateTimebound
     ((EDState)parents.lastElement(), currentTime - EDConst.REAP_FUDGE)) {
-      errorManager.println("state: " + myID + "has not timed out yet, no reap", EDErrorManager.REAPER);
+      debug.debug("Not timed out, not reaping");
       return false;
     }
     
     // if we're still here, timebound has failed
-    errorManager.println("currentTime is " + currentTime + "\nmost recent parent time is " +
-    getTimestampForState((EDState)parents.lastElement()), EDErrorManager.REAPER);
-    errorManager.println("EDState: " + myID + " - TIMED OUT!", EDErrorManager.STATE);
+    debug.debug("currentTime is " + currentTime + 
+    "\nmost recent parent time is " +
+    getTimestampForState((EDState)parents.lastElement()));
+    debug.debug("Timed out");
     kill();
     return true;
   }
-  
-  /**
-   * Validate a state.  If this returns true, then it means the state
-   * was successfully matched within the appropriate timebounds.
-   *
-   * BUG WARNING: If timestamp is mapped to a non-long, we will crash.
-   *
-   * public boolean validate(Notification n, EDState prev) {
-   * // Step 1. Perform timestamp validation.  If timestamp validation
-   * // fails, then we don't need to go further.
-   * AttributeValue timestamp = n.getAttribute("timestamp");
-   * if(!validateTimebound(prev, timestamp)) {
-   * errorManager.println("EDState: " + myID + ": timestamp validation failed", EDErrorManager.STATE);
-   * return false;
-   * }
-   *
-   * // Step 2. Now try and compare the attributes in the state's
-   * // notification.  This notification may have other attributes, but
-   * // we ignore them.
-   * Enumeration keys = attributes.keys();
-   * Enumeration objs = attributes.elements();
-   * while(keys.hasMoreElements()) {
-   * String attr = (String)keys.nextElement();
-   * AttributeValue val = (AttributeValue)objs.nextElement();
-   * if(!validate(attr, val, n.getAttribute(attr))) {
-   * // forget any possible registered wildcard values
-   * if (tempNames != null) {
-   * tempNames = null;
-   * tempValues = null;
-   * }
-   * return false;
-   * } // else continue
-   * }
-   *
-   * // They all passed, register any wildcard values, and return true
-   * if (tempNames != null)
-   * for (int i = 0; i < tempNames.size(); i++) {
-   * wildHash.put(tempNames.get(i), tempValues.get(i));
-   * errorManager.println("EDState: " + myID + ": wildcard '*" + tempNames.get(i) +
-   * "' BOUND to: " + tempValues.get(i), EDErrorManager.STATE);
-   * }
-   * return true;
-   * }*/
-  
-  /**
-   * Internal validate function - just check one attribute-value pair
-   *
-   * GOOD LUCK if you can understand this.  Read through a few times,
-   * hopefully it'll make sense then :-)
-   *
-   * private boolean validate(String attr, AttributeValue internalVal,
-   * AttributeValue externalVal) {
-   * // Simple bounds checking
-   * if(attr == null || internalVal == null ||
-   * internalVal.getType() == AttributeValue.NULL) {
-   * System.err.println("FATAL: Internal representation error in "+
-   * "EDState");
-   * return false;
-   * }
-   *
-   * // Attribute exists externally?
-   * else if(externalVal == null ||
-   * externalVal.getType() != internalVal.getType()) {
-   * // No match
-   * return false;
-   * }
-   *
-   * // Debug
-   * /*if(EventDistiller.DEBUG) {
-   * System.err.println("EDState: comparing attribute \"" + attr +
-   * "\", internalVal = " + internalVal + ", " +
-   * "externalVal = " + externalVal);
-   * }*
-   *
-   * // "**" is the escape character for "*"
-   * if (internalVal.getType() == AttributeValue.STRING &&
-   * internalVal.stringValue().startsWith("**"))
-   * return attrEqual(new AttributeValue(internalVal.stringValue().substring(1)), externalVal);
-   *
-   * // Wildcard binding?
-   * else if(internalVal.getType() == AttributeValue.STRING &&
-   * internalVal.stringValue().startsWith("*")) {
-   * // Is this one previously bound?
-   * String bindName = internalVal.stringValue().substring(1);
-   * if(bindName.length() == 0) { // Simple wildcard
-   * //if(EventDistiller.DEBUG)
-   * //System.err.println("EDState: Simple wildcard, match");
-   * return true;
-   * } else { // Binding
-   * if(sm == null || wildHash == null) { // BAD
-   * errorManager.println("EDState: ERROR - No State Machine hash "+
-   * "assigned, wildcard binding requested", EDErrorManager.ERROR);
-   * return false;
-   * }
-   * // Now check the bind
-   * if(wildHash.get(bindName) != null) {
-   * if(attrEqual((AttributeValue)wildHash.get(bindName),externalVal)){
-   * // YES!
-   * if(EventDistiller.DEBUG)
-   * //System.err.println("EDState: wildcard already bound to \"" +
-   * //	 wildHash.get(bindName) + "\" and match");
-   * return true;
-   * }
-   * else {
-   * if(EventDistiller.DEBUG)
-   * //System.err.println("EDState: wildcard already bound to \"" +
-   * //	 wildHash.get(bindName) + "\" but nomatch");
-   * return false; // Complex wildcard doesn't match
-   * }
-   * }
-   * else { // Binding requested, NOT YET BOUND
-   * // remember the name and value
-   * if (tempNames == null) {
-   * tempNames = new Vector();
-   * tempValues = new Vector();
-   * }
-   * tempNames.add(bindName);
-   * tempValues.add(externalVal);
-   * return true;
-   * }
-   * }
-   * }
-   *
-   * // No wildcard binding, SIMPLE match
-   * /*if(EventDistiller.DEBUG)
-   * System.err.println("EDState: performing SIMPLE match on " +
-   * externalVal + "," + internalVal);*
-   * return attrEqual(internalVal,externalVal);
-   * }*/
   
   /**
    * Compare timebound to a (previous) state.  IMPORTANT: to use this,
@@ -939,54 +564,11 @@ public class EDState implements EDNotifiable {
     // instead, temporarily, we do this
     tl = timeLimit;
     return f;
-    
-        /* old version
-        // We only want events from metaparser that have the state that
-        // maches us
-        f.addConstraint("Type", "EDInput");
-        // Now enumerate through the actual attr, val pairs
-        Enumeration keys = attributes.keys();
-        Enumeration objs = attributes.elements();
-        while(keys.hasMoreElements()) {
-            String attr = (String)keys.nextElement();
-            AttributeValue val = (AttributeValue)objs.nextElement();
-            if(val.getType() == AttributeValue.STRING &&
-               val.stringValue().startsWith("*")) {
-                // XXX - will "" be a problem here?
-                f.addConstraint(attr, new AttributeConstraint(Op.ANY,""));
-            } else {
-                f.addConstraint(attr, new AttributeConstraint(val));
-            }
-        }*/
   }
   
   /************************************
    * auxiliary static methods
    *************************************/
-  
-  /** AttributeValue isEqualTo check that WORKS. *
-   * public static boolean attrEqual(AttributeValue e1, AttributeValue e2) {
-   * return Covering.apply_operator((short)1, attributevalue, attributevalue1);
-   * /*if(e1.getType() != e2.getType()) return false;
-   *
-   * switch(e1.getType()) {
-   * case AttributeValue.BOOL:
-   * if(e1.booleanValue() == e2.booleanValue()) return true;
-   * else return false;
-   * case AttributeValue.DOUBLE:
-   * if(e1.doubleValue() == e2.doubleValue()) return true;
-   * else return false;
-   * case AttributeValue.LONG:
-   * if(e1.longValue() == e2.longValue()) return true;
-   * else return false;
-   * case AttributeValue.STRING:
-   * if(e1.stringValue().equals(e2.stringValue())) return true;
-   * else return false;
-   * default:
-   * System.err.println("EDState: Sorry, can't do attrEqual on this type!!");
-   * return false;
-   * }*
-   * }*/
   
   /**
    * Converts an array of strings into a comma-delimited list.
