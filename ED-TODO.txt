@@ -1,8 +1,9 @@
 Event Distiller Development Branch TODO:
 
-1. (Enrico) loop of states, able to be interrupted. State 'x' can occur
-any number of times, ended by an 'e' event. Fail if an 'x' times out.
-Succeed if 'e' occurs
+1. timebound - figure out how we deal with the reaper
+two options: time-driven, or event-driven
+a. options interface
+b. flush event in shutdown when using event-based time
 
 2. (Enrico) Integrate James's Daughter-Of-Siena once he has
 implemented priority dispatching. (call 'reorderRules()' or whatever, 
@@ -12,12 +13,6 @@ when necessary, and return value upon notification - just uncomment)
 needs testing...
 
 7. (Janak) Test event loopback support.
-
-8. (Janak) Merge xues-eb659 and xues-jw402 branches.
-
-9. (Janak) Documentation work - finish commenting schema and rule
-files.
-
 
 to be designed:
 

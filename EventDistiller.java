@@ -19,8 +19,8 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.27  2001-06-20 18:54:44  eb659
- * handle self-comparison
+ * Revision 1.28  2001-06-20 20:07:21  eb659
+ * time-based and event-based timekeeping
  *
  * Revision 1.26  2001/06/18 20:58:36  eb659
  *
@@ -247,12 +247,19 @@ public class EventDistiller implements Runnable, Notifiable {
 
     /** 
      * The model for keeping time. This can be time-driven (current time is 
-     * computed by consulting system time, and adjusting usin a skew factor 
-     * computed on the 
+     * computed by consulting system time, and adjusting it using a skew factor 
+     * computed on the basis on the actual time when events are receive, compared
+     * to their timestamp), or event-driven (current time is taken to be equal to 
+     * the timestamp of the last event that has been processed).
      */
-    private boolean timeDriven = true;
+    private boolean eventDriven = false;
 	
-    /** The number of 
+    /** The skew factor used to keep time. */
+    private long timeSkew = 0;
+
+    /** The number of events processed so far. */
+    private long processedEvents = 0;
+
     /** Debug flag. */
     static boolean DEBUG = false;
   
@@ -271,6 +278,7 @@ public class EventDistiller implements Runnable, Notifiable {
     /** Main. */
     public static void main(String args[]) {
 	String of = null, sf = null, sh = null;
+	boolean e = true, d = false;
 
 	if(args.length > 0) { // Siena host specified?
 	    for(int i=0; i < args.length; i++) {
@@ -279,9 +287,11 @@ public class EventDistiller implements Runnable, Notifiable {
 		else if(args[i].equals("-f"))
 		    sf = args[++i];
 		else if(args[i].equals("-d"))
-		    DEBUG = true;
+		    d = true;
 		else if (args[i].equals("-o"))
 		    of = args[++i];
+		else if (args[i].equals("-event"))
+		    e = true;
 		else
 		    usage();
 	    }
@@ -291,17 +301,15 @@ public class EventDistiller implements Runnable, Notifiable {
 	    System.exit(0);
 	}
 	else {
-	    EventDistiller ed = new EventDistiller(sh, sf);
+	    EventDistiller ed = new EventDistiller(sh, sf, e, d);
 	    ed.setOutputFile(new File(of));
 	}
     }
 
   /** Prints usage. */
   public static void usage() {
-    System.out.println("usage: java EventDistiller [-f stateSpecFile] "+
-		       "[-s sienaHost] [-d] [-?]");
-    System.out.println("Warning!  Omitting stateFile causes EventDistiller "+
-		       "to run in demo mode.");
+    System.out.println("usage: java EventDistiller [-f ruleSpecFile] "+
+		       "[-s sienaHost] [-d] [-o outputFileName] [-event]  [-?]");
     System.exit(-1);
   }
 
@@ -314,11 +322,13 @@ public class EventDistiller implements Runnable, Notifiable {
      * @param owner the object to which we return notifications
      * @param spec the name of the file containing the specification;
      *             could be null
+     * @param eventDriven the criterion for keeping time
      * @param debug whether debug statements should be printed
      */
-    public EventDistiller(Notifiable owner, String spec, boolean debug) { 
+    public EventDistiller(Notifiable owner, String spec, boolean eventDriven, boolean debug) { 
 	this.owner = owner;
 	this.stateSpecFile = spec;
+	this.eventDriven = eventDriven;
 	DEBUG = debug;
 
 	init(); // finish preparing before returning
@@ -326,22 +336,27 @@ public class EventDistiller implements Runnable, Notifiable {
     }
 
     /** Constructs a new ED with an owner -- Use notifications to add rules. */
-    public EventDistiller(Notifiable owner) { this(owner, null, false); }
+    public EventDistiller(Notifiable owner) { this(owner, null, false, false); }
 
     /** Constructs a new ED with an owner and spec file. */
-    public EventDistiller(Notifiable owner, String spec) { this(owner, spec, false); }
+    public EventDistiller(Notifiable owner, String spec) { this(owner, spec, false, false); }
 
     /** Constructs a new ED with an owner and debug statements. */
-    public EventDistiller(Notifiable owner, boolean debug) { this(owner, null, debug); }
+    public EventDistiller(Notifiable owner, boolean debug) { this(owner, null, false, debug); }
   
     /**
      * Standard constructor, called by main.
      * Receives notificaions through Siena.
      * @param sienaHost the siena host through which we receive events
      * @param specFile name of rule spedification file, could be null
+     * @param eventDriven the criterion for keeping time
+     * @param debug whether debug statements should be printed
      */
-    public EventDistiller(String sienaHost, String specFile) { 
+    public EventDistiller(String sienaHost, String specFile, boolean eventDriven, boolean debug) { 
 	this.stateSpecFile = specFile;
+	this.eventDriven = eventDriven;
+	DEBUG = debug;
+
 	// Subscribe to the "master" Siena
 	publicSiena = new HierarchicalDispatcher();
 	try {
@@ -424,9 +439,21 @@ public class EventDistiller implements Runnable, Notifiable {
 			Notification n = (Notification)eventProcessQueue.remove(0);
 			if(EventDistiller.DEBUG)
 			    System.err.println("EventDistiller: Publishing internally " + n);
-			bus.publish(n); 
+			bus.publish(n);
+ 
+			// advance event counter
+			processedEvents++;
+
 			// update time 
-			lastEventTime = n.getAttribute("timestamp").longValue();
+			long l = n.getAttribute("timestamp").longValue();
+			if (eventDriven) lastEventTime = l;
+			else {
+			    // how much does this differ from the previous skew?
+			    double skew = (double)(timeSkew - (System.currentTimeMillis() - l));
+			    double weight = 1 / processedEvents;
+			    // weighted average
+			    timeSkew += (long)(skew * weight);
+			}
 		    }
 		}
 	    }
@@ -537,7 +564,7 @@ public class EventDistiller implements Runnable, Notifiable {
 	     * we just send it through to ourselves. */
 	    if (n.getAttribute("internal") != null && 
 		n.getAttribute("internal").booleanValue()) 
-		bus.publish(KXNotification.EDInternalNotification(n)); 
+		bus.publish(KXNotification.EDInternalNotification(n, getTime())); 
 	    else { // the notification goes outside
 		// if we have an owner, send him the notification
 		if (owner != null) owner.notify(n);
@@ -554,7 +581,10 @@ public class EventDistiller implements Runnable, Notifiable {
     public void setOutputFile(File outputFile) { this.outputFile = outputFile; }
 
     /** @return the time to use a s a refernece. */
-    long getTime() { return lastEventTime; }
+    long getTime() { 
+	if (eventDriven) return lastEventTime; 
+	return System.currentTimeMillis() - timeSkew;
+    }
 
     /** @return the internal event dispatcher */
     EDBus getBus() { return this.bus; }

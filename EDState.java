@@ -25,7 +25,10 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.15  2001-06-20 18:54:44  eb659
+ * Revision 1.16  2001-06-20 20:07:21  eb659
+ * time-based and event-based timekeeping
+ *
+ * Revision 1.15  2001/06/20 18:54:44  eb659
  * handle self-comparison
  *
  * Revision 1.14  2001/06/18 20:58:36  eb659
@@ -219,7 +222,7 @@ public class EDState implements EDNotifiable {
      * The ID of this state, used for debugging purposes.
      * This is in the form 'machineSpec:machineInstance:stateName'.
      */
-    private String myID;
+    String myID;
   
     /** Relative timebound from previous state. */
     private long tb;

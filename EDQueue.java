@@ -70,8 +70,8 @@ public class EDQueue {
 		if(n.getAttribute(TS_STR)==null){
 		    q.add(n);
 		    ordering = REORDERING_DISABLED;
-		    System.err.println("EDBus: *******No timestamp - "
-				       +"enter fallback mode.*******\n\n\n");
+		    System.err.println("No timestamp - "
+				       +"enter fallback mode.");
 		    return;
 		}else if((q.size()==0)||
 			 (n.getAttribute(TS_STR).longValue()>=

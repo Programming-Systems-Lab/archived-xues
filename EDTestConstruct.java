@@ -22,7 +22,7 @@ public class EDTestConstruct implements Notifiable {
     /** Constructs a new EDTestConstruct. */
     public EDTestConstruct() {
 	// instantiate new ED
-	ed = new EventDistiller(this, "psl/xues/SampleRules.xml", true);
+	ed = new EventDistiller(this, "psl/xues/SampleRules.xml", false, true);
 	// give it an input...
 	// and an output -- optional
 	//ed.setOutputFile(new File("psl/xues/currentRulebase.xml"));
@@ -70,7 +70,22 @@ public class EDTestConstruct implements Notifiable {
     private void sendLoopEvent() {
 	// make event
 	Notification n1 = new Notification();
-ller");
+	n1.putAttribute("Source", "EventDistiller");
+	n1.putAttribute("SourceID", 12345);
+	n1.putAttribute("Type", "EDInput");
+	n1.putAttribute("event", "loop");
+	n1.putAttribute("timestamp", System.currentTimeMillis());
+
+	// send it
+	ed.notify(n1);   
+    }
+
+
+    /** Sends an event.  */
+    private void sendEndEvent() {
+	// make event
+	Notification n1 = new Notification();
+	n1.putAttribute("Source", "EventDistiller");
 	n1.putAttribute("SourceID", 12345);
 	n1.putAttribute("Type", "EDInput");
 	n1.putAttribute("event", "end");

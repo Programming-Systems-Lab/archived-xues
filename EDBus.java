@@ -71,7 +71,7 @@ public class EDBus {
     /**
      * All the subscribers.
      */
-    private Vector subscribers;
+    private TreeSet subscribers;
 
     /**
      * The hashtable linking a notifiable to the Subscriber wrapper class.
@@ -118,8 +118,8 @@ public class EDBus {
     public EDBus (int autoflushMode, long waitTime){
 	this.autoflushMode = autoflushMode;
 	this.waitTime = waitTime;
+	subscribers = new TreeSet();
 	subsHash = new Hashtable();
-	subscribers = new Vector();
 	eventQueue = new EDQueue();
 
 	new Thread(){
@@ -143,10 +143,8 @@ public class EDBus {
      */
     public void subscribe(Filter f, EDNotifiable n, Comparable c){
 	Subscriber s = new Subscriber(f,n,c);
-	synchronized(subscribers){
-	    subsHash.put(n,s);
-	    subscribers.add(s);
-	}
+	subsHash.put(n,s);
+	subscribers.add(s);
     }
 
     /**
@@ -189,11 +187,9 @@ public class EDBus {
      *           and is successfully removed
      */
     public boolean unsubscribe(EDNotifiable n){
-	synchronized(subscribers){
-	    Subscriber s = (Subscriber)subsHash.get(n);
-	    subsHash.remove(n);
-	    return subscribers.remove(s);
-	}
+	Subscriber s = (Subscriber)subsHash.get(n);
+	subsHash.remove(n);
+	return subscribers.remove(s);
     }
  
     /**
@@ -263,24 +259,15 @@ public class EDBus {
      * @param e  The <code>Notification</code> to be sent
      */
     private void dispatch(Notification e){
-
-	
-	/*
 	Iterator iterator = subscribers.iterator();
-	*/
-	Enumeration iterator = subscribers.elements();
 	boolean absorbed = false;
-	
-	//while(iterator.hasNext() && !absorbed){
-	while(iterator.hasMoreElements() && ! absorbed){
+	while(iterator.hasNext() && !absorbed){
 	    Subscriber thisSubscriber = 
-		//(Subscriber) iterator.next();
-		(Subscriber) iterator.nextElement();
+		(Subscriber) iterator.next();
 	    if(thisSubscriber.acceptsNotification(e)){
 		absorbed = thisSubscriber.n.notify(e);
 	    }
 	}
-	
     }
 
 
