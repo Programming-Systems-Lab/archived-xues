@@ -22,6 +22,8 @@ import psl.xues.ep.event.EPEvent;
  * @version $Revision$
  */
 public class JDBCStore extends EPStore {
+  /** Maximum base64-encoded size of events */
+  public static final int eventSize = 32768;
   /** Type of database we're using */
   private String dbType = null;
   /** Database driver for this type */
@@ -38,6 +40,11 @@ public class JDBCStore extends EPStore {
   private Connection conn = null;
   /** JDBC statement */
   private Statement st = null;
+  /** 
+   * Autoincrement counter - needed because HSQL and possibly other DB's don't
+   * have increment functionality
+   */
+  private long lastID = -1;
   
   /**
    * CTOR.
@@ -91,9 +98,28 @@ public class JDBCStore extends EPStore {
         debug.debug("Table \"" + tableName + "\" doesn't exist, creating");
         Statement s = conn.createStatement();
         s.executeUpdate("CREATE TABLE " + tableName + 
-        " (SOURCE VARCHAR(100), TIMESTAMP " +
-        "  
-    
+        " (ID BIGINT, SOURCE VARCHAR(100), TIMESTAMP TIMESTAMP, " + 
+        "FORMAT VARCHAR(100), EVENT VARCHAR(" + eventSize + "), " + 
+        "PRIMARY KEY ID)");
+        s.executeUpdate("CREATE INDEX source_index ON " + tableName +
+        " (SOURCE)");
+        s.executeUpdate("CREATE INDEX timestamp_index ON " + tableName + 
+        " (TIMESTAMP)");
+        s.executeUpdate("CREATE TABLE " + tableName + "metadata" + 
+        " (LASTID BIGINT)";
+        s.executeUpdate("ADD TO " + tableName + "metadata" +
+        " (LASTID -1)";
+      } else {
+        // Get the lastID from metadata
+        
+        
+      }
+    } catch(Exception e) {
+      debug.error("Could not check/create table", e);
+      throw new InstantiationException("Could not check/create table");
+    }
+
+    // All done
   }
  
   /**
@@ -138,7 +164,11 @@ public class JDBCStore extends EPStore {
    * @return True usually, false if you can't shutdown for some reason.
    */
   public boolean shutdown() {
-    
+    try {
+      conn.close();
+    } catch(Exception e) {
+      debug.error("Could not shutdown, ignoring", e);
+    }
     return true;
   }
   
