@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
+<rulebase>
+
 <!-- The spamblocker rule -->
 <rule xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" name="testRule">
    <states>
@@ -54,3 +56,5 @@
       </notification>
    </actions>
 </rule>
+
+</rulebase>
