@@ -1,4 +1,4 @@
-package psl.xues;
+package psl.xues.en;
 
 import siena.*;
 import java.io.*;
@@ -13,30 +13,7 @@ import java.util.*;
  * City of New York.  All Rights Reserved.
  *
  * @author Janak J Parekh
- * @version 0.9
- *
- * $Log$
- * Revision 1.1  2002-01-23 02:17:15  jjp32
- *
- * Another massive update - repackaging xues so I can release
- * EventDistiller separately (jar time coming up tomorrow :-))
- *
- * Revision 1.4  2001/01/30 07:18:42  jjp32
- *
- * Sienaified
- *
- * Revision 1.3  2000/12/26 22:25:13  jjp32
- *
- * Updating to latest preview versions
- *
- * Revision 1.2  2000/09/08 20:03:26  jjp32
- *
- * Finished network functionality in TriKXEventNotifier
- *
- * Revision 1.1  2000/09/07 23:15:25  jjp32
- *
- * Added EventNotifier code; updated previous event code
- *
+ * @version $Revision$
  */
 public class EventNotifier implements Notifiable {
   protected static String sienaHost = null;
