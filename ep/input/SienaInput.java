@@ -11,6 +11,7 @@ import siena.HierarchicalDispatcher;
 import siena.SienaException;
 import siena.Notification;
 import siena.TCPPacketReceiver;
+import siena.Op;
 
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
@@ -21,8 +22,10 @@ import psl.xues.ep.event.SienaEvent;
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO:
- * - Support bytearray filters (why does Siena have this?)
+ * - Support bytearray filters (why does Siena have this, anyway?)
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -91,28 +94,40 @@ public class SienaInput extends EPInput implements Notifiable {
           f = null;
           break;
         }
-        if(op == null || op.length() == 0) {
-          op = "EQ"; // Default operation in Siena as well
-        }
         if(valueType == null || valueType.length() == 0) {
           valueType = "String"; // Default format in Siena
         }
         
-        // Add the constraint now, based on filterType
+        // Operator handling
+        short opcode = 0; // Actual operation we will use for the subscription
+        if(op == null || op.length() == 0) {
+          op = "EQ"; // Default operation in Siena as well
+        }
+        opcode = Op.op(op);
+        if(opcode == 0) { // Siena couldn't parse the op
+          debug.error("Can't process op in filter \"" +
+          filterName + "\", " + "skipping filter entirely");
+          f = null;
+          break;
+        }
+        
+        // Add the constraint now, based on filterType and opcode
         try {
           if(valueType.equalsIgnoreCase("String"))
-            f.addConstraint(attrName, value);
+            f.addConstraint(attrName, opcode, value);
           else if(valueType.equalsIgnoreCase("Boolean"))
-            f.addConstraint(attrName, Boolean.valueOf(value).booleanValue());
+            f.addConstraint(attrName, opcode, 
+            Boolean.valueOf(value).booleanValue());
           else if(valueType.equalsIgnoreCase("ByteArray"))
-            debug.warn("Bytearrays not yet supported in Siena constraint");
+            debug.warn("Bytearrays not yet supported in Siena constraint, "+
+            "ignoring constraint");
           else if(valueType.equalsIgnoreCase("Double"))
-            f.addConstraint(attrName, Double.parseDouble(value));
+            f.addConstraint(attrName, opcode, Double.parseDouble(value));
           else if(valueType.equalsIgnoreCase("Integer") ||
           valueType.equalsIgnoreCase("Int"))
-            f.addConstraint(attrName, Integer.parseInt(value));
+            f.addConstraint(attrName, opcode, Integer.parseInt(value));
           else if(valueType.equalsIgnoreCase("Long"))
-            f.addConstraint(attrName, Long.parseLong(value));
+            f.addConstraint(attrName, opcode, Long.parseLong(value));
           else {
             debug.error("Failed in parsing constraint for filter \""+filterName+
             "\": invalid format for attribute \"" + attrName +

@@ -6,6 +6,7 @@ import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
 import psl.xues.ed.EDConst;
 import siena.Notification;
+import siena.AttributeValue;
 
 /**
  * Time synchronizer transform module for the Event Packager.  Handles only
@@ -18,8 +19,9 @@ import siena.Notification;
  * basis).  Note that this must exist in the Siena notification before it
  * hits the EP, as it is non-trivial to conclusively identify a given "source".
  *
+ * <!--
  * TODO:
- * - Consider handling other types of events (at least, FlatEvents) without
+ * - Consider handling other types of events (at least, FlatEvents)?? without
  *   requiring conversion (or using FlatEvents as the base event format)
  * - Consider handling non-flatevents which are nonconvertible in the first
  *   place
@@ -28,6 +30,7 @@ import siena.Notification;
  *   with Siena events anyway.
  * - Right now, we implicitly assume ED-style timestamp notification.  Detach
  *   and put into XML instead?
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -86,14 +89,18 @@ public class TimeSynchronizer extends EPTransform {
     
     // Build the skew as an average
     Averager a = (Averager)sourceSkew.get(src);
-    long t = n.getAttribute(EDConst.TIME_ATT_NAME).longValue();
-    if(a == null) {
-      sourceSkew.put(src, new Averager(ourT - t));
-      n.putAttribute(EDConst.TIME_ATT_NAME, ourT);
-    } else {
-      t += a.updateSkew(ourT - t);
-      n.putAttribute(EDConst.TIME_ATT_NAME, t);
+    AttributeValue tstamp = n.getAttribute(EDConst.TIME_ATT_NAME);
+    if (tstamp != null) {
+        long t = tstamp.longValue();
+        if(a == null) {
+            sourceSkew.put(src, new Averager(ourT - t));
+            n.putAttribute(EDConst.TIME_ATT_NAME, ourT);
+        } else {
+            t += a.updateSkew(ourT - t);
+            n.putAttribute(EDConst.TIME_ATT_NAME, t);
+        }
     }
+    
     
     // Now, return the notification; the embedded Siena event has been changed
     // so we don't need to instantiate a new SienaEvent
