@@ -1,0 +1,120 @@
+Programming Systems Lab
+XML Universal Event System (XUES) v0.1 README
+Copyright (c) 2001 The Trustees of Columbia University in the City of
+New York.  All Rights Reserved.
+----------------------------------------
+
+* Introduction
+
+XUES consists of three modules that serve as core modules in the KX
+event infrastructure: Event Packager, Event Distiller, and Event
+Notifier (hereafter referred to as EP, ED, and EN).
+
+Note that XUES is in a prerelease state, and is still active research.
+This means that while the functionality mentioned in this document has
+been implemented, there is no guarantee of error-free operation.
+Additionally, modules in this system are subject to significant change
+in the future; current API's are not final-form.
+
+* Description
+
+The EP is a Siena service whose responsibility it is to "spool" Siena
+and XML events and shuttle them to the appropriate parties.  Spooling
+is not completely functional at this time (e.g., it spools the events
+but does not present an API to readily access them programmatically;
+interested parties must read the spool file directly).
+
+ED is a general event distillation service.  It detects event patterns
+with specific timeouts, and upon such detection sends out Siena
+meta-notifications as specified at runtime.
+
+EN is a general framework for providing a bridge from KX to external
+notification/target systems.  For particular functionality, a
+particular EN must be implemented for the target platform.  The
+standalone EN template does not implement any runtime features at this
+time.
+
+* Distribution/Prerequisites
+
+XUES is currently distributed in source.  In order to use XUES, you
+must have several supporting libraries:
+
+- SUN JDK 1.3 (http://java.sun.com/)
+- Siena 1.1.3 (http://www.cs.colorado.edu/~carzanig/siena)
+- Apache Xerces XML parser (http://xml.apache.org/)
+
+If you installed the complete installation available from our website,
+then both Siena and the XML parser should have been preinstalled for
+you.
+
+Additionally, it is STRONGLY recommended that the KX metaparser be
+installed at the same time.  Both EP and ED do have the ability to
+interoperate with the metaparser for XML events that need its
+services.
+
+Once source has been obtained, ensure that the CLASSPATH includes the
+aforementioned libraries as well as the PARENT of the psl directory.
+javac should then be able to compile the source with no further
+parameters.
+
+* Configuration
+
+At this time, only the ED requires configuration - a rule file must be
+provided for execution.  See the TestRules.xml file provided in the
+distribution, which corresponds to the DistillerRules.xsd schema
+provided in the same directory.  This XML file is specified on
+startup, so alternate rulesets can be composed and selected at
+execution-time.
+
+* Execution
+
+Note that XUES is not intended for standalone operation.  However, a
+tester program is provided so that you can experiment with its
+functionality and begin to be accustomed to the XUES prerelease API.
+
+Before the tester can be run, however, both the EP and ED must be
+running.  (Incidentally, Siena should be running before any KX
+components are started.)
+
+1. Start Siena.  (java siena.StartServer)
+2. Start EP.     (java psl.xues.EventPackager  [...])
+3. Start ED.     (java psl.xues.EventDistiller [...])
+4. Start EDTest. (java psl.xues.EDTest         [...])
+
+For #2 through #4, there are parameters.  For usage, run the
+appropriate module with the -? parameter.  It is *strongly* suggested
+that you do this before attempting execution of the appropriate
+modules.  The port number specified to #1, for example, should be
+supplied to the XUES components at startup.  (Parameters to
+siena.StartServer are available from the Siena website.)
+
+Additionally, since no EN's that provide useful output are currently
+provided, either a Siena service that accepts ED metaevents should be
+constructed or these services should be started in a debugging mode
+(-d) so that output can be monitored appropriately.  Constructing
+Siena filters may be facilitated by looking at the KXNotification
+class, located in the psl/kx directory; most KX components use these
+predefined notifications as a template.
+
+* Documentation
+
+Published documentation is not yet available for XUES, as the API is
+currently under heavy fluctuation.  However, XUES source is
+well-commented, and follows Javadoc standards, so if basic
+documentation is desired javadoc should be run on the supplied
+modules.
+
+* Known Problems/Bugs
+
+Due to the early research state of this software, there are a number
+of known bugs and issues.  We are in the process of compiling these,
+and will be placing them on our website in the near future.  In the
+meantime, see the email address below for support on XUES.
+
+* Contact
+
+PSL can be reached on the Web at http://www.psl.cs.columbia.edu.  For
+technical support with this product (limited, as it is a prerelease
+version), email marvelus@cs.columbia.edu.  For access to developers
+(note that responses are more limited than technical support), you may
+email xues@cs.columbia.edu {phil, do we want this public?}
