@@ -13,6 +13,7 @@ import siena.Op;
 
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
+import psl.xues.ep.store.EPStore;
 import psl.xues.util.SienaUtils;
 
 /**
@@ -193,12 +194,10 @@ public class SienaInput extends EPInput implements Notifiable {
       Filter f = new Filter();
       f.addConstraint("Type", "EPControl");
       try {
-        debug.info("Subscribing control-channel filter \"" + filterName +
-        "\"...");
+        debug.info("Subscribing control-channel filter...");
         hd.subscribe(f, this);
       } catch(SienaException se) {
-        debug.warn("Cannot subscribe control-channel filter \"" +
-        filterName + "\"", se);
+        debug.warn("Cannot subscribe control-channel filter", se);
         // XXX - do we need to do anything here?
       }
     }
@@ -224,13 +223,41 @@ public class SienaInput extends EPInput implements Notifiable {
         debug.error("Invalid request \"" + n + "\" to EP, ignoring");
         return;
       }
-
+      
       // Try to parse the control message
       if(n.getAttribute("Request").stringValue().equals("Replay")) {
         // Get replay parameters
-        if(n.getAttribute("Source") != null) {
-          
-        
+        String store = n.getAttribute("Store") == null ? null : n.getAttribute("Store").stringValue();
+        String source = n.getAttribute("Source") == null ? null : n.getAttribute("Source").stringValue();
+        long t1 = n.getAttribute("StartTime") == null ? -1 : n.getAttribute("StartTime").longValue();
+        long t2 = n.getAttribute("EndTime") == null ? -1 : n.getAttribute("EndTime").longValue();
+        boolean orgTime = n.getAttribute("OriginalTime") == null ? false : n.getAttribute("OriginalTime").booleanValue();
+        // Sanity checks
+        if(store == null || ep.getStore(store) == null) {
+          debug.error("Cannot replay without valid store reference, ignoring");
+          return;
+        }
+        if(source == null && (t1 == -1 || t2 == -1)) {
+          debug.error("Cannot replay without source or timestamp, ignoring");
+        }
+        // Now playback based on what we have
+        EPStore eps = ep.getStore(store);
+        Object[] refs = null;
+        if(t1 != -1 && t2 != -1) {
+          if(source != null) {
+            refs = eps.requestEvents(source, t1, t2);
+          } else {
+            refs = eps.requestEvents(t1, t2);
+          }
+        } else {
+          refs = eps.requestEvents(source);
+        }
+
+        if(refs != null) {
+          // There's data to play back
+          eps.playbackEvents(getName(), refs, orgTime);
+        } else {
+          debug.debug("No events found to actually playback");
         }
       }
     }
