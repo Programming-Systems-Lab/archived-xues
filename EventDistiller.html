@@ -192,7 +192,8 @@
 		      <li>
 			<strong><tt>&lt;attribute name="<em>attribute
 			name</em>" value="<em>attribute value</em>"
-			/&gt;</tt></strong><br> Declarator for an
+			op="<em>comparison operator</em>" type="<em>
+			value type</em>"/&gt;</tt></strong><br> Declarator for an
 			attribute-value pair required in this
 			particular state.  Note that there may be many
 			attributes per state, and they are ANDed
@@ -200,6 +201,13 @@
 			notifications to this state.  Since there are
 			no embedded tags within this tag, you can use
 			the compact end-tag notation (e.g. "/&gt;").
+			The comparison operator is a string representation of the 
+			operator to be used for matching the value. For instance, 
+			you would specify <code>op="&gt"</code> to match all values 
+			greater than the one that the specified value.
+			The default operator is the equality operator.
+			Type needs to be specified since some operators only make sense
+			for certain types; the default type is the string type.
 			Note that the value field here is matched
 			using a string-equals comparison,
 			<em>unless</em> a special wildcard-binding
