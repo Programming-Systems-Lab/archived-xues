@@ -35,4 +35,11 @@ public class NullOutput extends EPOutput {
   public boolean handleEvent(EPEvent epe) {
     return true;  // Wasn't that hard?
   }
+  
+  /**
+   * Handle shutdown.  (Like there's a lot to do in NullOutput's shutdown :))
+   */
+  public void shutdown() {
+    return;
+  }
 }
