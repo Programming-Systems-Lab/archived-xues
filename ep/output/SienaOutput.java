@@ -67,6 +67,7 @@ public class SienaOutput extends EPOutput {
    * @return A boolean indicating success (if you don't know, return true).
    */
   public boolean handleEvent(EPEvent epe) {
+    debug.debug("Received event, about to publish");
     if(epe.getFormat().equals("SienaEvent")) {
       // Just get the embedded Siena event and publish it
       return publishEvent(((SienaEvent)epe).getSienaEvent());

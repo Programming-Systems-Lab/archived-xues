@@ -1,5 +1,7 @@
 package psl.xues.ep;
 
+import bsh.Interpreter;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -21,10 +23,12 @@ import psl.xues.ep.transform.EPTransform;
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO:
  * - Implement outputter dispatch threads (or should we just continue to trust
  *   that the outputter will be fast?)
  * - Consider executing rules in parallel...
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -94,6 +98,17 @@ public class EventPackager implements Runnable, EPInputInterface {
         shutdown();
       }
     });
+    
+    // Start up a beanshell
+    try {
+      new Thread(new Interpreter(new InputStreamReader(System.in),
+      System.out, System.err, true)).start();
+    } catch(Exception e) {
+      debug.error("Could not start shell", e);
+    }
+    
+    // Start ourselves up.  XXX - do we want to do this?
+    new Thread(this).start();
   }
   
   public void run() {
@@ -112,7 +127,7 @@ public class EventPackager implements Runnable, EPInputInterface {
         new Thread((EPInput)i.next()).start();
       }
     }
-
+    
     // Store a reference to our current thread
     dequeueThread = Thread.currentThread();
     
@@ -121,6 +136,7 @@ public class EventPackager implements Runnable, EPInputInterface {
       while(eventQueue.size() > 0) {
         // Dequeue the first element
         EPEvent epe = (EPEvent)eventQueue.remove(0);
+        debug.debug("Dequeued event " + epe + ", processing");
         // Process it: get the correct inputter and fire it through each of
         // its rules in turn
         EPInput epi = (EPInput)inputters.get(epe.getSource());
@@ -143,7 +159,7 @@ public class EventPackager implements Runnable, EPInputInterface {
    */
   public void shutdown() {
     debug.info("Shutting down EP...");
-
+    
     // Stop ourselves first
     shutdown = true;
     if(dequeueThread != null) dequeueThread.interrupt();
@@ -162,9 +178,17 @@ public class EventPackager implements Runnable, EPInputInterface {
         ((EPOutput)i.next()).shutdown();
       }
     }
-
-    debug.info("EP shutdown complete.");
+    
+    debug.info("EP shutdown process complete (process may not terminate if " +
+    "there are hung threads).");
   }
+  
+  /**
+   * Are we in shutdown?
+   *
+   * @return A boolean indicating true if we're in shutdown.
+   */
+  public boolean inShutdown() { return shutdown; }
   
   /** Main. */
   public static void main(String args[]) {
@@ -224,11 +248,23 @@ public class EventPackager implements Runnable, EPInputInterface {
    * @param e The EPEvent you wish to inject.
    * @return A boolean indicating success.
    */
-  public boolean injectEvent(EPEvent e) {
-    debug.warn("injectEvent not implemented yet");
-    // Need to verify that EPEvent has a timestamp, otherwise warn and put
-    // one ourselves (bad EPInput!)
-    return false;
+  public boolean injectEvent(EPEvent epe) {
+    // If no source, fail
+    if(epe.getSource() == null) {
+      debug.error("Received event without source, cannot process");
+      return false;
+    }
+    
+    // Verify timestamp and source
+    if(epe.getTimestamp() == -1) {
+      debug.warn("Received event without timestamp, putting current time");
+      epe.setTimestamp(System.currentTimeMillis());
+    }
+    
+    // Now "inject"
+    debug.debug("Injecting event " + epe);
+    eventQueue.add(epe);
+    return true;
   }
   
   /**

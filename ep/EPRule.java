@@ -49,6 +49,11 @@ public class EPRule {
   public EPRule(Element el, EventPackager ep) throws InstantiationException {
     this.ep = ep;
     
+    // First instantiations
+    inputs = new HashSet();
+    transforms = new ArrayList();
+    outputs = new HashSet();
+    
     // Get the rule name
     ruleName = el.getAttribute("Name");
     if(ruleName == null || ruleName.length() == 0)

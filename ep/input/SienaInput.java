@@ -30,7 +30,6 @@ import psl.xues.ep.event.SienaEvent;
 public class SienaInput extends EPInput implements Notifiable {
   private String sienaHost = null;
   private HierarchicalDispatcher hd = null;
-  private Category debug = null;
   
   /**
    * CTOR.  Modeled after the EPInput CTOR.
@@ -78,7 +77,7 @@ public class SienaInput extends EPInput implements Notifiable {
       for(int j=0; j < constraints.getLength(); j++) {
         // Grab each constraint and map them to a Siena AttributeConstraint.
         // We also need to type each of the elements
-        Element constraintTemplate = (Element)constraints.item(i);
+        Element constraintTemplate = (Element)constraints.item(j);
         String attrName = constraintTemplate.getAttribute("AttributeName");
         String op = constraintTemplate.getAttribute("Op");
         String valueType = constraintTemplate.getAttribute("ValueType");

@@ -57,6 +57,17 @@ public abstract class EPEvent implements Comparable {
   public long getTimestamp() { return timestamp; }
   
   /**
+   * Set the timestamp of this event.
+   *
+   * <!-- XXX - we really shouldn't provide public access to this! -->
+   *
+   * @param t Standard UNIX time format
+   */
+  public void setTimestamp(long t) {
+    this.timestamp = t;
+  }
+  
+  /**
    * Get the source of this event.
    *
    * @return The sourceID of this event.

@@ -139,7 +139,7 @@ class EPConfiguration {
           EPRule epr = new EPRule((Element)rules.item(i), ep);
           ep.rules.put(epr.getName(), epr);
         } catch(Exception ex) {
-          debug.warn("Could not instantiate rule: " + ex.toString());
+          debug.warn("Could not instantiate rule", ex);
           continue;
         }
       }
@@ -200,8 +200,8 @@ class EPConfiguration {
       // XXX - Should we be making a deep copy of the inputter element,
       // since we're handing it to a potentially unknown constructor?
       epi = (EPInput)Class.forName(inputterType).getConstructor(new Class[]
-      { inputter.getClass(), EPInputInterface.class }).newInstance(new Object[]
-      { inputter, (EPInputInterface)ep });
+      { EPInputInterface.class, Element.class }).newInstance(new Object[]
+      { (EPInputInterface)ep, inputter });
     } catch(Exception e) {
       debug.warn("Failed in loading inputter \"" + inputterName +
       "\", ignoring", e);
@@ -234,8 +234,8 @@ class EPConfiguration {
       debug.debug("Loading outputter \"" + outputterName + "\"...");
       // XXX - Should we be making a deep copy of the outputter element,
       // since we're handing it to a potentially unknown constructor?
-      epo = (EPOutput)Class.forName(outputterName).getConstructor(new Class[]
-      { outputter.getClass() }).newInstance(new Object[] { outputter });
+      epo = (EPOutput)Class.forName(outputterType).getConstructor(new Class[]
+      { Element.class }).newInstance(new Object[] { outputter });
     } catch(Exception e) {
       debug.warn("Failed in loading outputter \"" + outputterName +
       "\", ignoring", e);

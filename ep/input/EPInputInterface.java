@@ -39,4 +39,17 @@ public interface EPInputInterface {
    */
   public void error(String src, String err);
 
+  // Control methods
+  
+  /**
+   * Request that the Event Packager be shutdown.
+   */
+  public void shutdown();
+  
+  /**
+   * Ask the EP if we're in shutdown.
+   *
+   * @return A boolean indicating if we're in shutdonw
+   */
+  public boolean inShutdown();
 }

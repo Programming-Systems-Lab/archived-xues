@@ -4,26 +4,26 @@
 
 <EventPackagerConfiguration>
     <EventFormats>
-        <EventFormat Name="HierarchicalEvent"></EventFormat>
-        <EventFormat Name="SienaEvent"></EventFormat>
-        <EventFormat Name="FlatEvent"></EventFormat>
+        <EventFormat Name="psl.xues.ep.event.HierarchicalEvent"></EventFormat>
+        <EventFormat Name="psl.xues.ep.event.SienaEvent"></EventFormat>
+        <EventFormat Name="psl.xues.ep.event.FlatEvent"></EventFormat>
     </EventFormats>
     <Inputters>
-        <Inputter Name="SienaInput1" Type="SienaInput" SienaHost="senp://localhost:7890">
+        <Inputter Name="SienaInput1" Type="psl.xues.ep.input.SienaInput" SienaHost="senp://localhost:7890">
             <SienaFilter Name="TestFilter1">
                 <SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue"></SienaConstraint>
             </SienaFilter>
             <SienaFilter Name="TestFilter2">
-                <SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue"></SienaConstraint>
+                <SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue2"></SienaConstraint>
             </SienaFilter>
         </Inputter>
     </Inputters>
 <Outputters>
-        <Outputter Name="SienaOutput1" Type="SienaOutput" SienaHost="senp://localhost:7891"></Outputter>
+        <Outputter Name="SienaOutput1" Type="psl.xues.ep.output.SienaOutput" SienaHost="senp://localhost:7891"></Outputter>
     </Outputters>
 <Transforms></Transforms>
     <Rules>
-        <Rule><!--Sources specify a disjoint set-->
+        <Rule Name="TestRule1"><!--Sources specify a disjoint set-->
             <Inputs>
                 <Input Name="SienaInput1"></Input>
             </Inputs>
