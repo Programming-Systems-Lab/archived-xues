@@ -15,11 +15,18 @@
 	    <xsd:sequence>
 	      <xsd:element name="state" maxOccurs="unbounded">
 	        <xsd:complexType>
-		  <xsd:attribute name="attributename" type="xsd:string" />
-		  <xsd:attribute name="value" type="xsd:string" />
+                  <xsd:sequence>
+                    <xsd:element name="attribute" maxOccurs="unbounded">
+                      <xsd:complexType>
+		        <xsd:attribute name="attributename" type="xsd:string"/>
+		        <xsd:attribute name="value" type="xsd:string"/>
+                      </xsd:complexType>
+                    </xsd:element>
+                  </xsd:sequence>
+                  <!-- Timebound for occurrence of this event -->
 		  <xsd:attribute name="timebound" type="xsd:integer" />
 	        </xsd:complexType>
-	      </xsd:element>
+	      </xsd:element> <!-- /state -->
 	    </xsd:sequence>
 	  </xsd:complexType>
 	</xsd:element>

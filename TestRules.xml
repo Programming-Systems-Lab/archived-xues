@@ -3,8 +3,14 @@
 <!-- The spamblocker rule -->
 <rule xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" name="testRule">
    <states>
-      <state attributename="from" value="*1" timebound="-1"/>
-      <state attributename="from" value="*1" timebound="-1"/>
+      <state timebound="-1">
+        <attribute name="from" value="*1"/>
+	<attribute name="spam" value="true"/>
+      </state>
+      <state timebound="-1">
+        <attribute name="from" value="*1"/>
+	<attribute name="spam" value="true"/>
+      </state>
    </states>
    <actions>
       <notification>
