@@ -1,16 +1,18 @@
 package psl.xues.ep.input;
 
 import java.util.HashMap;
+
 import org.apache.log4j.Category;
 import org.w3c.dom.Element;
+
 import psl.xues.ep.EventPackager;
 import psl.xues.ep.EPRule;
 
 /**
  * Extend this class to have your very own input mechanism.
- *
- * Copyright (c) 2002: The Trustees of Columbia University in the
- * City of New York.  All Rights Reserved.
+ * <p>
+ * <em>Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.</em>
  *
  * <!--
  * TODO:

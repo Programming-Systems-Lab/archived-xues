@@ -1,24 +1,36 @@
 package psl.xues.ep.event;
 
+import java.io.Serializable;
+
 import org.apache.log4j.Category;
 
 /**
- * Abstract base class for EP event formats.
+ * Abstract base class for EP event formats.  This is not intended to be
+ * transported <em>between</em> EP instances, but rather to be used within
+ * <em>one</em> EP.
  *
- * Copyright (c) 2002: The Trustees of Columbia University in the
- * City of New York.  All Rights Reserved.
+ * <!--
+ * TODO:
+ * - Handle multiple/arbitrary sources
+ * - Perhaps support wrapping EPEvent in another?
+ * -->
+ * <p>
+ * <em>Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.</em>
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-public abstract class EPEvent implements Comparable {
+public abstract class EPEvent implements Comparable, Serializable {
   /** Timestamp of this event, in OUR perception */
   protected long timestamp = -1;
   /** Debugger */
   protected Category debug = null;
-  /** Creator ("source", not "type") */
+  /** 
+   * Creator ("source", not "type").  NB: This creator must be the local
+   * EP creator -- rules are fired by examining the source.
+   */
   protected String source = null;
-  
   
   /**
    * CTOR.  Assume that construction time is the correct timestamp time.
