@@ -121,7 +121,8 @@ public class Xmlifier extends EPTransform {
       NodeList attrList = instructions.getElementsByTagName("attrname");
       
       //in case the number of tags in the xml file dont match up, shutdown.
-      if((attrList.getLength()!= patternList.getLength()) && (attrList.getLength()!= locationList.getLength())){
+      if((attrList.getLength()!= patternList.getLength()) &&
+      (attrList.getLength()!= locationList.getLength())){
         debug.fatal("Error: Invalid xml file. Tags missing.");
         return null;
       }
@@ -159,7 +160,8 @@ public class Xmlifier extends EPTransform {
    * @param String attribute in which the extract expression will be stored
    * @return Document a dom document
    */
-  private Document buildDom(String input, String regex, String path, String attribute, Document document){
+  private Document buildDom(String input, String regex, String path, 
+  String attribute, Document document){
     //try{
     //start index of the substring matched by the java regex matcher
     int startIndex;
@@ -189,7 +191,8 @@ public class Xmlifier extends EPTransform {
       if(startIndex != endIndex){
         //here need to check path and then stick in  at the right position
         if(!path.equals("")){
-          //append a dummy parent node named root assuming all paths are absolute, ie start at the top
+          //append a dummy parent node named root assuming all paths are 
+          //absolute, ie start at the top
           path = "root/"+path;
           //tokenize with a "/" as the separator
           StringTokenizer tokenizer = new StringTokenizer(path, "/");
@@ -260,7 +263,8 @@ public class Xmlifier extends EPTransform {
             startIndex = m.start();
             endIndex = m.end();
             if(startIndex != endIndex)
-              parent.appendChild((Element)document.createElement(input.substring(startIndex, endIndex)));
+              parent.appendChild((Element)document.createElement(
+              input.substring(startIndex, endIndex)));
           }
           //}//while has more tokens
         }//if path exists
