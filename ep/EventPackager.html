@@ -1,0 +1,507 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Event Distiller documentation</title>
+  </head>
+
+  <body bgcolor="#FFFFFF">
+    <h2>Programming Systems Lab<br>Event Packager version 1.9<br>
+    Documentation</h2>
+    <p><i>Copyright (c) 2000-2002: The Trustees of Columbia University and the 
+    City of New York. All Rights Reserved.<br>
+    </i>Please see the <a href="License">license</a> file for licensing 
+    information.</p>
+    <h2>Warning - prerelease version!</h2>
+    <p>This release of the Event Packager is a prerelease leading up to version 
+    2.0.&nbsp; While the functionality is (mostly) complete, testing and 
+    documentation is <i>not</i>.&nbsp; If you have bug reports, feel free to 
+    report them to the author (see the bottom of the page), but note that this 
+    version is not officially supported.</p>
+    <h2>Introduction</h2>
+    The Event Packager (EP) component of XUES provides a first-level processing 
+    infrastructure for the KX system.  It is responsible for preprocessing 
+    incoming events, applying filters, transforms, and supporting spooling 
+    applications.&nbsp; Event Packager is concerned with <i>per-event </i>
+    manipulation; <i>cross-event </i>manipulation is the responsibility of the 
+    Event Distiller module.<h2>System requirements</h2>
+    <p>Java 1.4.0 is strongly recommended; this is the official supported 
+    platform for this prerelase.&nbsp; While 1.3.X should work, it is no longer 
+    actively supported.&nbsp; The 1.4.1 release candidates should work, but they 
+    have not been fully tested either.&nbsp; Versions prior to v1.3.0 will <i>
+    not</i> work; in particular, the use of ShutdownHooks in the code prevent EP 
+    from functioning in these environments.</p>
+    <p>EP depends on a number of third-party packages.&nbsp; For your 
+    convenience, these are bundled in the release distribution as <b>
+    xues-support.jar</b>.&nbsp; 
+    Make sure to include it, along with the <b>EventDistiller.jar</b>, in your 
+    CLASSPATH prior to executing EP.&nbsp; This jar includes:</p>
+    <ul>
+      <li><a href="http://jakarta.apache.org/log4j/docs/documentation.html">
+      Apache Log4j 1.2.4</a>.&nbsp; Log4j versions 1.2.x are supported.</li>
+      <li><a href="http://www.cs.colorado.edu/~carzanig/siena/index.html">Siena 
+      1.4.2</a>.&nbsp; 
+      EP is compatible with 1.3 and 1.4 versions, although 1.4.2 is recommended 
+      as it has a number of bugfixes and performance improvements.</li>
+      <li>Hypersonic SQL DB 1.61.&nbsp; This is a free open-source database that 
+      supports the minimum subset of SQL/JDBC functionality needed for EP.&nbsp; 
+      It is not required, although is useful if you are planning to use the JDBC 
+      spooling functionality in Event Packager.</li>
+      <li>Apache Crimson.&nbsp; This is only present for backwards functionality 
+      with Java 1.3 environments; Java 1.4 ignores the classes in this bundle.</li>
+    </ul>
+    <p>If any of the nonrequired components (e.g., Crimson, Siena 1.4, or HSQLDB 
+    1.61) are incompatible with your environment, feel free to substitute 
+    components with alternatives indicated above.</p>
+    <h2>Execution</h2>
+    <p>
+      EP may be executed in one of two ways:</p>
+    <ol>
+      <li><b>Standalone:</b> in this mode, EP runs in its own JVM, and uses 
+      external communication mechanisms (e.g., Siena, Sockets, etc.)<br>
+      <br>
+      To execute EP in this fashion, issue the following command:<br>
+      <br>
+      <b>java psl.xues.ep.EventPackager [-c configFile] [-d|-df 
+      debugScript] [-?]<br>
+      <br>
+      </b>As is implied, -? instructs EP to print a usage statement similar to 
+      the one above.<b><br>
+&nbsp;</b></li>
+      <li><b>Embedded:</b> EP can be run in another JVM by being instantiated by 
+      a third-party launcher.&nbsp; In this mode, EP can either communicate via 
+      external communication mechanisms or via direct method calls.&nbsp; Note that:<ul>
+        <li>EP will <i>automatically</i> construct a new thread for itself to 
+        run in;</li>
+        <li><i>Embedded environments will not be fully supported until v2.0.</i>&nbsp; 
+        Specifically, while the containing object may inject events <i>into</i> 
+        EP, the callback mechanism to allow the containing object to receive 
+        responses directly back <i>from </i>EP is not yet implemented.</li>
+        <li>A configuration file is currently <i>required</i> for Event Packager 
+        startup.&nbsp; v2.0 will fully support dynamic rule declaration, at 
+        which point it will be possible to request EP to start with an empty 
+        rulebase.</li>
+      </ul>
+      <p>To use EP in an embedded fashion, use one of the following 
+      constructors.<ul>
+        <li>For basic configuration (i.e., just a config file specification), 
+        use<br>
+        <b>public EventPackager(String configFile);</b></li>
+        <li>For full configuration options, use<br>
+        <b>public EventPackager(String configFile, boolean debugging, String 
+        debugFile);</b></li>
+      </ul>
+      </li>
+    </ol>
+    <p>
+      Both mechanisms have a number of options.</p>
+    <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse" id="AutoNumber1">
+      <tr>
+        <td align="center" bgcolor="#CCFFFF"><b>Standalone<br>
+        option</b></td>
+        <td align="center" bgcolor="#CCFFFF"><b>Constructor<br>
+        field</b></td>
+        <td align="center" bgcolor="#CCFFFF"><b>Purpose</b></td>
+        <td align="center" bgcolor="#CCFFFF"><b>Required?</b></td>
+        <td align="center" bgcolor="#CCFFFF"><b>Default value</b></td>
+        <td align="center" bgcolor="#CCFFFF"><b>Description/Notes</b></td>
+      </tr>
+      <tr>
+        <td>-c</td>
+        <td>configFile</td>
+        <td>Location of EP configuration file</td>
+        <td>No</td>
+        <td>
+        <p align="center">EPConfig.xml</td>
+        <td>See the format of the file below.</td>
+      </tr>
+      <tr>
+        <td>-d</td>
+        <td>debugging</td>
+        <td>Enable debugging</td>
+        <td>No</td>
+        <td>
+        <p align="center">No</td>
+        <td>If set (or true), EP prints (verbose) debugging information.&nbsp; 
+        This uses default settings; for more flexible settings, specify a debug 
+        specification file (see next option)</td>
+      </tr>
+      <tr>
+        <td>-df</td>
+        <td>debugFile</td>
+        <td>Enable debugging, specifying log4j directives</td>
+        <td>No</td>
+        <td>
+        <p align="center">null</td>
+        <td>Points to the local log configuration file.&nbsp; This must be in
+        <a href="http://jakarta.apache.org/log4j/docs/api/org/apache/log4j/PropertyConfigurator.html#doConfigure(java.lang.String,%20org.apache.log4j.spi.LoggerRepository)">
+        log4j format</a> (XXX - this includes 1.2?).&nbsp; Note that you do <i>not</i> have to specify both 
+        debugging <i>and</i> a debugFile, although you may should you wish.</td>
+      </tr>
+      </table>
+    <p>
+      Once the Event Packager is run, it will run in the background.
+      No further user interaction is required, although if the console is 
+      enabled in the configuration file it will now appear and will be ready for 
+      manual control of the Event Pacakger.&nbsp; See the sections &quot;Operation&quot; 
+      and &quot;Configuration Files&quot;, below, to control EP's behavior hereon.</p>
+    <h2>Operation</h2>
+    <h3>
+      Standalone and embedded Siena modes</h3>
+    <p>
+      When the Event Packager starts, it will immediately start parsing its 
+      configuration file and following the directives contained within.&nbsp; If 
+      there are errors in this file they will appear on the console (or other 
+      debugging output, if the <b>debugFile</b> option was used during 
+      initialization).</p>
+    <p>
+      XXX - cut here</p>
+    <p>
+      Once the Event Packager is running, it will immediately begin processing 
+      the subscribing to notifications it is interested in (based on the rule 
+      file supplied at start-time) and listening for instances of these 
+      notifications. Upon a rule match (or a partial match), appropriate 
+      notifications will be sent out on the same Siena bus based on the rules 
+      defined in the specification file.</p>
+    <p>
+      There are two special attributes that ED pays special attention to:</p>
+    <ul>
+      <li><b>&quot;Type&quot;: </b>In order to prevent ED from listening to <i>everything</i>, 
+      the Siena subscription made by ED only listens for events of type &quot;EDInput&quot;.&nbsp; 
+      This behavior will be made more flexible in the next ED release.</li>
+      <li><b>&quot;Timestamp&quot;:</b> One of the major problems/caveats/compromises with 
+      Siena is its inability to guarantee in-order delivery given an ordering 
+      upon publication.&nbsp; The ED goes to great lengths to resolve this, <i>
+      if</i> a timestamp is stored in the event.&nbsp; If the publisher 
+      specifies a timestamp as a long (preferably the number of milliseconds 
+      since 1970, i.e., <b>System.currentTimeMillis()</b>), the ED will reorder 
+      events to make sure they're in the correct order before processing them.&nbsp; 
+      Currently, the ED uses a sliding window (a la TCP) of 1 second (this will 
+      be configurable in the next release), during which any events in its queue 
+      will be reordered.<font color="#FFFFFF">&nbsp; (Note that behavior might 
+      differ if the event driven property is turned on.)</font></li>
+    </ul>
+    <h3>
+      All embedded modes</h3>
+    <p>
+      ED will accept <i>all </i>notifications handed to it directly: use the 
+      notify() method and hand it a Siena Notification.&nbsp; As previously 
+      mentioned, in direct mode callbacks will be handed to the Notifiable 
+      specified in the constructor.</p>
+    <p><b>NOTE:</b> It is
+      strongly suggested that the <tt>shutdown()</tt> method be called during 
+    shutdown of the owner. ED runs in a separate thread, and this ensures that 
+    the thread will be killed in a safe fashion.</p>
+    <h2>Configuration</h2>
+    <p><span style="background-color: #FFFF00">Notes</span></p>
+    <ul>
+      <li><span style="background-color: #FFFF00">Console a very bad idea in 
+      embedded mode</span></li>
+      <li><span style="background-color: #FFFF00">See the example configuration 
+      files for a better idea of how this works</span></li>
+    </ul>
+    <p>
+      The heart of Event Distiller configuration lies in the
+      rulebase specification file.  It is in XML, based on the schema
+      described in the <tt>DistillerRule.xsd</tt> file.
+    </p>
+    <h3>Distiller rules</h3>
+    <ul><li><strong><tt>&lt;rulebase
+	    xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd"&gt;</tt></strong><br>
+	This line is the top-level XML rulebase declaration, and is required.
+	<hr>
+	<ul>
+	  <li>
+	    <strong><tt>&lt;rule name="<em>rule
+	    name</em>"&gt;</tt></strong><br> This is the top-level
+	    rule declarator, is declared within ruleBase, and is
+	    repeated at the beginning of each rule. The following parameters
+	    may be supplied:
+	    <ul>
+	    <li> name (required): Rule names are
+	    used primarily for disambiguation at this time; they are
+	    not referred elsewhere.
+	    </li>
+	    <li> position (optional):
+              the position where this rule is inserted, starting with 0. The position specifies the
+	      priority of this rule in receiving events: higher priority rules
+	      (smaller numbers) receive events first. This is useful in the case of
+	      event absorbtion on the part of a state (see the absorb attribute in state).
+	    </li>
+            <li>instantiation (optional): the criterion for instantiating this rule.
+	      Legal values are: 0, 1, 2. '0' means the rule will only be instantiated once.
+	      '1' means there will always be only one instance at any given time, so a new instance is created
+	      as the previous succeeds or one times out.
+	      '2' means a new instance is created whenever a previous instance starts (i.e.
+	      receives its first event), so that there will always be one instance listening for the starting event(s).
+	    </li>
+	    </ul>
+	    <hr>
+	    <ul>
+	      <li>
+		<strong><tt>&lt;states&gt;</tt></strong><br> This
+		declarator, contained in a rule, signifies the
+		beginning of state declarations (of which there may be
+		many).  <strong>Note:</strong> There can be only one
+		"states" declaration in a rule.
+		<hr>
+		<ul>
+		  <li>
+		    <strong><tt>&lt;state name="<em>state name</em>"
+		    timebound="<em>milliseconds</em>"
+		    children="<em>CSV-list of children names</em>"
+		    actions="<em>CSV-list of actions</em>"
+		    fail_actions="<em>CSV-list of actions</em>"
+		    absorb="<em>boolean value</em>"
+		    count="<em>integer value</em>"
+		    &gt;</tt></strong><br>
+		    This is the beginning of declarator for a single
+		    state in the state-list (pattern) to be matched
+		    for this rule.  A number of parameters are
+		    supplied alongside the rule declarator:
+		    <ul>
+		      <li>
+			name (required): specifies the state name.
+			This name should not conflict with other
+			state names within this rule.
+		      </li>
+		      <li>
+			timebound (required): specifies the timebound
+			in which this event can happen relative to the
+			previous event. For the first event, the
+			timebound is generally set to -1 (e.g. no time
+			limit); for subsequent timebounds it is
+			<em>recommended</em>, although not required,
+			that the timebound be positive. If the first state
+			of a rule has positive timebound, it is measured against the
+			time at which the rule is created.(Note that
+			timebound is not precise - a fudge factor
+			is present in the Event Distiller to take care
+			of race conditions.)
+		      </li>
+		      <li>
+			children (optional): specifies (in a comma-delimited
+			list, no spaces) states that
+			can follow this particular state.
+		      </li>
+		      <li>
+			actions (optional): specifies the
+			notification(s) to be sent out when this state
+			is matched.  Usually, this is intended for the
+			last state in a rule, which would signify as
+			the "rule matching", but intermediate
+			notifications can be sent out.
+		      </li>
+		      <li>
+			fail_actions (optional): specifies the
+			notification(s) to be sent out if this state
+			times out while waiting for input.  Unlike actions,
+			this is intended for each state, so a
+			different notification <em>may</em> be sent
+			out for a failure at any given point in the
+			state machine. Note that if a rule allows multiple paths between states
+			(so that at one given time multiple states are subscribed),
+			failure notifications for one of the states that timed out will be sent,
+			only if all currently subscribed states time out.
+		      </li>
+		        <li> absorb (optional): Whether this state will absorb the events that match it.
+			  If this is set to true, when an event matches this state, the event
+			  will <em>not</em> be passes on to any other state cutrrently subscribed.
+			  If this field is not specified, a default value of 'false' will be used.
+			</li>
+			<li> count (optional): the number of times this event will need to be matched
+			  before it passes. A default value of '1' is used if this field is not specified.
+			  If the value specified is greatr than '1' (say, <em>n</em>, children and actions
+			  will only apply to the <em>n</em>th time that the state is matched; while fail_actions,
+			  if specified, will apply at all times. The special value '-1' indicates that the event
+			  may occur any number of times (within the specified timebound), until one of
+			  the children is matched, thus terminating the loop.
+			</li>
+		    </ul>
+		    <hr>
+		    <ul>
+		      <li>
+			<strong><tt>&lt;attribute name="<em>attribute
+			name</em>" value="<em>attribute value</em>"
+			op="<em>comparison operator</em>" type="<em>
+			value type</em>"/&gt;</tt></strong><br> Declarator for an
+			attribute-value pair required in this
+			particular state.  Note that there may be many
+			attributes per state, and they are ANDed
+			together in the filter that matches incoming
+			notifications to this state.  Since there are
+			no embedded tags within this tag, you can use
+			the compact end-tag notation (e.g. "/&gt;").
+			The comparison operator is a string representation of the 
+			operator to be used for matching the value. For instance, 
+			you would specify <code>op="&gt"</code> to match all values 
+			greater than the one that the specified value.
+			The default operator is the equality operator.
+			Type needs to be specified since some operators only make sense
+			for certain types; the default type is the string type.
+			Note that the value field here is matched
+			using a string-equals comparison,
+			<em>unless</em> a special wildcard-binding
+			notation is used (see below).
+		      </li>
+		    </ul>
+		    <hr>
+		    <strong><tt>&lt;/state&gt;</tt></strong>
+		  </li>
+		</ul>
+		<hr>
+		<strong><tt>&lt;/states&gt;</tt></strong>
+	      </li>
+	      <li>
+		<strong><tt>&lt;actions&gt;</tt></strong><br> This
+		declarator, contained in a rule, signifies the
+		beginning of <tt>action</tt> declarations (of which
+		there may be many).  <strong>Note:</strong> There can
+		be only one "actions" declaration in a rule.
+		<hr>
+		<ul>
+		  <li>
+		    <strong><tt>&lt;notification
+			name="<em>notification
+			  name</em>"&gt;</tt></strong><br>
+		    This is the beginning of the notification (action)
+		    declarator.  There is one parameter, name, which
+		    corresponds to the actions and fail_actions
+		    references above.  It is <em>strongly</em>
+		    recommended that this name be one contiguous
+		    phrase without whitespace or punctuation to avoid
+		    conflicts in the CSV-lists referenced above.
+		    <hr>
+		    <ul>
+		      <li>
+			<strong><tt>&lt;attribute name="<em>attribute
+			name</em>" value="<em>attribute value</em>"
+			/&gt;</tt></strong><br> Declarator for an
+			attribute-value pair to be included in this
+			particular notification.  Note that there may
+			be many attributes per notification.  Since
+			there are no embedded tags within this tag,
+			you can use the compact end-tag notation
+			(e.g. "/&gt;").  If you use wildcard-binding
+			above, you may use the same wildcard-binding
+			tag here - it will be substituted with the
+			actual bound value (again, see below).
+		      </li>
+		    </ul>
+		    <hr>
+		    <strong><tt>&lt;/notification&gt;</tt></strong>
+		  </li>
+		</ul>
+		<hr>
+		<strong><tt>&lt;/actions&gt;</tt></strong>
+	      </li>
+	    </ul>
+	    <hr>
+	    <strong><tt>&lt;/rule&gt;</tt></strong>
+	  </li>
+	</ul>
+	<hr>
+	<strong><tt>&lt;/rulebase&gt;</tt></strong>
+      </li>
+    </ul>
+    <h3>Wildcard binding</h3>
+    <p>
+      Attribute values (<em>not</em> names) may be specified as a
+      wildcard that is bound on the first match in a particular rule
+      instance execution.  This is accomplished by putting a "*" as
+      the first character in the matching value, followed by a string
+      key (preferably one contiguous phrase, without whitespace).
+      When the Event Distiller encounters such a value, it checks the
+      key (<em>not</em> the attribute, but rather the string after the
+      "*") against its hash of known keys <em>for this rule
+      instance</em>, and if not found, it makes a new entry into the
+      hash, with the key matching the value that was encountered when
+      processing this rule instance.  If the key is matched, i.e. a
+      value exists for this key, the state is only validated if the
+      incoming value matches the already-stored value for this rule
+      instance.  This is useful if you need to match a value
+      consistently, or need to match a value once and have the
+      resulting value outputted in the notification.  Note that
+      separate rule instances keep separate hashes, so another
+      execution of this rule being done in parallel does not share the
+      wildcard hash.  If you need to match different values for each
+      state in a rule or each attribute in a state, use different key
+      strings in the "*" notation.
+    </p>
+    <p>
+      In a notification (action), if the "*" notation is detected, the
+      Event Distiller will attempt to substitute the value matching
+      the key in the hash in the output.
+      <!-- XXX -->
+      If the value doesn't exist,
+      the "*" and the key are thrown out and an empty string is
+      returned.
+      <!-- /XXX -->
+    </p>
+    <p>
+      If you are attempting to match a literal asterisk at the
+      beginning of the string, use a double-asterisk as your first two
+      characters.  The Event Distiller will throw away the first
+      asterisk and will ignore the remainder of the string, e.g.,
+      "**foo" will match "*foo" in incoming notifications.
+    </p>
+    <h2>Dynamic run-time configuration</h2>
+    <p>
+      In addition to the rulebase specification file, rules may be
+      added, deleted, or queried for through Siena events.  If the
+      "client" (defined here as the party that wishes to change the
+      ED's rulebase) is implemented in Java, we have implemented
+      methods in a convenience class to automate the task: in
+      <tt>psl.kx.KXNotification</tt>, there are methods called
+      <tt>EDManagerAddRule</tt>, <tt>EDManagerRemoveRule</tt>,
+      <tt>EDManagerQueryRule</tt>, and <tt>EDManagerQueryRules</tt>.
+      (C++ users - take a look at the source - the attribute/value
+      pairs are extremely simple to copy into a C++ implementation).
+    </p>
+    <p>Here's a brief description of each method:</p>
+    <ul>
+      <li>EDManagerAddRule is used to add a rule - specify the XML
+	that would normally be in the rulebase specification file,
+	e.g., a complete <tt>&lt;rule&gt;</tt> instance.
+      </li>
+      <li>EDManagerRemoveRule deletes a rule given its name.</li>
+      <li>EDManagerQueryRule returns the XML representation of the
+	rule that's specified by name.</li>
+      <li>EDManagerQueryRules returns a comma-delimited list of all
+	the rules in the currently-running rulebase.</li>
+    </ul>
+    <p>
+      These rules are currently saved on exit, if an output filename was specified.
+      If an embedded Event Distiller is being used (see below) use the
+      <tt>setOutputFile(String fileName)</tt> method to set the output file.
+    </p>
+    <h2>More to come</h2>
+    <p>
+      ED is under active development, and we have a number of new features 
+      slated for the next release of ED (to be released late Spring 2002), 
+      including:</p>
+    <ul>
+      <li>Native XML SmartEvent support</li>
+      <li>GUI rule designer and administrative tool</li>
+      <li>Faster performance</li>
+    </ul>
+    <h2>Examples, Source Code, Javadocs</h2>
+    <p>
+      A number of examples are included with the Event Distiller
+      distribution.  The EDTest*.java files demonstrate typical Event
+      Distiller usage (in albeit simple scenarios), while the *.xml
+      files are sample rulebases.&nbsp; You can unjar the Event Distiller jar 
+      file to obtain this test code as well as the full Event Distiller source 
+      code.</p>
+    <p>
+      Javadoc is available <a href="javadoc/">here</a>.&nbsp; The Javadoc, as 
+      well as other information, is also available on the XUES website, located 
+      at <a href="http://www.psl.cs.columbia.edu/xues/">
+      http://www.psl.cs.columbia.edu/xues/</a>.</p>
+    <hr>
+<!-- Created: Mon May 21 22:53:20 Eastern Daylight Time 2001 -->
+<address>Janak J Parekh &lt;<a href="mailto:janak@cs.columbia.edu">janak@cs.columbia.edu</a>&gt;<br>
+<!-- hhmts start -->
+  Last modified:
+  <!--webbot bot="Timestamp" S-Type="EDITED" S-Format="%A, %B %d, %Y %I:%M:%S %p" startspan -->Monday, September 09, 2002 07:41:08 PM<!--webbot bot="Timestamp" endspan i-checksum="3576" --></address>
+  </body>
+</html>

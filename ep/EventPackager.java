@@ -300,7 +300,8 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
   
   /** Prints usage. */
   public static void usage() {
-    System.err.println("\nUsage: java EventPackager [-c configFile] [-d]");
+    System.err.println("\nUsage: java EventPackager [-c configFile] " +
+    "[-d|-df debugScript]");
     System.err.println("\t-c: Specify configuration via XML config file");
     System.err.println("\t-d: Turn on basic (console) debugging");
     System.err.println("\t-df: Specify log4j-compliant logging config file");
