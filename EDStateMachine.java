@@ -19,7 +19,11 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.10  2001-05-21 00:43:04  jjp32
+ * Revision 1.11  2001-06-02 18:22:56  jjp32
+ *
+ * Fixed bug where wildHash would not get assigned if derivative state never got a notification
+ *
+ * Revision 1.10  2001/05/21 00:43:04  jjp32
  * Rolled in Enrico's changes to main Xues trunk
  *
  * Revision 1.7.4.6  2001/05/06 03:54:27  eb659
@@ -418,6 +422,8 @@ public class EDStateMachine {
 		if(val.getType() == AttributeValue.STRING &&
 		   val.stringValue().startsWith("*")) {
 		    String key = val.stringValue().substring(1);
+		    if(EventDistiller.DEBUG)
+		      System.err.println("EDStateMachine: wildHash.get(" + key + ")");
 		    AttributeValue bindVal = (AttributeValue)wildHash.get(key);
 		    if(bindVal != null) {
 			// Replace this attributeValue

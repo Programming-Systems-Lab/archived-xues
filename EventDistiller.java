@@ -19,7 +19,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.22  2001-05-29 17:25:25  jjp32
+ * Revision 1.23  2001-06-02 18:22:56  jjp32
+ *
+ * Fixed bug where wildHash would not get assigned if derivative state never got a notification
+ *
+ * Revision 1.22  2001/05/29 17:25:25  jjp32
  * Rolled in new constructors for embeddable version
  *
  * Revision 1.21  2001/05/29 17:21:30  jjp32
@@ -304,8 +308,11 @@ public class EventDistiller implements Runnable, Notifiable {
 	finish();
 	break;
       }
+      //       if(EventDistiller.DEBUG)
+      // 	System.err.println("EventDistiller: Checking process 
       if(EventDistiller.DEBUG)
-	System.err.println("EventDistiller: Checking process queue");
+       	System.err.print("+");
+
 
       // Poll for events to process
       int size;

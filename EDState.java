@@ -25,7 +25,11 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.10  2001-05-21 00:43:04  jjp32
+ * Revision 1.11  2001-06-02 18:22:56  jjp32
+ *
+ * Fixed bug where wildHash would not get assigned if derivative state never got a notification
+ *
+ * Revision 1.10  2001/05/21 00:43:04  jjp32
  * Rolled in Enrico's changes to main Xues trunk
  *
  * Revision 1.7.4.6  2001/05/06 03:54:27  eb659
@@ -262,16 +266,39 @@ public class EDState implements Notifiable{
 	    parents = new Vector();
 	    
 	    //subscribe
-	    try { siena.subscribe(buildSienaFilter(), this); } 
+	    Filter f = buildSienaFilter();
+	    try { siena.subscribe(f, this); } 
 	    catch(SienaException e) { e.printStackTrace(); }
 
 	    if(EventDistiller.DEBUG) 
-		System.out.println("EDState: subscribing state: " + myID);
+		System.out.println("EDState: subscribing state: " + myID + " with " + f);
 	}
 
 	/* add it at the beginning, so when we search
 	 * we find the more recent events first */
 	parents.add(0, parent);
+
+	/* [janak] Build the wildHash NOW in case we never get a
+	 * notification.  I presume Enrico goes through the list to
+	 * find the last guy with the wildHash, although we don't need
+	 * that anymore, so it's commented out.
+	 */
+
+	/* inherit the wildHash from the candidate parent,
+	 * so we can compare wildcard values while validating  */
+	//	EDState parent;
+	// 	for (int i = 0; i < parents.size(); i++) {
+	// 	  parent = (EDState)parents.get(i);
+	if (parent == null) {
+	  if(EventDistiller.DEBUG)
+	    System.out.println("EDState " + myID + " creating NEW wildHash");
+	  wildHash = new Hashtable();
+	} else {
+	  if(EventDistiller.DEBUG)
+	    System.out.println("EDState " + myID + " inheriting wildHash");
+	  wildHash = parent.getWildHash();
+	}
+
 	this.alive = true; // don't move up...
     }
 
@@ -328,11 +355,6 @@ public class EDState implements Notifiable{
 	EDState parent;
 	for (int i = 0; i < parents.size(); i++) {
 	parent = (EDState)parents.get(i);
-
-	    /* inherit the wildHash from the candidate parent,
-	     * so we can compare wildcard values while validating  */
-	    if (parent == null) wildHash = new Hashtable();
-	    else wildHash = parent.getWildHash();
 
 	    // does the notification match us? 
 	    if(validate(n, parent)) {
