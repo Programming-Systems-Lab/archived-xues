@@ -19,7 +19,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.3  2000-09-07 23:15:25  jjp32
+ * Revision 1.4  2000-09-08 19:08:27  jjp32
+ *
+ * Minor updates, added socket communications in TriKXEventNotifier
+ *
+ * Revision 1.3  2000/09/07 23:15:25  jjp32
  *
  * Added EventNotifier code; updated previous event code
  *
@@ -163,17 +167,20 @@ public class EventPackager implements GroupspaceService,
     public void run() {
       /* Wait for stuff - then write it to disk - and to the bus */
       try {
-	String newInput = in.readLine();
-	if(spoolFile != null) spoolFile.writeObject(newInput);
-	if(gcRef != null) {
-	  /* Send the event */
-	  gcRef.groupspaceEvent(new GroupspaceEvent(newInput,
-						    "EventPackagerIncoming", 
-						    null, null, true));
+	while(true) {
+	  String newInput = in.readLine();
+	  if(spoolFile != null) spoolFile.writeObject(newInput);
+	  if(gcRef != null) {
+	    /* Send the event */
+	    gcRef.groupspaceEvent(new GroupspaceEvent(newInput,
+						      "EventDistillerIncoming", 
+						      null, null, true));
+	  }
 	}
       } catch(Exception e) {
 	gcRef.Log(roleName,"Error communicating with client:" + e.toString());
 	e.printStackTrace();
+	return;
       }
     }
   }

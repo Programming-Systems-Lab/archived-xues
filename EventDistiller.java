@@ -14,7 +14,11 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.3  2000-09-08 02:09:44  jjp32
+ * Revision 1.4  2000-09-08 19:08:27  jjp32
+ *
+ * Minor updates, added socket communications in TriKXEventNotifier
+ *
+ * Revision 1.3  2000/09/08 02:09:44  jjp32
  *
  * Some minor updates
  *
@@ -38,7 +42,7 @@ public class EventDistiller implements GroupspaceService,
    */
   Stack eventProcessStack = null;
 
-  /**  My execution context */
+  /** My main execution context */
   Thread edContext = null;
 
   public EventDistiller() { 
@@ -49,7 +53,7 @@ public class EventDistiller implements GroupspaceService,
     this.gcRef = gc;
     this.gcRef.registerRole(roleName, this);
     // Subscribe to EventPackager events
-    this.gcRef.subscribeEvent(this,"EventPackagerIncoming");
+    this.gcRef.subscribeEvent(this,"EventDistillerIncoming");
     this.gcRef.subscribeEvent(this,"MetaparserResult");
     return true;
   }
@@ -73,7 +77,7 @@ public class EventDistiller implements GroupspaceService,
   }
 
   public int callback(GroupspaceEvent ge) {
-    if(ge.getEventDescription().equals("EventPackagerIncoming")) {
+    if(ge.getEventDescription().equals("EventDistillerIncoming")) {
       // Add the event onto the stack and then wake up the distiller
       eventProcessStack.add(ge);
       edContext.interrupt();
