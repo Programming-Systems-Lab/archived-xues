@@ -17,7 +17,11 @@ import psl.trikx.impl.TriKXUpdateObject;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.7  2000-12-26 22:25:13  jjp32
+ * Revision 1.1  2000-12-26 22:26:54  jjp32
+ *
+ * Some rearrangements.
+ *
+ * Revision 1.7  2000/12/26 22:25:13  jjp32
  *
  * Updating to latest preview versions
  *
