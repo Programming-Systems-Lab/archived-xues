@@ -19,7 +19,10 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.21  2001-05-29 17:21:30  jjp32
+ * Revision 1.22  2001-05-29 17:25:25  jjp32
+ * Rolled in new constructors for embeddable version
+ *
+ * Revision 1.21  2001/05/29 17:21:30  jjp32
  * Added embeddable-shutdown functionality (is not a shutdown hook right
  * now-- you have been warned :)
  *
@@ -214,20 +217,32 @@ public class EventDistiller implements Runnable, Notifiable {
     System.exit(-1);
   }
 
-
   /**
    * Constructs a new EventDistiller with an owner.
    * If you use this constructor, pass events to ED directly through 
-   * the notify method using EDInputNotification.  ALSO - make sure
-   * you call shutdown() after you're done.
+   * the notify method using EDInputNotification.
    *
    * @param owner the object to which we return notifications
+   * @param spec the name of the file containing the specification;
+   *             could be null
+   * @param debug whether debug statements should be printed
    */
-  public EventDistiller(Notifiable owner) { 
+  public EventDistiller(Notifiable owner, String spec, boolean debug) { 
     this.owner = owner;
-    // Create a new thread context for us to run in
-    new Thread(this).start();
+    stateSpecFile = spec;
+    DEBUG = debug;
+
+    new Thread(this).start(); // new thread context to run in
   }
+
+  /** Constructs a new ED with an owner -- Use notifications to add rules. */
+  public EventDistiller(Notifiable owner) { this(owner, null, false); }
+
+  /** Constructs a new ED with an owner and spec file. */
+  public EventDistiller(Notifiable owner, String spec) { this(owner, spec, false); }
+
+  /** Constructs a new ED with an owner and debug statements. */
+  public EventDistiller(Notifiable owner, boolean debug) { this(owner, null, debug); }
   
   /**
    * Standard, non-embedded CTOR.
