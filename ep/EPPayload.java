@@ -1,4 +1,4 @@
-package psl.xues;
+package psl.xues.ep;
 
 /**
  * Simple class to deliver EventPackager's payload to other classes.
@@ -8,21 +8,7 @@ package psl.xues;
  * City of New York.  All Rights Reserved.
  *
  * @author Janak J Parekh
- * @version 0.1 (9/7/2000)
- *
- * $Log$
- * Revision 1.1  2002-02-24 16:33:01  jjp32
- *
- * Moving EP in preparation for overhaul
- *
- * Revision 1.2  2000/12/26 22:25:13  jjp32
- *
- * Updating to latest preview versions
- *
- * Revision 1.1  2000/09/07 19:30:49  jjp32
- *
- * Updating
- *
+ * @version $Revision$
  */
 public class EPPayload {
   int srcID;

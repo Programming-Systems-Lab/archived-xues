@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Created by jjp32 on March 8, 2002, 8:31 PM -->
+
+<EventPackagerConfiguration>
+    <EventFormats>
+        <EventFormat Name="HierarchicalEvent"></EventFormat>
+        <EventFormat Name="SienaEvent"></EventFormat>
+    </EventFormats>
+</EventPackagerConfiguration>
+
