@@ -19,7 +19,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.23  2001-06-02 18:22:56  jjp32
+ * Revision 1.24  2001-06-03 01:11:13  jjp32
+ *
+ * Updates, tweaks, hacks for demo.  Also now makes sanity check on command line params
+ *
+ * Revision 1.23  2001/06/02 18:22:56  jjp32
  *
  * Fixed bug where wildHash would not get assigned if derivative state never got a notification
  *
@@ -188,6 +192,9 @@ public class EventDistiller implements Runnable, Notifiable {
   /** Whether the ED is to be shut down by the owning application. */
   boolean inShutdown = false;
 
+  /** Last received event time.  We will use this as the reaper standard. */
+  //  long lastReceivedEventTime = -1;
+
   /** 
    * Reap fudge factor.  IMPORTANT to take care of non-realtime event
    * buses (can anyone say Siena?)  XXX - should be a better way to do this.
@@ -208,7 +215,9 @@ public class EventDistiller implements Runnable, Notifiable {
 		else
 		    usage();
 	    }
-	}   
+	} else {
+	  usage();
+	}
 	new EventDistiller();
     }
 
@@ -321,7 +330,7 @@ public class EventDistiller implements Runnable, Notifiable {
       }
 
       try {
-	Thread.sleep(2000);
+	Thread.sleep(500);
       } catch(InterruptedException ie) { ; }
 
       /* Use the following when Siena is replaced internally with something
@@ -393,6 +402,20 @@ public class EventDistiller implements Runnable, Notifiable {
 	//n.putAttribute("loopback",(int)0);
       // Add the event onto the queue and then wake up the engine
       if(DEBUG) System.err.println("EventDistiller: Putting event on queue");
+
+      // Add a timestamp RIGHT NOW, if it doesn't exist.  Less
+      // accurate than the source timestamp, but we don't worry about that
+      if(n.getAttribute("timestamp") == null) {
+	// XXX - MEGAHACK for Phil
+	if(n.getAttribute("time") != null)
+	  n.putAttribute("timestamp", n.getAttribute("time").longValue());
+	else n.putAttribute("timestamp", System.currentTimeMillis());
+      }
+
+      // in the future, possibly --- Keep our own timestamp for reap purposes (e.g., when it came in)
+      //      n.putAttribute("EDtimestamp", System.currentTimeMillis());
+
+      // Now add it
       synchronized(eventProcessQueue) {
 	eventProcessQueue.addElement(n);
       }

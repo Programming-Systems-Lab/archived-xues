@@ -25,7 +25,11 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.11  2001-06-02 18:22:56  jjp32
+ * Revision 1.12  2001-06-03 01:11:13  jjp32
+ *
+ * Updates, tweaks, hacks for demo.  Also now makes sanity check on command line params
+ *
+ * Revision 1.11  2001/06/02 18:22:56  jjp32
  *
  * Fixed bug where wildHash would not get assigned if derivative state never got a notification
  *
@@ -345,7 +349,9 @@ public class EDState implements Notifiable{
 
     /** Handles siena callbacks */
     public void notify(Notification n) {
-	long millis = System.currentTimeMillis();
+      //	long millis = System.currentTimeMillis();
+      // Log by received timestamp instead
+      long millis = n.getAttribute("timestamp").longValue();
 
 	if(EventDistiller.DEBUG) 
 	    System.err.println("EDState " + myID +
@@ -434,9 +440,10 @@ public class EDState implements Notifiable{
     // Step 1. Perform timestamp validation.  If timestamp validation
     // fails, then we don't need to go further.
     AttributeValue timestamp = n.getAttribute("timestamp");
-    if(validateTimebound(prev,timestamp/*.longValue()*/) == false)
+    if(validateTimebound(prev,timestamp/*.longValue()*/) == false) {
+      if(EventDistiller.DEBUG) System.out.println("EDState " + myID + ": validate timebound FAILED");
       return false;
-
+    }
     // Step 2. Now try and compare the attributes in the state's
     // notification.  This notification may have other attributes, but
     // we ignore them.
