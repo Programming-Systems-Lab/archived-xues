@@ -9,11 +9,13 @@
   <xsd:element name="rulebase">
     <xsd:complexType>
       <xsd:sequence>
-        <!-- Rule specification.  A rule consists of "states" that make up a pattern, and "actions" to take based on those states. -->
+        <!-- Rule specification.  A rule consists of "states" that make up a pattern, 
+	and "actions" to take based on those states. -->
         <xsd:element name="rule" maxOccurs="unbounded">
           <xsd:complexType>
             <xsd:sequence>
-              <!-- States consist of many individual attribute/value states.  They should be put in order, with appropriate timebounds. -->
+              <!-- States consist of many individual attribute/value states.  
+		They should be put in order, with appropriate timebounds. -->
               <xsd:element name="states">
                 <xsd:complexType>
                   <xsd:sequence>
@@ -27,8 +29,19 @@
                             </xsd:complexType>
                           </xsd:element>
                         </xsd:sequence>
+                        <!-- name for this event -->
+            		<xsd:attribute name="name" type="xsd:string" />	
                         <!-- Timebound for occurrence of this event -->
                         <xsd:attribute name="timebound" type="xsd:integer" />
+                        <!-- List of (names of) events that may follow this one.
+			     this list and the following are comma-delimited -->
+            		<xsd:attribute name="children" type="xsd:string" />
+                        <!-- List of (names of) notifications to send in the case that 
+			     this event is matched  -->
+            		<xsd:attribute name="actions" type="xsd:string" />
+                        <!-- List of (names of) notifications to send in the case that
+			     this event is NOT matched  -->
+            		<xsd:attribute name="fail_actions" type="xsd:string" />
                       </xsd:complexType>
                     </xsd:element> <!-- /state -->
 	          </xsd:sequence>
@@ -37,8 +50,7 @@
 
               <xsd:element name="actions">
 	        <xsd:complexType>
-	          <!-- Eventually, multiple types of notifications will be provided.  Right now, only one notification is supported - and of attribute/value type. -->
-	          <xsd:choice>
+	          <xsd:sequence> <!-- multiple types of notifications provided. -->
 	            <xsd:element name="notification" minOccurs="0" maxOccurs="unbounded">
 		      <xsd:complexType>
 		        <xsd:sequence>
@@ -51,7 +63,9 @@
 		        </xsd:sequence>
 		      </xsd:complexType>
 	            </xsd:element> <!-- /notification -->
-	          </xsd:choice> <!-- no other choices right now -->
+	          </xsd:sequence>
+                  <!-- name for this action -->
+            	  <xsd:attribute name="name" type="xsd:string" />	
 	        </xsd:complexType>
 	      </xsd:element> <!-- /actions -->
             </xsd:sequence>

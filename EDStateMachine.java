@@ -19,10 +19,82 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.9  2001-04-08 22:10:09  jjp32
+ * Revision 1.10  2001-05-21 00:43:04  jjp32
+ * Rolled in Enrico's changes to main Xues trunk
  *
- * Restored previous revisions on main branch after Enrico's accidental
- * commit (see xues-eb659 branch for those)
+ * Revision 1.7.4.6  2001/05/06 03:54:27  eb659
+ *
+ * Added support for checking multiple parents, and independent wild hashtables
+ * for different paths. ED now has full functionality, and resiliency.
+ * Now doing some additional testing for event sequences that actually use
+ * the OR representation, and re-testing the dynamic rulebase, to make sure
+ * it still works after the changes made.
+ *
+ * Revision 1.7.4.5  2001/05/02 00:04:27  eb659
+ *
+ * Tested and fixed a couple of things.
+ * New architecture works, and can be tested using EDTest.
+ * Reaper thread needs revision...
+ * Can we get rid of internal 'loopback' notifications?
+ *
+ * Revision 1.7.4.4  2001/05/01 04:21:56  eb659
+ *
+ * Added revised reaper thread and re-enabled validation.
+ * New version compiles and has 95% of the expected functionality. Next:
+ * 1) testing & debugging
+ * 2) if time permits, cool stuff like allowing multiple parents for each state, etc.
+ *
+ * Revision 1.7.4.3  2001/04/21 06:57:11  eb659
+ *
+ *
+ * A lot of changes (oh boy it's 3am already).
+ * Basically, the new architecture is in place, in terms of data
+ * structure. Next we will add the functionality.
+ *
+ * Made the following changes:
+ * - states and actions are parsed and stores in hashtables
+ * - well with the new non-sequential states you may well have
+ * multiple starting states. but then the thing of subscribing
+ * the smSpecification and waiting for the first event is not so
+ * neat anymore. Instead, for every spec, a new stateMachine is
+ * made. Then, as soon as it starts (one of the initial states is met)
+ * a new one is placed
+ * - neither smSpecification nor stateMachines subscribe.
+ * only the states currently waiting for a match.
+ * - etc. etc.
+ *
+ * compiles - but no testing done so far
+ *
+ * coming next:
+ * - new validation method for states (so that it works)
+ * - new reaper method (with failure notifs, etc.)
+ *
+ * Revision 1.7.4.2  2001/04/06 00:15:07  eb659
+ *
+ *
+ * 1) changed AddTestRule and EDStateManager to conform to the new standard notification types set in KXNotification
+ *
+ * 2) changed schema to allow multiple notifications
+ *
+ * 3) changed the following:
+ *
+ * EDStateMachineSpecification
+ * EDStateManager (the parser, and finish())
+ * EDStateMachine
+ *
+ * to allow multiple notifications, and internal notifications as well (this is what we use for loopback and higher order abstractions)
+ *
+ * Haven't tested it yet, but compiles.
+ * enrico
+ *
+ * Revision 1.7.4.1  2001/04/03 01:09:13  eb659
+ *
+ *
+ * OK this is my first upload...
+ * Basically, most of the dynamic rulebase stuff has been accomplished.
+ * the principal methods are in EDStatemanaged, but most of the files in ED
+ * had to be modified, at least in some small way
+ * enrico
  *
  * Revision 1.7  2001/03/14 20:45:15  png3
  * replaced deprecated call to Notification.iterator()
@@ -55,60 +127,91 @@ import java.util.*;
  * First full Siena-aware build of XUES!
  *
  */
-public class EDStateMachine implements Notifiable {
-  private int currentState;
-  private Vector states = null;
-  private Siena siena = null;
-  private Notification action = null;
-  private EDStateManager el = null;
-  String myID = null;
-  /**
-   * Wildcard binding hashtable.  If there are wildcards in states that must
-   * match later states, we store them in this table.  In the future, this
-   * might be used for more than just wildcards.
-   */ 
-  Hashtable wildHash = null;
+public class EDStateMachine {
+    /** the manager */
+    private EDStateManager manager = null;
 
-  /**
-   * CTOR.  EDStateMachines *must* be launched through a StateManager,
-   * and must be handed the first match that launched this state machine.
-   *
-   * @param myID My ID (just for debugging)
-   */
-  EDStateMachine(String myID,
-		 Siena siena, 
-		 EDStateManager el, 
-		 Vector stateArray,
-		 Notification firstNotification,
-		 Notification action) {
-    this.siena = siena;
-    this.el = el;
-    this.myID = myID;
-    this.action = new Notification(action);  // Make a copy
-    if(stateArray.size() == 0) { // All states done, we work, go home
-      finish();
-      return;
-    }
-    this.wildHash = new Hashtable();
-    // Add the states, set up notifications.  Why copy the states
-    // here?  Since we have to create notifications anyway...
-    states = new Vector();
-    for(int i=0; i < stateArray.size(); i++) {
-      // Clone 'em
-      addState(new EDState((EDState)stateArray.elementAt(i),this));
-    }
-    this.currentState = 0;
-    // Now register ourselves with the StateManager.  Doing so enables
-    // us to be garbage-collected intelligently (in the future).
-    el.addMachine(this);
-    // If firstNotification is not null, feed it!
-    notify(firstNotification);
+    /** the specification on which this machine is built. */
+    private EDStateMachineSpecification specification;
+
+    /** 
+     * Whether this machine has started.
+     * When the mahcine is first instanciated, 
+     * this value is set to false, and the initial states subscribed.
+     * When one of these states is matched, a call is made to make a 
+     * new instance, and the value set to true. it then remains true.
+     */
+    private boolean hasStarted = false;
+
+    /**
+     * True if the machine is in a state of transition,
+     * meaning that it is unsubscribing one state and 
+     * subscribing the children. Do not allow reaping 
+     * when the machine is in transition.
+     */
+    private boolean inTransition = false;
+
+    /** an ID number for debugging */
+    String myID = null;
+
+    /** the states in the event-graph of this stateMachine */
+    private Hashtable states = new Hashtable();
+
+    /** the notifications we send, when the states call them. */
+    private Hashtable actions = new Hashtable();
+
+    /** no! percolated down to the state level, so we can really have multiple paths
+     * with independent wildcard values
+     * Wildcard binding hashtable.  If there are wildcards in states that must
+     * match later states, we store them in this table.  In the future, this
+     * might be used for more than just wildcards.
+     */ 
+    //Hashtable wildHash = new Hashtable();
+
+    /**
+     * Constructs a new stateMachine based on a stateMachineSpecification.
+     * @param specification the specification on which this machine is constructed
+     */
+    public EDStateMachine(EDStateMachineSpecification specification) {
+	
+	this.specification = specification;
+	this.manager = specification.getManager();
+	//this.siena = manager.getSiena();
+
+	/* get an ID - for debugging
+	 * this is in the form 'rulename:index' */
+	this.myID = specification.getName() + ":" + specification.getNewID();
+	if (EventDistiller.DEBUG) 
+	    System.out.println("NEW EDStateMachine: " + myID);
+
+	// copy the actions - using the cloning constructor
+	Hashtable sourceActions = specification.getActions();
+	Enumeration keys = sourceActions.keys();
+	while(keys.hasMoreElements()){
+	    String key = keys.nextElement().toString();
+	    this.actions.put(key, new Notification((Notification)sourceActions.get(key)));
+	}
+
+	// copy the states - using the cloning constructor
+	Hashtable sourceStates = specification.getStates();
+	keys = sourceStates.keys();
+	while(keys.hasMoreElements()){
+	    String key = keys.nextElement().toString();
+	    EDState e = new EDState((EDState)sourceStates.get(key), 
+				    this, manager.getSiena());
+	    this.states.put(key, e);
+	}
+
+	// subscribe initial states
+	String[] initialStates = specification.getInitialStates();
+	for (int i = 0; i < initialStates.length; i++)
+	    ((EDState)states.get(initialStates[i])).bear(null);
   }
     
-  /**
+  /* do we need this?
    * Add a state.  WARNING! This machine *WILL* adjust the state.  If you 
    * need a deep copy, make one!
-   */
+   *
   public void addState(EDState s) {
     // Assign ourselves as the "owner" state machine
     s.assignOwner(this);
@@ -119,28 +222,30 @@ public class EDStateMachine implements Notifiable {
 	System.err.println("EDStateMachine/"+myID+"/"+": Subscribing " + f);
       siena.subscribe(f,this);
     } catch(SienaException e) { e.printStackTrace(); }
-  }
+  }*/
 
-  /** 
+  /*
    * Add an action.  If the notification does not exist it will be
    * created the first time.  Use setAction if you want to *replace*
    * the notification with a new one.
-   */
+   *
   public void addAction(String attr, String val) {
     if(action == null) {
       action = new Notification();
     }
     action.putAttribute(attr, val);
-  }
+    } */
 
-  /**
+  /*
    * (Re)set the action.
-   */
+   *
   public void setAction(String attr, String val) {
     action = null;
     addAction(attr,val);
-  }
-  
+    } */
+
+    /*
+      move this to the EDState...
   public void notify(Notification n) {
     long millis = System.currentTimeMillis();
     if(EventDistiller.DEBUG) 
@@ -169,16 +274,17 @@ public class EDStateMachine implements Notifiable {
     }
   }
 
-  /** Unused Siena construct. */
-  public void notify(Notification[] s) { ; }
+  /** Unused Siena construct. 
+      public void notify(Notification[] s) { ; }*/
 
-  /**
+  /** moved down to the state level 
+   * needs revision - or, do we need this at all?
    * Finish up the state machine.  Yes, this could be inlined, but
    * why?  Also, another alternative is to have EDManager do the
    * unsubscription.  Since we subscribe in the first place it seems
    * to make better sense to handle our own unsubscriptions (but this
    * behavior may change someday...)
-   */
+   *
   private void finish() {
     if(EventDistiller.DEBUG)
       System.err.println("EDStateMachine/" + myID + "/: finishing");
@@ -187,50 +293,59 @@ public class EDStateMachine implements Notifiable {
       siena.unsubscribe(this);
     } catch(SienaException e) { e.printStackTrace(); }
 
-    // Do we need to amend the Notification?  Iterate through all
-    // attribute values and fill in any wildcard hashes in.
-    // png 14 Mar 2001  replaced deprecated method
-    // Iterator i = action.iterator();
-    Iterator i = action.attributeNamesIterator();
-
-    while(i.hasNext()) {
-      String attr = (String)i.next();
-      AttributeValue val = action.getAttribute(attr);
-      if(val.getType() == AttributeValue.STRING &&
-	 val.stringValue().startsWith("*")) {
-	String key = val.stringValue().substring(1);
-	AttributeValue bindVal = (AttributeValue)wildHash.get(key);
-	if(bindVal != null) {
-	  // Replace this attributeValue
-	  action.putAttribute(attr,bindVal);
-	}
-      }
     }
 
     // Call our manager and tell them we're finished, and hand them
-    // the (modified) notification to send
-    el.finish(this, action);
-  }
+    // the (modified) notifications to send
+    el.finish(this, actions);
+  } */
 
-  /**
-   * Reap ourselves if necessary.  This involves deregistering us from
-   * EDStateManager stateMachines array, and unsubscribing from
-   * Siena.  The former is done by our StateManager oh-so-nicely.
-   *
-   * The Grim Reaper (in EventDistiller) will eventually get to us by
-   * calling this method.
-   */
-  public boolean reap() {
+    /** 
+     * Reap ourselves if necessary. 
+     * The Grim Reaper (in EventDistiller) will eventually get to us by
+     * calling this method.
+     * @return whether this machine is 'dead' and can be removed 
+     */
+    public boolean reap() {
+	/* if machine has not started yet, keep it
+	   if it is in a state of transition, don't check it */
+	if(!hasStarted || inTransition) return false;
+
+	/* go through individual states,
+	 * which will kill themselves if they timed out */
+	Vector failedStateNames = new Vector();
+	Enumeration keys = states.keys();
+	while(keys.hasMoreElements()){
+	    String key = keys.nextElement().toString();
+	    EDState e = (EDState)states.get(key);
+	    // remember which states timed out
+	    if (e.isAlive() && e.reap()) failedStateNames.add(e.getName());
+	}
+
+	if(containsLiveStates()) return false;
+
+	/* if all states are dead by now: 
+	 * 1) send failure notifications for SOME state that failed */
+	if (failedStateNames.size() > 0) 
+	    ((EDState)states.get(failedStateNames.get(0).toString())).fail();
+	/* 2) throw the state amchine away */
+	if (EventDistiller.DEBUG) 
+	    System.out.println("EDStateMachine: " + myID + " about to get reaped");
+	return true; 
+
+
+	/*
+	  this test has been moved down to the state level
 
     boolean reap = false;
 
-    /* Should never happen, but easy boundary cases */
+    // Should never happen, but easy boundary cases 
     if(currentState == 0) reap = false;
     else if(currentState == states.size()) reap = true;
     
     /* Now try calling validateTimebound, assume the current state
      * occurs --NOW--, and if that fails, then we MUST reap.
-     */
+     *
     else if(((EDState)states.elementAt(currentState)).
 	    validateTimebound((EDState)states.elementAt(currentState-1),
 			      System.currentTimeMillis() - 
@@ -238,14 +353,114 @@ public class EDStateMachine implements Notifiable {
       reap = true;
     }
     
-    /* Now, shall we reap?  :) */
-    if(reap) {
-      // Let's go
-      try {
-	siena.unsubscribe(this);
-      } catch(SienaException e) { e.printStackTrace(); }
+	// Now, shall we reap?  
+    if(reap) unsubscribe();
+
+    return reap;    */
     }
 
-    return reap;    
-  }
+    /** @return whether there are live states in this machine */
+    private boolean containsLiveStates(){
+	Enumeration elements = states.elements();
+	while(elements.hasMoreElements()){
+	    if(((EDState)elements.nextElement()).isAlive()) return true;
+	}
+	return false;
+    }
+
+    /** 
+     * Kill all the states currently subscribed. 
+     * this has the effect that the machine will be
+     * reaped the next time the manager takes a look at us.
+     */
+    public void killAllStates(){
+	Enumeration keys = states.keys();
+	while(keys.hasMoreElements()){
+	    Object key = keys.nextElement();
+	    EDState e = (EDState)states.get(key);
+	    if(e.isAlive()) e.kill();
+	}
+    }
+
+    /** @return the specification for this machine */
+    public EDStateMachineSpecification getSpecification(){ return specification;  }
+
+    /** @return whether this machine has started receiving notifications */
+    public boolean hasStarted(){ return this.hasStarted; }
+
+    /** Called when a state has been matched. So now we know we've started */
+    public void setStarted(){
+	if(hasStarted) return;
+	hasStarted = true;
+	// ask the manager to put a new 'clear' machine on the list
+	manager.addStateMachine(specification);
+    }
+
+    /** 
+     * Sends the given notification out, after filling
+     * in the required wildcards. The wildcard hashtable
+     * is passed from the specific state that publishes the action,
+     * since different states in the graph may have different
+     * values for their wildcard hashtables.
+     * @param actionName the name of the action to send
+     * @param wildHash the hashtable containing any wildcards
+     *        that may be needed to fill in the actions
+     */
+    public void sendAction(String actionName, Hashtable wildHash) {
+	Notification action = (Notification)actions.get(actionName);
+	if (action != null) {
+	    // Do we need to amend the Notification?  Iterate through all
+	    // attribute values and fill in any wildcard hashes in.
+	    Iterator i = action.attributeNamesIterator();	
+	    while(i.hasNext()) {
+		String attr = (String)i.next();
+		AttributeValue val = action.getAttribute(attr);
+		if(val.getType() == AttributeValue.STRING &&
+		   val.stringValue().startsWith("*")) {
+		    String key = val.stringValue().substring(1);
+		    AttributeValue bindVal = (AttributeValue)wildHash.get(key);
+		    if(bindVal != null) {
+			// Replace this attributeValue
+			action.putAttribute(attr,bindVal);
+		    }
+		}
+	    }
+	    if (EventDistiller.DEBUG)
+		System.out.println("EDStateMachine: " + specification.getName() 
+				   + ":" +  myID + " sending notification...");
+	    manager.getEventDistiller().sendPublic(action);
+	}
+	else System.err.println
+		 ("ERROR: could find no action with name: " + actionName);
+    }
+
+    /** 
+     * Returns the action requested.
+     * @param actionName the name of the action
+     * @return the action with the given name
+     */
+    public Notification getAction(String actionName) {
+	return (Notification)actions.get(actionName);
+    }
+
+    /** 
+     * Returns the state requested.
+     * @param stateName the name of the action
+     * @return the state with the given name
+     */
+    public EDState getState(String stateName) {
+	return (EDState)states.get(stateName);
+    }
+
+    /** 
+     * Sets the value for inTransition. Called by a state
+     * when it is bearing children.
+     * @param inTransition the new value for inTransition
+     */
+    void setInTransition(boolean inTransition) {
+	this.inTransition = inTransition;
+    }
 }
+
+
+

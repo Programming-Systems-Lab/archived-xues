@@ -1,0 +1,11 @@
+Event loopback support
+
+Perhaps, to solve the spamblocker rule, a way of limiting the number of simultaneous threads, or absorb rules.
+
+Integrate James's daughter-of-Siena (DOS) :)
+
+What if all the attributes for a state are not there?
+
+Clean up the schema file (Janak)
+
+Dynamic rules - what happens if you try to add a rule that already exists?  Perhaps we need to use rule naming to establish a policy about this.

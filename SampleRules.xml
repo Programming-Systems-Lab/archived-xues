@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- Sample EventDistiller 2.0 rules.
+     By Janak J Parekh (jjp32@cs.columbia.edu) and 
+        Enrico Buonnano (eb659@cs.columbia.edu)
+
+     Copyright 2001 Trustees of Columbia University in the City of New York.
+     All Rights Reserved.
+-->
+
+<rulebase xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd">
+
+<!-- The spamblocker rule.  If we receive two "spam" notifications from the
+     same person, send out appropriate notifications.  NOTE: Since
+     the two states are the same, the second event received will match the
+     BOTH the first and the second, and a new state machine will be
+     generated.  Since said machine has a failure notification, 
+     a failure notification will always be generated.  -->
+<rule name="spamblocker">
+   <states>
+      <state name="a" timebound="-1" children="b" actions="" fail_actions="">
+        <attribute name="from" value="*1"/>
+	<attribute name="spam" value="true"/>
+      </state>
+      <state name="b" timebound="5" children="" actions="A,B" fail_actions="F">
+        <attribute name="from" value="*1"/>
+	<attribute name="spam" value="true"/>
+      </state>
+   </states>
+   <actions>
+      <notification name="A">
+         <attribute name="spamblock" value="*1"/>
+      </notification>
+      <!-- test multiple notifications - and loopback! -->
+      <notification name="B">
+         <attribute name="spamblock" value="*1"/>
+	 <attribute name="internal" value="true"/>
+      </notification>
+      <!-- test failure notifications -->
+      <notification name="F">
+	 <attribute name="spamblocker_failure" value="true"/>
+      </notification>
+   </actions>
+</rule>
+
+<!-- The hexagon rule. The graph for this rule is like:
+                    c - d
+                   /     \
+              a - b       g - h
+                   \     /
+                    e - f                           -->
+<rule name="hexagon">
+   <states>
+      <state name="a" timebound="-1" children="b" actions="" fail_actions="">
+        <attribute name="event" value="a"/>
+      </state>
+      <state name="b" timebound="10" children="c,e" actions="" fail_actions="">
+	<attribute name="event" value="b"/>
+      </state>
+      <state name="c" timebound="10" children="d" actions="" fail_actions="">
+        <attribute name="event" value="c"/>
+      </state>
+      <state name="d" timebound="10" children="g" actions="" fail_actions="">
+        <attribute name="event" value="d"/>
+      </state>
+      <state name="e" timebound="10" children="f" actions="" fail_actions="">
+        <attribute name="event" value="e"/>
+      </state>
+      <state name="f" timebound="10" children="g" actions="" fail_actions="">
+        <attribute name="event" value="f"/>
+      </state>
+      <state name="g" timebound="10" children="h" actions="" fail_actions="">
+        <attribute name="event" value="g"/>
+      </state>
+      <state name="h" timebound="10" children="" actions="A" fail_actions="">
+        <attribute name="event" value="h"/>
+      </state>
+   </states>
+   <actions>
+      <notification name="A">
+         <attribute name="hex" value="true"/>
+      </notification>
+<!-- more actions? -->
+   </actions>
+</rule>
+</rulebase>

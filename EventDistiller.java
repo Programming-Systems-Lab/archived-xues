@@ -19,7 +19,48 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.16  2001-01-30 07:33:10  jjp32
+ * Revision 1.17  2001-05-21 00:43:04  jjp32
+ * Rolled in Enrico's changes to main Xues trunk
+ *
+ * Revision 1.16.4.4  2001/05/06 08:01:48  eb659
+ *
+ * FINAL VERSION FOR THIS RELEASE! Expected functionality fully implemented.
+ * Use EDTestOR to test or representation. Call it with smthg like:
+ * 'java psl.xues.EDTestOR -s senp://canal:8888 -e abc'
+ * using the desired siena host, and the desired event sequence. The command
+ * above will send the events a, b, c, in that order. Look at the definition
+ * of the 'hexagon rule' in TestRules2.xml to see which sequences are significant
+ * to test.
+ * Any reasonably short  sequence that contains, as a subset,
+ * either 'abcdgh' or 'abefgh' should succeed (that is, propagate a success
+ * notification {hex="true"}. Any sequence that does not satisfy this, should
+ * fail, and the instantiate machine should time out.
+ *
+ * Otherwise, use EDTest to see the normal functioning, and AddRuleTest
+ * (removing comments as appropriate) to test different dynamic rulebase
+ * functions.
+ *
+ * Revision 1.16.4.3  2001/05/06 05:31:07  eb659
+ *
+ * Thoroughly re-tested all dynamic rulebase and fixed so that it
+ * works with the new arch.
+ *
+ * Revision 1.16.4.2  2001/05/06 03:54:27  eb659
+ *
+ * Added support for checking multiple parents, and independent wild hashtables
+ * for different paths. ED now has full functionality, and resiliency.
+ * Now doing some additional testing for event sequences that actually use
+ * the OR representation, and re-testing the dynamic rulebase, to make sure
+ * it still works after the changes made.
+ *
+ * Revision 1.16.4.1  2001/05/02 00:04:27  eb659
+ *
+ * Tested and fixed a couple of things.
+ * New architecture works, and can be tested using EDTest.
+ * Reaper thread needs revision...
+ * Can we get rid of internal 'loopback' notifications?
+ *
+ * Revision 1.16  2001/01/30 07:33:10  jjp32
  *
  * I'm done for tonight
  *
@@ -102,7 +143,7 @@ public class EventDistiller implements Notifiable {
   private Siena publicSiena = null;
 
   /** Private loopback Siena */
-  private Siena loopbackSiena = null;
+    //private Siena loopbackSiena = null;
 
   /** Debug flag. */
   static boolean DEBUG = false;
@@ -117,25 +158,25 @@ public class EventDistiller implements Notifiable {
    * Reap fudge factor.  IMPORTANT to take care of non-realtime event
    * buses (can anyone say Siena?)  XXX - should be a better way to do this.
    */
-  public static int reapFudgeMillis = 60000;
+  public static int reapFudgeMillis = 6000;
 
-  /**
-   * Main.  */
-  public static void main(String args[]) {
-    if(args.length > 0) { // Siena host specified?
-      for(int i=0; i < args.length; i++) {
-	if(args[i].equals("-s"))
-	  sienaHost = args[++i];
-	else if(args[i].equals("-f"))
-	  stateSpecFile = args[++i];
-	else if(args[i].equals("-d"))
-	  DEBUG = true;
-	else
-	  usage();
-      }
-    }   
-    new EventDistiller();
-  }
+    /**
+     * Main. */
+    public static void main(String args[]) {
+	if(args.length > 0) { // Siena host specified?
+	    for(int i=0; i < args.length; i++) {
+		if(args[i].equals("-s"))
+		    sienaHost = args[++i];
+		else if(args[i].equals("-f"))
+		    stateSpecFile = args[++i];
+		else if(args[i].equals("-d"))
+		    DEBUG = true;
+		else
+		    usage();
+	    }
+	}   
+	new EventDistiller();
+    }
 
   /**
    * Print usage.
@@ -186,41 +227,7 @@ public class EventDistiller implements Notifiable {
       ((HierarchicalDispatcher)privateSiena).
 	setReceiver(new TCPPacketReceiver(61979));
     } catch(Exception e) { e.printStackTrace(); }
-
-    // Private siena tester.  Just relays all events published to
-    // private siena on screen.
-    if(EventDistiller.DEBUG) {
-      System.err.println("EventDistiller: Creating private siena tester");
-      Filter f = new Filter();
-      //      f.addConstraint("",new AttributeConstraint(Op.ANY,""));
-      //      f.addConstraint("foo",Op.EQ,"bar");
-      f.addConstraint("loopback",
-		      new AttributeConstraint(Op.ANY,(AttributeValue)null));
-      System.err.println("EventDistiller: Private tester constraint is" 
-			 + " " + f);
-      try {
-	privateSiena.subscribe(f, new Notifiable() {
-	    public void notify(Notification n) {
-	      System.err.println("EventDistiller: Internal received " + n);
-	    }
-	    public void notify(Notification[] n) { ; }
-	  });
-      } catch(Exception e) { e.printStackTrace(); }
-    }			    
     
-    /*
-      // Create private loopback siena
-      loopbackSiena = new HierarchicalDispatcher();
-      try {
-      ((HierarchicalDispatcher)loopbackSiena).
-      setReceiver(new TCPPacketReceiver(61980));
-      ((HierarchicalDispatcher)loopbackSiena).
-      setMaster("senp://localhost:61979");
-      // Now start a loopback class
-      EDLoopback edlb = new EDLoopback(loopbackSiena);
-      } catch(Exception e) { e.printStackTrace(); }
-    */
-
     // Initialize state machine manager.  Hand it the private siena.
     EDStateManager edsm = new EDStateManager(privateSiena, this, 
 					     stateSpecFile);
@@ -239,7 +246,9 @@ public class EventDistiller implements Notifiable {
       });
 
 
-    // Run
+    // Run process injector.  NOTE: Due to parallelism of Siena, ordering
+    // is not guaranteed.  Below is a rather hacky way of ensuring a
+    // very high probability of order in the internal Siena.
     while(true) {
       if(EventDistiller.DEBUG)
 	System.err.println("EventDistiller: Checking process queue");
@@ -254,20 +263,22 @@ public class EventDistiller implements Notifiable {
 	Thread.sleep(2000);
       } catch(InterruptedException ie) { ; }
 
-      /*      if(size == 0) {
-	      if(EventDistiller.DEBUG)
-	      System.err.println("EventDistiller: Queue empty, sleeping");
-	      try {
-	      Thread.sleep(2000);
-	      } catch(InterruptedException ie) { ; }
-	      continue;
-	      } else*/
+      /* Use the following when Siena is replaced internally with something
+	 more sane. */
+      /*if(size == 0) {
+	if(EventDistiller.DEBUG)
+	System.err.println("EventDistiller: Queue empty, sleeping");
+	try {
+	Thread.sleep(2000);
+	} catch(InterruptedException ie) { ; }
+	continue;
+	} else*/
       if(size != 0) {
 	// Pull them off
 	synchronized(eventProcessQueue) {
 	  Notification n = (Notification)eventProcessQueue.remove(0);
 	  if(EventDistiller.DEBUG)
-	    System.err.println("EventDistiller: Processing " + n);
+	    System.err.println("EventDistiller: Publishing event internally " + n);
 	  // Feed it to our internal Siena
 	  try {
 	    privateSiena.publish(n);
@@ -301,7 +312,7 @@ public class EventDistiller implements Notifiable {
     } else if(n.getAttribute("Type").stringValue().equals("ParsedEvent") ||
 	      n.getAttribute("Type").stringValue().equals("EDInput")) {
       // Add a loopback value
-      n.putAttribute("loopback",(int)0);
+	//n.putAttribute("loopback",(int)0);
       // Add the event onto the queue and then wake up the engine
       if(DEBUG) System.err.println("EventDistiller: Putting event on queue");
       synchronized(eventProcessQueue) {
@@ -315,13 +326,23 @@ public class EventDistiller implements Notifiable {
   public void notify(Notification[] s) { ; }
 
   /**
-   * Send out to the world.  Used for the state machine.
+   * Propagates a given notification to the world - or
+   * internally, if it is an internal notification.
+   * @param n the notofication to propagate
    */
   void sendPublic(Notification n) {
     if(EventDistiller.DEBUG)
-      System.err.println("EventDistiller: sending event " + n);
+      System.err.println("YES! EventDistiller: sending event " + n);
     try {
-      publicSiena.publish(n);
-    } catch(SienaException e) { e.printStackTrace(); }
+	/* if this is an internal notification
+	 * we just send it through to ourselves. */
+	if (n.getAttribute("Internal") != null && 
+	    n.getAttribute("Internal").booleanValue()) 
+	    privateSiena.publish(KXNotification.EDInternalNotification(n)); 
+	
+	// Propagate the notification up, but wrap it in KX form (... ?)
+	else publicSiena.publish(n); 
+    }
+    catch(SienaException e) { e.printStackTrace(); }
   }
 }
