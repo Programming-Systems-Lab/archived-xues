@@ -19,7 +19,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.2  2000-09-07 19:30:49  jjp32
+ * Revision 1.3  2000-09-07 23:15:25  jjp32
+ *
+ * Added EventNotifier code; updated previous event code
+ *
+ * Revision 1.2  2000/09/07 19:30:49  jjp32
  *
  * Updating
  *
@@ -50,7 +54,7 @@ public class EventPackager implements GroupspaceService,
    */
   public EventPackager(int listeningPort, String spoolFilename) { 
     this.listeningPort = listeningPort;
-    this.spoolFilename = spoolFile;
+    this.spoolFilename = spoolFilename;
     if(this.spoolFilename != null) { 
       try {
 	this.spoolFile = new ObjectOutputStream(new
@@ -70,8 +74,8 @@ public class EventPackager implements GroupspaceService,
    */
   public boolean gsInit(GroupspaceController gc) {
     this.gcRef = gc;
-    gc.registerRole(roleName, this); // Register to receive events
-    gc.Log(roleName, "Ready.");
+    gcRef.registerRole(roleName, this); // Register to receive events
+    gcRef.Log(roleName, "Ready.");
     return true;
   }
 
@@ -93,13 +97,21 @@ public class EventPackager implements GroupspaceService,
    */
   public void run() {
     /* Set up server socket */
-    listeningSocket = new ServerSocket(listeningPort);
-
+    try {
+      listeningSocket = new ServerSocket(listeningPort);
+    } catch(Exception e) {
+      gcRef.Log(roleName, "Failed in setting up serverSocket");
+      listeningSocket = null;
+    }
     /* Listen for connection */
     while(true) {
-      Socket newSock = listeningSocket.accept();
-      /* Hand the hot potato off! */
-      new Thread(new EPClientThread(srcIDCounter++,newSock));
+      try {
+	Socket newSock = listeningSocket.accept();
+	/* Hand the hot potato off! */
+	new Thread(new EPClientThread(srcIDCounter++,newSock));
+      } catch(Exception e) {
+	gcRef.Log(roleName, "Failed in accept from serverSocket");
+      }
     }
   }
 
@@ -143,7 +155,7 @@ public class EventPackager implements GroupspaceService,
 	//	this.out = new PrintWriter(clientSocket.getOutputStream(), 
 	//				   true); //autoflush
       } catch(Exception e) {
-	gc.Log("Error establishing client connection:" + e.toString());
+	gcRef.Log(roleName,"Error establishing client connection:" + e.toString());
 	e.printStackTrace();
       }
     }
@@ -160,7 +172,7 @@ public class EventPackager implements GroupspaceService,
 						    null, null, true));
 	}
       } catch(Exception e) {
-	gc.Log("Error communicating with client:" + e.toString());
+	gcRef.Log(roleName,"Error communicating with client:" + e.toString());
 	e.printStackTrace();
       }
     }

@@ -2,6 +2,7 @@ package psl.xues;
 
 import psl.groupspace.*;
 import java.io.*;
+import java.util.*;
 
 /**
  * The Event Distiller.
@@ -13,7 +14,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.1  2000-09-07 19:30:49  jjp32
+ * Revision 1.2  2000-09-07 23:15:25  jjp32
+ *
+ * Added EventNotifier code; updated previous event code
+ *
+ * Revision 1.1  2000/09/07 19:30:49  jjp32
  *
  * Updating
  *
@@ -51,7 +56,7 @@ public class EventDistiller implements GroupspaceService,
   public void run() { 
     // Set the current execution context, so if the callback is called
     // it can wake up a sleeping distiller
-    edContext = Thread.getCurrentThread();
+    edContext = Thread.currentThread();
 
     while(true) {
       // Poll for events to process
@@ -63,11 +68,11 @@ public class EventDistiller implements GroupspaceService,
   }
 
   public int callback(GroupspaceEvent ge) {
-    if(ge.getDescription().equals("EventPackagerIncoming") {
+    if(ge.getEventDescription().equals("EventPackagerIncoming")) {
       // Add the event onto the stack and then wake up the distiller
       eventProcessStack.add(ge);
       edContext.interrupt();
-    } else if(ge.getDescription().equals("MetaparserResult") {
+    } else if(ge.getEventDescription().equals("MetaparserResult")) {
       // Need to deal with this
       System.err.println("METAPARSER RESULT: " + ge);   
     }
