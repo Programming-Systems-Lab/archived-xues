@@ -1,9 +1,17 @@
 package psl.xues;
 
 import siena.*;
-import psl.kx.*;
 import java.net.*;
 import java.io.*;
+/* additional imports for putting Siena info into databases */
+import org.hsql.*;
+import org.hsql.util.*;
+import psl.kx.*;
+//import org.jdom.*;
+//import org.jdom.input.*;
+import java.sql.*;
+import java.util.*;
+
 
 /** 
  * EventPackager for Xues.  Now Siena-compliant(TM).
@@ -26,11 +34,9 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.21  2001-06-18 17:44:51  jjp32
+ * Revision 1.22  2001-06-29 19:27:45  aq41
  *
- * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
- * trunk is now development again, and the aforementioned branches are
- * hereby closed.
+ * Put Rose's version in CVS, added Tuple, removed jdom reference
  *
  * Revision 1.17  2001/01/30 02:39:36  jjp32
  *
@@ -100,220 +106,485 @@ import java.io.*;
  *
  * Updating
  *
+ * java siena.StartServer -port 1982
+ * java psl.xues.EventPackager -s senp://localhost:1982 -d
+ * java psl.xues.EPTest senp://localhost:1982
  */
+
 public class EventPackager implements Notifiable {
-  /** XXX - This is a hack for now */
-  private static String sienaHost = "senp://localhost";
-
-  int listeningPort = -1;
-  ServerSocket listeningSocket = null;
-  String spoolFilename;
-  ObjectOutputStream spoolFile;
-  int srcIDCounter = 0;
-  Siena siena = null;
-
-  /* Debug flag */
-  static boolean DEBUG = false;
-
-  /**
-   * Basic CTOR.  
-   * Assumes no spooling, and no listening sockets.
-   */
-  public EventPackager() {
-    this(-1, null);
-  }
-
-  /**
-   * CTOR.
-   *
-   * @param listeningPort Port to establish listening on.
-   * @param spoolFile File to spool events to.
-   */
-  public EventPackager(int listeningPort, String spoolFilename) { 
-    this.listeningPort = listeningPort;
-    this.spoolFilename = spoolFilename;
-    if(this.spoolFilename != null) { 
-      try {
-	this.spoolFile = new ObjectOutputStream(new
-	  FileOutputStream(this.spoolFilename,true));	
-      } catch(Exception e) { 
-	System.err.println("Error creating spool file");
-	e.printStackTrace();
-      }
+    /** XXX - This is a hack for now */
+    private static String sienaHost = "senp://localhost";
+    
+    /* new fields for using database */  
+    private Connection conn; // database connection
+    private Statement statement; // sql statement
+    private DatabaseMetaData meta; // database metadata
+    private int current; // the largest assigned index 
+    private Filter filter; // siena filter
+    private String filterName; // filter component name
+    private int maxresults = 5; // the max num of results that
+                                //can be returned from an EPLookup query
+    
+    private static String[] tableCreationSQL = {		
+	"create table EVENTS (id integer,"+
+	"time bigint,"+
+	"source varchar(200),"+
+	"type varchar(200),"+
+	"PRIMARY KEY (id) )",
+	"create index time on EVENTS(time)"
+    };
+    
+    int listeningPort = -1;
+    ServerSocket listeningSocket = null;
+    String spoolFilename;
+    ObjectOutputStream spoolFile;
+    int srcIDCounter = 0;
+    Siena siena = null;
+    
+    /* Debug flag */
+    static boolean DEBUG = false;
+    
+    /**
+     * Basic CTOR.  
+     * Assumes no spooling, and no listening sockets.
+     */
+    public EventPackager() {
+	this(-1, null);
     }
-
-    /* Add a shutdown hook */
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-	public void run() {      
-	  /* Clean up the file streams */
-	  if(spoolFile != null) {
-	    System.err.println("EventPackager: shutting down");
+    
+    /**
+     * CTOR.
+     *
+     * @param listeningPort Port to establish listening on.
+     * @param spoolFile File to spool events to.
+     */
+    public EventPackager(int listeningPort, String spoolFilename) { 
+	this.listeningPort = listeningPort;
+	this.spoolFilename = spoolFilename;
+	if(this.spoolFilename != null) { 
 	    try {
-	      spoolFile.close();
-	      spoolFile = null;
-	      ((HierarchicalDispatcher)siena).shutdown();
-	    } catch(Exception e) { e.printStackTrace(); }
-	  }
+		this.spoolFile = new ObjectOutputStream(new
+							FileOutputStream(this.spoolFilename,true));	
+	    } catch(Exception e) { 
+		System.err.println("Error creating spool file");
+		e.printStackTrace();
+	    }
 	}
-      });
-    
-    // Now create a Siena node
-    siena = new HierarchicalDispatcher();
-    try {
-      ((HierarchicalDispatcher)siena).
-	setReceiver(new TCPPacketReceiver(61977));
-      ((HierarchicalDispatcher)siena).setMaster(sienaHost);
-    } catch(Exception e) { e.printStackTrace(); }
-
-    // Set up listening.  We listen for SmartEvents (which have a data
-    // field with all the data) and DirectEvents (which have the
-    // attributes inline).
-    Filter f = new Filter();
-    f.addConstraint("Type","SmartEvent");
-    try {
-      siena.subscribe(f, this);
-    } catch(SienaException e) { e.printStackTrace(); }
-
-    Filter g = new Filter();
-    g.addConstraint("Type","DirectEvent");
-    try {
-      siena.subscribe(g, this);
-    } catch(SienaException e) { e.printStackTrace(); }
-  }
-    
-  /**
-   * Run routine.
-   */
-  public void run() {
-    /* Set up server socket */
-    try {
-      listeningSocket = new ServerSocket(listeningPort);
-    } catch(Exception e) {
-      System.err.println("EventPackager: Failed in setting up serverSocket, "+
-			 "shutting down");
-      listeningSocket = null;
-      return;
-    }
-    /* Listen for connection */
-    while(true) {
-      try {
-	Socket newSock = listeningSocket.accept();
-	/* Hand the hot potato off! */
-	new Thread(new EPClientThread(srcIDCounter++,newSock)).start();
-      } catch(Exception e) {
-	System.err.println("EventPackager: Failed in accept from "+
-			   "serverSocket");
-      }
-    }
-  }
-
-  /**
-   * Tester.
-   */
-  public static void main(String args[]) {
-    if(args.length > 0) { // Siena host specified?
-      for(int i=0; i < args.length; i++) {
-	if(args[i].equals("-s"))
-	  sienaHost = args[++i];
-	else if(args[i].equals("-?"))
-	  usage();
-	else if(args[i].equals("-d"))
-	  DEBUG = true;
-	else
-	  usage();
-      }
-    }	   
-
-    EventPackager ep = new EventPackager(7777, "EventPackager.spl");
-    ep.run();
-  } 
-
-  /**
-   * Print usage.
-   */
-  public static void usage() {
-    System.out.println("usage: java EventPackager [-s sienaHost] [-d] [-?]");
-    System.exit(-1);
-  }
-
-  /**
-   * Handle incoming siena notifications.
-   */
-  public void notify(Notification n) {
-    if(DEBUG) System.err.println("EventPackager: received notification " + n);
-
-    // Do a turnaround and send it out.
-    Notification q = null;
-    if(n.getAttribute("Type").stringValue().equals("SmartEvent")) {
-      // Extract the XML data and send it out
-      String data = n.getAttribute("SmartEvent").stringValue();
-      q = KXNotification.EventPackagerKXNotification(11111,22222,(String)null,
-						     data);
-    } else {
-      // Direct Siena thing, just send it out
-      q = KXNotification.EventPackagerKXNotification(11111,22222,n);
-    }
-
-    try {
-      if(DEBUG) System.err.println("EventPackager: sending notification " + q);
-      siena.publish(q);
-    } catch(SienaException e) { e.printStackTrace(); }
-  }
-
-  /** Unused Siena construct. */
-  public void notify(Notification[] s) { ; }
-
-  class EPClientThread implements Runnable {
-    private int srcID;
-    private Socket clientSocket;
-    private BufferedReader in;
-    //    private PrintWriter out;
-
-    public EPClientThread(int srcID, Socket clientSocket) {
-      this.srcID = srcID;
-      this.clientSocket = clientSocket;
-      /* Build the streams */
-      try {
-	this.in = new BufferedReader(new 
-	  InputStreamReader(clientSocket.getInputStream()));
-	//	this.out = new PrintWriter(clientSocket.getOutputStream(), 
-	//				   true); //autoflush
-      } catch(Exception e) {
-	System.err.println("Error establishing client connection: " +
-			   e.toString());
-	e.printStackTrace();
-      }
+	
+	/* create a connection to the database */
+	connectDB("DB", "sa", "");
+	/* Add a shutdown hook */
+	Runtime.getRuntime().addShutdownHook(new Thread() {
+	    public void run() {      
+		/* Clean up the file streams */
+		if(spoolFile != null) {
+		    System.err.println("EventPackager: shutting down");
+		    try {
+			spoolFile.close();
+			spoolFile = null;
+			((HierarchicalDispatcher)siena).shutdown();
+			disconnectDB(); // **
+		    } catch(Exception e) { e.printStackTrace(); }
+		}
+	    }
+	});
+	
+	// Now create a Siena node
+	siena = new HierarchicalDispatcher();
+	try {
+	    ((HierarchicalDispatcher)siena).
+		setReceiver(new TCPPacketReceiver(61977));
+	    ((HierarchicalDispatcher)siena).setMaster(sienaHost);
+	} catch(Exception e) { e.printStackTrace(); }
+	
+	// Set up listening.  We listen for SmartEvents (which have a data
+	// field with all the data), DirectEvents (which have the
+	// attributes inline), and EPLookup events 
+	Filter f = new Filter();
+	f.addConstraint("Type","SmartEvent");
+	try {
+	    siena.subscribe(f, this);
+	} catch(SienaException e) { e.printStackTrace(); }
+	
+	Filter g = new Filter();
+	g.addConstraint("Type","DirectEvent");
+	try {
+	    siena.subscribe(g, this);
+	} catch(SienaException e) { e.printStackTrace(); }
+	
+	Filter h = new Filter();
+	h.addConstraint("Type","EPLookup");
+	try {
+	    siena.subscribe(h, this);
+	} catch(SienaException e) { e.printStackTrace(); }    
     }
     
+    /**
+     * Run routine.
+     */
     public void run() {
-      /* Wait for stuff - then write it to disk - and to the bus */
-      try {
-	while(true) {
-	  String newInput = in.readLine();
-	  if(newInput == null) { // Finished
-	    System.err.println("EPCThread: closing connection");
-	    in.close();
-	    clientSocket.close();
+	/* Set up server socket */
+	try {
+	    listeningSocket = new ServerSocket(listeningPort);
+	} catch(Exception e) {
+	    System.err.println("EventPackager: Failed in setting up serverSocket, "+
+			       "shutting down");
+	    listeningSocket = null;
 	    return;
-	  }
-	  System.err.println("EPCThread: Got " + newInput);
-	  if(spoolFile != null) spoolFile.writeObject(newInput);
-	  // Now send out the event.
-	  if(siena != null) {
-	    //	    try {
-	    //	      siena.publish(new KXNotification(srcID,null));
-	    //	    } catch(SienaException e) { e.printStackTrace(); }
-	  }
 	}
-      } catch(SocketException e) {
-	System.err.println("EPCThread: Client socket unexpectedly closed");
-	return;
-      } catch(Exception e) {
-	System.err.println("EPCThread: Error communicating with client:" + 
-			   e.toString());
-	e.printStackTrace();
-	return;
-      }
+	/* Listen for connection */
+	while(true) {
+	    try {
+		Socket newSock = listeningSocket.accept();
+		/* Hand the hot potato off! */
+		new Thread(new EPClientThread(srcIDCounter++,newSock)).start();
+	    } catch(Exception e) {
+		System.err.println("EventPackager: Failed in accept from "+
+				   "serverSocket");
+	    }
+	}
     }
-  }
+    
+    /**
+     * Tester.
+     */
+    public static void main(String args[]) {
+	if(args.length > 0) { // Siena host specified?
+	    for(int i=0; i < args.length; i++) {
+		if(args[i].equals("-s"))
+		    sienaHost = args[++i];
+		else if(args[i].equals("-?"))
+		    usage();
+		else if(args[i].equals("-d"))
+		    DEBUG = true;
+		else
+		    usage();
+	    }
+	}	   
+	
+	EventPackager ep = new EventPackager(7777, "EventPackager.spl");
+	ep.run();
+    } 
+    
+    /**
+     * Print usage.
+     */
+    public static void usage() {
+	System.out.println("usage: java EventPackager [-s sienaHost] [-d] [-?]");
+	System.exit(-1);
+    }
+    
+    /**
+     * Handle incoming siena notifications.
+     */
+    public void notify(Notification n) {
+	if(DEBUG) System.err.println("EventPackager: received notification " + n);
+	
+	Notification q = null;
+	
+	/* if we get a SMARTEVENT - extract data and add a tuple*/
+	if(n.getAttribute("Type").stringValue().equals("SmartEvent")) {
+	    int myCurrent = ++current; //increment tuple id
+	    String data = n.getAttribute("SmartEvent").stringValue();
+	    
+	    createNewDataFile(myCurrent, data); //put data in file with name of myCurrent
+	    addTuple(System.currentTimeMillis(), "SmartEvent", "Siena", myCurrent,
+		     data);      
+	    q = KXNotification.EventPackagerKXNotification(11111,22222,(String)null,
+							   data);
+	    
+	    /* if we get an EPLOOKUP - extract needed attributes, run query */ 
+	} else if (n.getAttribute("Type").stringValue().equals("EPLookup")) {
+	    
+	    long starttime = Long.parseLong(n.getAttribute("Start").stringValue());
+	    long endtime = Long.parseLong(n.getAttribute("End").stringValue());
+	    String lookuptype = n.getAttribute("LookupType").stringValue();
+	    int max = Integer.parseInt(n.getAttribute("MaxResults").stringValue());
+	    
+	    if (max < 0 )
+		max = 0;
+	    else if (max > maxresults)
+		max = maxresults;
+	    
+	    queryTimes(starttime, endtime, lookuptype, max); 
+	    
+	} else {
+	    // Direct Siena thing, just send it out
+	    q = KXNotification.EventPackagerKXNotification(11111,22222,n);
+	}
+	
+	try {
+	    if(DEBUG) System.err.println("EventPackager: sending notification " + q);
+	    
+	    if ( !n.getAttribute("Type").stringValue().equals("EPLookup") )
+		siena.publish(q);
+	    
+	} catch(SienaException e) { e.printStackTrace(); }
+    }
+    
+    /** Unused Siena construct. */
+    public void notify(Notification[] s) { ; }
+    
+    class EPClientThread implements Runnable {
+	private int srcID;
+	private Socket clientSocket;
+	private BufferedReader in;
+	private String clientAddress="";
+	private byte[] ipAddress= new byte[4];
+	
+	public EPClientThread(int srcID, Socket clientSocket) {
+	    this.srcID = srcID;
+	    this.clientSocket = clientSocket;
+	    this.ipAddress = ( clientSocket.getInetAddress()).getAddress();
+	    
+	    for (int i = 0; i < ipAddress.length; i++) {
+		
+		clientAddress += Integer.toString((new Byte(ipAddress[i])).intValue())
+		    + ".";
+		// remove "." at the end of the address
+		if (i == ipAddress.length -1)
+		    clientAddress.substring(0, clientAddress.length()-2);
+	    }	  
+	    
+	    /* Build the streams */
+	    try {
+		this.in = new BufferedReader(new 
+					     InputStreamReader(clientSocket.getInputStream()));
+		
+	    } catch(Exception e) {
+		System.err.println("Error establishing client connection: " +
+				   e.toString());
+		e.printStackTrace();
+	    }
+	}
+	
+
+	public void run() {
+	    int bufLen = 100; // num of chars read in at a time
+	    String newInput="";
+	    
+	    /* read in info coming from socket, add a tuple, publish data */
+	    try {
+		char[] cbuf = new char[bufLen]; 	
+		int myCurrent = ++current; //increment tuple id
+		boolean receivedData = false;
+		
+		//open file in which to put data
+		File f = new File(Integer.toString(myCurrent));
+		FileOutputStream fout= new FileOutputStream(f);
+		
+		while(true) {
+		    int numRead = in.read(cbuf, 0,bufLen);
+		    
+		    if(numRead == -1 && receivedData) { // Finished - add new tuple now
+			addTuple(System.currentTimeMillis(), "SocketConnection",
+				 clientAddress, myCurrent, "");
+			
+			System.err.println("EPCThread: closing connection");
+			in.close();
+			fout.close();
+			clientSocket.close();
+			return;
+		    }
+		    else if(numRead != -1) {	  
+			receivedData = true;
+			newInput = new String(cbuf);  
+			fout.write(newInput.getBytes()); // write data into file
+		    }
+		    else {
+			/* No data received - do nothing for now */
+		    }
+		    
+		    
+		    System.err.println("EPCThread: Got " + newInput);
+		    if(siena != null) {
+			//try {
+			//      siena.publish(new KXNotification(srcID,null));
+			//    } catch(SienaException e) { e.printStackTrace(); }
+		    }
+		}
+		
+	    } catch(SocketException e) {
+		System.err.println("EPCThread: Client socket unexpectedly closed");
+		return;
+	    } catch(Exception e) {
+		System.err.println("EPCThread: Error communicating with client:" + 
+				   e.toString());
+		e.printStackTrace();
+		return;
+	    }	
+	}
+    }
+    
+    
+    /* establish connection to local database - from Xescii.java*/
+    private void connectDB(String file, String usr, String pwd) {
+	try {
+	    Class.forName("org.hsql.jdbcDriver").newInstance();
+	    conn = DriverManager.getConnection("jdbc:HypersonicSQL:"+
+					       file,usr,pwd);
+	    statement = conn.createStatement();
+	} catch (Exception e) {
+	    System.err.println("ERROR: FAILS TO ESTABLISH CONNECTION TO " +
+			       file + ".");
+	    System.exit(1);
+	}
+	
+	// create the table EVENTS, if not already exists
+	for(int i=0;i<tableCreationSQL.length;i++) {
+	    try {
+		statement.executeQuery(tableCreationSQL[i]);
+	    }
+	    catch(SQLException e) {
+		if (e.getErrorCode() != 0) {
+		    System.err.println("ERROR: FAILS TO CREATE TABLE");
+		    System.exit(1);
+		} 
+		
+		System.err.println(e);
+	    }
+	}
+	
+	current = getMaxIndex();
+	
+	System.out.println("CONNECTION TO " + file + " ESTABLISHED.");
+	System.out.println("CURRENT MAX ID: " + current);
+    }//end::connectDB
+    
+    
+    // close database connection
+    private void disconnectDB() {
+	try {
+	    conn.close();
+	} catch (Exception e) {
+	    System.err.println("ERROR: FAILS TO CLOSE DATABASE CONNECTION.");
+            return;
+	}
+	
+	System.out.println("CONNECTION TO DATABASE CLOSED.");
+    }//end::disconnectDB
+    
+    
+    // retrieve the maximum id in the database - used in connectDB
+    private int getMaxIndex() {
+	int tmp = -1;
+	try {
+	    ResultSet r = statement.executeQuery("select max(id) from EVENTS");
+	    if ( r.next() )
+		tmp = r.getInt(1);
+	} catch(SQLException e) {} 
+	
+	return tmp;
+    }//end::getMaxIndex
+    
+    
+    //query run with info received from EPLookup events
+    public void queryTimes(long starttime, long endtime, String typ, int max) {
+	
+	
+	try {
+	    Vector v = Tuple.parseResultSet(statement.executeQuery(
+								   "select * from EVENTS E where E.time >" + starttime +
+								   "AND E.time < " + endtime + " AND E.type = '"+
+								   typ +"' order by E.time") );
+	    
+	    if (v.size() > max) {
+		for (int k= v.size()-1; k >= max; k--)
+		    v.removeElementAt(k);
+	    }
+	    
+	    if (DEBUG) {
+		System.out.println("The result set of query:");
+		System.out.println(Tuple.tuplesToString(v)); 
+	    }
+	    
+	    // send out a notification for each result row
+	    for (int k=0; k < v.size(); k++) {
+		
+		Notification n = new Notification();
+		n.putAttribute("Type", "EPResultRow");
+		n.putAttribute("TimeStamp", ((Tuple)v.elementAt(k)).getTimeStr());
+		n.putAttribute("DataSource", ((Tuple)v.elementAt(k)).getSrc());
+		n.putAttribute("DataPath", ((Tuple)v.elementAt(k)).getId());
+		
+		siena.publish(n);
+	    }		
+	} catch (Exception e) {
+	    System.err.println(e);
+	}
+	
+    }	
+    
+    // Print the entire source table
+    public void printTable() {
+	
+	try {
+	    Vector v = Tuple.parseResultSet(statement.executeQuery("select * from EVENTS") );
+	    
+	    System.out.println("\nThe current data table is:");
+	    System.out.println(Tuple.tuplesToString(v));
+	} catch (SQLException e) {
+	    System.err.println(e);
+	}
+    }//end::printtable	
+    
+    
+    /* adds a tuple from SmartEvent to the database */
+    public boolean addTuple(long time, String type, String source,
+			    int curId, String data) {
+	
+	
+	source= source.toLowerCase();
+	type= type.toLowerCase();
+	data= data.toLowerCase();
+	
+	/*add tuple to database */
+	try {
+	    
+	    if (DEBUG) {
+		System.out.println("INSERTING: " + curId + " " +
+				   time + " " + source + " " + type);
+	    }
+	    
+	    statement.executeQuery("insert into EVENTS values (" +
+				   curId + "," + time +
+				   " ,'" + source + "','" + type + "')");            
+	    
+	} catch (SQLException e) {
+            System.out.println("ERROR in ADD TUPLE: ");
+	    System.err.println(e);
+	    return false;
+	}
+	
+	if (DEBUG) { printTable(); }
+	
+	return true;
+	
+    }//end::addTuple
+    
+    
+    /* creates a file in which to put the data in Notification */
+    public void createNewDataFile(int fname, String data) {
+	
+        try {
+            File f = new File(Integer.toString(fname));
+            PrintWriter out = new PrintWriter(new FileWriter(f));
+            out.print(data);
+            out.close();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+	
+    }//end::createNewDataFile
+    
+    
 }
+
+
+
+
+
+
+
+
+
