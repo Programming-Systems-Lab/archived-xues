@@ -31,7 +31,11 @@ import org.xml.sax.helpers.DefaultHandler;
  * @version 1.0
  *
  * $Log$
- * Revision 1.6  2001-01-29 04:18:42  jjp32
+ * Revision 1.7  2001-01-29 04:58:55  jjp32
+ *
+ * Each rule can now have multiple attr/value pairs.
+ *
+ * Revision 1.6  2001/01/29 04:18:42  jjp32
  *
  * Lots of updates.  Doesn't compile yet, hopefully it will by the time I'm home :)
  *
@@ -72,8 +76,9 @@ public class EDStateManager extends DefaultHandler implements Runnable {
   private EDStateMachineSpecification currentEdsms = null;
   /** The current state being built. */
   private EDState currentState = null;
-  /** The current action being built. */
-  private Notification currentAction = null;
+  /** The current action being built.  Unused right now - see code
+   * where currentAction is commented out */
+  //  private Notification currentAction = null;
   /** What are we currently parsing? */
   private int currentMode = -1;
 
@@ -188,8 +193,12 @@ public class EDStateManager extends DefaultHandler implements Runnable {
     /////
     
     if(localName.equals("notification")) { // Start of new notification
-      currentAction = new Notification();
-      currentEdsms.addAction(currentAction);
+      // We don't create a new notification, since action can only be
+      // one action.  Later we will want to change this.  Right now we
+      // can append attr/val pairs to an existing action in edsms.
+
+      //      currentAction = new Notification();
+      //      currentEdsms.addAction(currentAction);
       currentMode = PARSINGACTION;
     }
 
@@ -213,7 +222,8 @@ public class EDStateManager extends DefaultHandler implements Runnable {
 	currentState.add(attr, val);
 	break;
       case PARSINGACTION:
-	currentAction.add(attr, val);
+	//	currentAction.add(attr, val);
+	currentEdsms.addAction(attr,val);
 	break;
       default:
 	System.err.println("FATAL: EDStateManager init failed in determining mode");

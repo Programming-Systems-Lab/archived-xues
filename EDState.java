@@ -16,7 +16,11 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.3  2001-01-29 04:18:42  jjp32
+ * Revision 1.4  2001-01-29 04:58:55  jjp32
+ *
+ * Each rule can now have multiple attr/value pairs.
+ *
+ * Revision 1.3  2001/01/29 04:18:42  jjp32
  *
  * Lots of updates.  Doesn't compile yet, hopefully it will by the time I'm home :)
  *
@@ -115,7 +119,8 @@ public class EDState {
   public boolean validate(Notification n, EDState prev) {
     // Step 1. Perform timestamp validation.  If timestamp validation
     // fails, then we don't need to go further.
-    if(validateTimebound(prev,timestamp) == false)
+    AttributeValue timestamp = n.getAttribute("timestamp");
+    if(validateTimebound(prev,timestamp.longValue()) == false)
       return false;
 
     // Step 2. Now try and compare the attributes in the state's
@@ -126,7 +131,7 @@ public class EDState {
     while(keys.hasMoreElements()) {
       String attr = (String)keys.nextElement();
       AttributeValue val = (AttributeValue)objs.nextElement();
-      if(validate(attr, val, n.getAttribute(attr) == false)) {
+      if(validate(attr, val, n.getAttribute(attr)) == false) {
 	return false;
       } // else continue
     }
@@ -141,7 +146,8 @@ public class EDState {
   private boolean validate(String attr, AttributeValue internalVal,
 			   AttributeValue externalVal) {
     // Simple bounds checking
-    if(attr == null || internalVal == null || internalVal.getType == null) {
+    if(attr == null || internalVal == null || 
+       internalVal.getType() == AttributeValue.NULL) {
       System.err.println("FATAL: Internal representation error in "+
 			 "EDState");
       return false;
@@ -149,7 +155,7 @@ public class EDState {
 
     // Attribute exists externally?
     else if(externalVal == null || 
-	    externalVal.getType != internalVal.getType) {
+	    externalVal.getType() != internalVal.getType()) {
       // No match
       return false;
     }
@@ -162,9 +168,10 @@ public class EDState {
     }
 
     // Wildcard binding?
-    else if(internalVal.startsWith("*")) {
+    else if(internalVal.getType() == AttributeValue.STRING &&
+	    internalVal.stringValue().startsWith("*")) {
       // Is this one previously bound?
-      String bindName = internalVal.substring(1);
+      String bindName = internalVal.stringValue().substring(1);
       if(bindName.length() == 0) { // Simple wildcard
 	return true;
       } else { // Binding
@@ -194,7 +201,7 @@ public class EDState {
     }
 
     // Not our event
-    else return false;
+    return false;
   }
 
   /**

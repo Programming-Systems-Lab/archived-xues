@@ -15,7 +15,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.2  2001-01-29 02:14:36  jjp32
+ * Revision 1.3  2001-01-29 04:58:55  jjp32
+ *
+ * Each rule can now have multiple attr/value pairs.
+ *
+ * Revision 1.2  2001/01/29 02:14:36  jjp32
  *
  * Support for multiple attributes on a output notification added.
  *
@@ -47,7 +51,9 @@ class EDStateMachineSpecification implements Notifiable {
   { 
     EDStateMachineSpecification edsms = 
       new EDStateMachineSpecification(siena,edsm);
-    edsms.stateArray.addElement(new EDState("temperature","60",-1));
+    EDState e = new EDState(-1);
+    e.add("temperature","60");
+    edsms.stateArray.addElement(e);
     edsms.action = new Notification();
     edsms.action.putAttribute("itworked","true");
     edsms.subscribe();
