@@ -11,7 +11,11 @@ import siena.*;
  * @version 0.1
  *
  * $Log$
- * Revision 1.5  2002-01-11 05:01:52  aq41
+ * Revision 1.1  2002-02-24 16:33:01  jjp32
+ *
+ * Moving EP in preparation for overhaul
+ *
+ * Revision 1.5  2002/01/11 05:01:52  aq41
  * Minor debugging completed.
  * In order to startup the eventpackager, now type:
  * java psl.xues.EventPackager -s senp://localhost:5000 -uid [userID] -pwd [password] -d
