@@ -99,7 +99,10 @@ public class EDBus {
      */
     private long waitTime;
 
+
     private boolean DEBUG = true;
+
+
 
     /**
      *
@@ -287,7 +290,8 @@ public class EDBus {
      * @param e  The <code>Notification</code> to be sent
      */
     private void dispatch(Notification e){
-	Enumeration elements = subscribers.elements();
+	Vector copyOfSubscribers = new Vector(subscribers);
+	Enumeration elements = copyOfSubscribers.elements();
 	boolean absorbed = false;
 	while(elements.hasMoreElements() && !absorbed){
 	    Subscriber thisSubscriber = 
