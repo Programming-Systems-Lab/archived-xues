@@ -24,7 +24,10 @@ import java.util.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.2  2001-02-07 01:45:25  gskc
+ * Revision 1.3  2001-02-07 01:47:43  gskc
+ * Something that was hardcoded _even_ in Monterey.
+ *
+ * Revision 1.2  2001/02/07 01:45:25  gskc
  * Changes made in Monterey.
  *
  * Revision 1.1  2001/01/30 07:18:32  jjp32
@@ -107,6 +110,7 @@ public class WorkletEventNotifier implements Notifiable {
       e.printStackTrace();
     }
     
+    // This hardcoded bit has to be read in from a config file
     CERWJ wj = new CERWJ(confFileIn, "/etc/mail/access", "10.0.1.2", "sendmailMonitor");
     System.out.println("Adding CERWJ to WKL");
     wkl.addJunction(wj);
