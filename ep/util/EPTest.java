@@ -1,6 +1,11 @@
 package psl.xues.ep.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import psl.xues.ep.EventPackager;
+import psl.xues.ep.util.Base64;
 import siena.HierarchicalDispatcher;
 import siena.Filter;
 import siena.Notifiable;
@@ -55,6 +60,24 @@ public class EPTest {
   }
   
   public static void main(String[] args) {
-    new EPTest(args[0], args[1]);
+    Notification n = new Notification();
+    byte[] ba = null;
+    n.putAttribute("foo", "bar");
+    try {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      ObjectOutputStream oos = new ObjectOutputStream(baos);
+      oos.writeObject(n);
+      oos.close();
+      ba = baos.toByteArray();
+      baos.close();
+      System.out.println("Length is " + ba.length + ", now reading back in");
+      ByteArrayInputStream bais = new ByteArrayInputStream(ba);
+      ObjectInputStream ois = new ObjectInputStream(bais);
+      Notification n2 = (Notification)ois.readObject();
+      System.out.println("Notification read, it's \"" + n2 + "\"");
+    } catch(Exception e) { e.printStackTrace(); }
+      //    System.out.println(Base64.encodeObject(n));
+      //    System.out.println(Base64.encodeObject(n).length());
+      //new EPTest(args[0], args[1]);
   }
 }

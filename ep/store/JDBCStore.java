@@ -22,11 +22,11 @@ import psl.xues.ep.util.Base64;
  * Usage: <em>([] implies an optional parameter)</em></p>
  * <p><tt>
  * &lt;Stores&gt;<br>
- * <blockquote>&lt;Store Name="<em>instance name</em>" 
+ * <blockquote>&lt;Store Name="<em>instance name</em>"
  * Type="psl.xues.ep.store.JDBCStore" DBType="<em>database type</em>"
  * DBDriver="<em>database driver</em>" [DBName="<em>database name</em>"]
- * [TableName="<em>table name</em>"] Username="<em>username</em>"
- * Password="<em>password</em>" /&gt;<br></blockquote>
+ * [TableName="<em>table name</em>"] [Username="<em>username</em>"]
+ * [Password="<em>password</em>"] /&gt;<br></blockquote>
  * &lt;/Stores&gt;
  * </tt></p>
  * <p>
@@ -34,25 +34,21 @@ import psl.xues.ep.util.Base64;
  * <li><b>DBType</b>: The database type name (for JDBC).</li>
  * <li><b>DBDriver</b>: The database driver (full classname; for JDBC).</li>
  * <li><b>DBName</b>: The name of the database to use.  If none is specified,
- * "EventPackager" will be used.  If the database does not exist, it will 
+ * "EventPackagerDB" will be used.  If the database does not exist, it will
  * automatically be created.</li>
  * <li><b>DBTable</b>: The name of the table to use.  If none is specified,
  * "EPData" will be used.  If the table does not exist, it will automatically
  * be created.</li>
  * <li><b>Username</b>: The username to use when connecting to the JDBC
- * driver.  (Required for now; anonymous connections may be supported in the
- * future.)</li>
+ * driver.  (If making an anonymous connection, leave this attribute out or
+ * specify an empty string.)</li>
  * <li><b>Password</b>: The password to use when connecting to the JDBC
- * driver. (For a passwordless connection, specify an empty string.)</li>
+ * driver. (For a passwordless connection, leave this attribute out or 
+ * specify an empty string.)</li>
  * </ol>
  * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
- *
- * <!--
- * TODO:
- * - Support anonymous and passwordless database connections
- * -->
  *
  * @author Janak J Parekh
  * @version $Revision$
@@ -65,7 +61,7 @@ public class JDBCStore extends EPStore {
   /** Database driver for this type */
   private String dbDriver = null;
   /** Name of database */
-  private String dbName = "EventPackager";
+  private String dbName = "EventPackagerDB";
   /** Name of table */
   private String tableName = "EPData";
   /** Username */
@@ -92,33 +88,42 @@ public class JDBCStore extends EPStore {
     // Now attempt to determine necessary JDBC parameters
     dbType = el.getAttribute("DBType");
     dbDriver = el.getAttribute("DBDriver");
-    dbName = el.getAttribute("DBName");
-    tableName = el.getAttribute("DBTable");
+    // Optional parameters
     username = el.getAttribute("Username");
     password = el.getAttribute("Password");
-    
-    if(dbType == null || dbDriver == null || dbName == null ||
-    tableName == null || username == null || password == null ||
-    dbType.length() == 0 || dbDriver.length() == 0 ||
-    dbName.length() == 0 || tableName.length() == 0 ||
-    username.length() == 0) {
-      debug.error("Can't initialize store: missing parameters");
-      throw new InstantiationException();
+    // Optional parametes with defaults
+    String tempdbName = el.getAttribute("DBName");
+    String temptableName = el.getAttribute("DBTable");
+    if(tempdbName.length() > 0)
+      dbName = tempdbName;
+    if(temptableName.length() > 0)
+      tableName = temptableName;
+
+    if(dbType.length() == 0 || dbDriver.length() == 0) {
+      throw new InstantiationException("Can't initialize store: missing or "+
+      "invalid parameters");
     }
     
     // Try to load the driver
     try {
       Class.forName(dbDriver);
     } catch(Exception e) {
-      debug.error("Can't initialize store", e);
-      throw new InstantiationException();
+      InstantiationException ie =
+      new InstantiationException("Can't initialize store");
+      ie.initCause(e); // Chain the underlying cause
+      throw ie;
     }
     
     // Attempt connection
     debug.debug("Connecting to jdbc:" + dbType + ":" + dbName + "...");
     try {
-      conn = DriverManager.getConnection("jdbc:" + dbType + ":" +
-      dbName, username, password);
+      if(username.length() > 0) {
+        conn = DriverManager.getConnection("jdbc:" + dbType + ":" +
+        dbName, username, password);
+      } else {
+        conn = DriverManager.getConnection("jdbc:" + dbType + ":" +
+        dbName);
+      }
     } catch(Exception e) {
       debug.error("Can't connect to database", e);
     }
@@ -135,7 +140,7 @@ public class JDBCStore extends EPStore {
         debug.debug("Table \"" + tableName + "\" doesn't exist, creating");
         Statement s = conn.createStatement();
         s.executeUpdate("CREATE TABLE " + tableName +
-        " (ID BIGINT PRIMARY KEY, SOURCE VARCHAR(100), TIMESTAMP TIMESTAMP, " +
+        " (ID BIGINT PRIMARY KEY, SOURCE VARCHAR(100), TIMESTAMP BIGINT, " +
         "FORMAT VARCHAR(100), EVENT VARCHAR(" + eventSize + "))");
         s.executeUpdate("CREATE INDEX source_index ON " + tableName +
         " (SOURCE)");
@@ -228,6 +233,7 @@ public class JDBCStore extends EPStore {
   public Object storeEvent(EPEvent e) {
     // First grab the event and try to base64 it.
     String encoding = Base64.encodeObject(e);
+    debug.debug("Base64 encoding complete, length is " + encoding.length());
     if(encoding == null) {
       debug.warn("Could not serialize event, skipping");
       return null;
@@ -250,6 +256,7 @@ public class JDBCStore extends EPStore {
     }
     
     // Done
+    debug.debug("Event stored, ID is " + lastID);
     return new Long(lastID);
   }
   

@@ -27,7 +27,7 @@ public abstract class EPEvent implements Comparable, Serializable {
   /** Timestamp of this event, in OUR perception */
   protected long timestamp = -1;
   /** Debugger */
-  protected Logger debug = null;
+  protected transient Logger debug = null;
   /** 
    * Creator ("source", not "type").  NB: This creator must be the local
    * EP creator -- rules are fired by examining the source.

@@ -9,6 +9,16 @@ import psl.xues.ep.event.EPEvent;
  * Simple implementation of an EP store to store events in memory.
  * Fast, and useful for testing.
  * <p>
+ * Usage: <em>([] implies an optional parameter)</em></p>
+ * <p><tt>
+ * &lt;Stores&gt;<br>
+ * <blockquote>&lt;Store Name="<em>instance name</em>" 
+ * Type="psl.xues.ep.store.MemoryStore"/&gt;<br></blockquote>
+ * &lt;/Stores&gt;
+ * </tt></p>
+ * <p>
+ * Note that there are no configurable parameters for this store.
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *

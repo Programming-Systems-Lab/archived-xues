@@ -31,6 +31,16 @@ import siena.Notification;
  * Socket event input mechanism.  Allows EP to be a server which receives
  * socket input.  We currently allocate one thread per socket.
  * <p>
+ * Usage: <em>([] implies an optional parameter)</em></p>
+ * <p><tt>
+ * &lt;Inputs&gt;<br>
+ * <blockquote>&lt;Inputter Name="<em>instance name</em>" 
+ * Type="psl.xues.ep.input.SocketInput" Port="<em>port number</em>"
+ * [SocketType="<em>socket type</em>"] DataType="<em>datatype</em>" /&gt;<br>
+ * </blockquote>
+ * &lt;/Inputs&gt;
+ * </tt></p>
+ * <p>
  * Required attributes:<ol>
  * <li><b>Port</b>: specify the port to listen on for client connections</li>
  * <li><b>SocketType</b>: specify socket type (optional)</li>
@@ -60,9 +70,9 @@ import siena.Notification;
  *  <li>org.w3c.dom.Element: a DOMEvent is automatically created.</li>
  * </ol></li>
  * <li>String input (via type <b>StringObject</b>).  Note that String input
- * is newline-delimited for TCP streams.</li>
+ * is newline-delimited for tcpstream.</li>
  * <li>XML plaintext input (via type <b>XMLObject</b>).
- * Note that for TCP, only one XML document per connection is supported!  Gets
+ * Note that for TCP, only tcpwrap and tcpconn modes are supported.  Gets
  * parsed and inserted as a DOMEvent.</li>
  * </ol>
  * <p>

@@ -21,6 +21,24 @@ import psl.xues.util.SienaUtils;
  * Siena 1.4.2.  (Note that Siena 1.4.0-1 is extremely buggy and will probably
  * not work well.)
  * <p>
+ * Usage: <em>([] implies an optional parameter)</em></p>
+ * <p><tt>
+ * &lt;Inputs&gt;<br>
+ * <blockquote>&lt;Inputter Name="<em>instance name</em>" 
+ * Type="psl.xues.ep.input.SienaInput" [SienaHost="<em>senp url</em>"]
+ * [SienaReceivePort="<em>port number</em>"] [Control="true"]&gt;
+ * <blockquote>&lt;SienaFilter&gt;
+ * <blockquote>[&lt;SienaConstraint AttributeName="<em>attribute name</em>"
+ * Op="<em>matching operator</em>" ValueType="<em>value type</em>"
+ * Value="<em>attribute value</em>"&gt;]
+ * <br>...</blockquote>
+ * &lt;/SienaFilter&gt;
+ * <br>...</blockquote>
+ * &lt;/Inputter&gt;
+ * </blockquote>
+ * &lt;/Inputs&gt;
+ * </tt></p>
+ * <p>
  * Attributes/parameters: <ol>
  * <li><b>SienaHost</b>: Specifies the Siena master that this node will
  * connect to (in Siena URL format {which is version-dependent}).  If this field

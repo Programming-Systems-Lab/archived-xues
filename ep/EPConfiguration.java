@@ -24,6 +24,7 @@ import psl.xues.ep.transform.EPTransformInterface;
 import psl.xues.ep.store.EPStore;
 import psl.xues.ep.store.EPStoreInterface;
 import psl.xues.util.JAXPUtil;
+import psl.xues.util.XuesUtil;
 
 /**
  * Event packager configuration module.
@@ -208,7 +209,7 @@ public class EPConfiguration {
       Class.forName(eventFormatName);
     } catch(Exception e) {
       debug.warn("Failed in loading event format \"" + eventFormatName +
-      "\", ignoring", e);
+      "\", ignoring", XuesUtil.parseException(e));
       return null;
     }
     
@@ -276,7 +277,7 @@ public class EPConfiguration {
       { ep, data });
     } catch(Exception e) {
       debug.warn(pluginType + " \"" + pluginName +
-      "\" failed to load, ignoring", e);
+      "\" failed to load, ignoring", XuesUtil.parseException(e));
       return null;
     }
     
@@ -300,5 +301,4 @@ public class EPConfiguration {
   public boolean deletePlugin(short type, String name) {
     return false;
   }
-  
 }

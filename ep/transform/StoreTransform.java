@@ -9,6 +9,15 @@ import org.w3c.dom.Element;
  * Transform that snapshots the current event and writes it to the
  * configured store.
  * <p>
+ * Usage: <em>([] implies an optional parameter)</em></p>
+ * <p><tt>
+ * &lt;Transforms&gt;<br>
+ * <blockquote>&lt;Transform Name="<em>instance name</em>" 
+ * Type="psl.xues.ep.transform.StoreTransform" 
+ * StoreName="<em>store instance name</em> /&gt;</blockquote>
+ * &lt;/Transforms&gt;
+ * </tt></p>
+ * <p>
  * Attributes/parameters: <ol>
  * <li><b>StoreName</b>: Specifies the store instance to capture events to.
  * </ol>

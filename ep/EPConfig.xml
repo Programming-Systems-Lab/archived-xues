@@ -5,18 +5,56 @@
 
 <EventPackagerConfiguration>
   <Inputters>
-    <Inputter Name="ConsoleInput1" Type="psl.xues.ep.input.ConsoleInput"></Inputter>
+    <Inputter Name="ConsoleInput1" Type="psl.xues.ep.input.ConsoleInput" />
+    <Inputter Name="SienaInput1" Type="psl.xues.ep.input.SienaInput" 
+	      SienaReceivePort="7890">
+      <SienaFilter />
+    </Inputter>
+    <Inputter Name="SocketInput1" Type="psl.xues.ep.input.SocketInput"
+	      Port="7891" SocketType="tcpstream" DataType="StringObject" />
   </Inputters>
+  <Transforms>
+    <Transform Name="StoreTransform1" 
+	       Type="psl.xues.ep.transform.StoreTransform"
+	       StoreName="JDBCStore1" />
+  </Transforms>
   <Outputters>
-    <Outputter Name="ConsoleOutput1" Type="psl.xues.ep.output.ConsoleOutput"></Outputter>
+    <Outputter Name="ConsoleOutput1" Type="psl.xues.ep.output.ConsoleOutput" />
+    <Outputter Name="NullOutput1" Type="psl.xues.ep.output.NullOutput" />
   </Outputters>
+  <Stores>
+    <Store Name="JDBCStore1" Type="psl.xues.ep.store.JDBCStore" 
+	   DBType="hsqldb" DBDriver="org.hsqldb.jdbcDriver" Username="sa" />
+  </Stores>
   <Rules>
     <Rule Name="ConsoleRule">
       <Inputs>
-	<Input Name="ConsoleInput1"></Input>
+	<Input Name="ConsoleInput1" />
       </Inputs>
       <Outputs>
-	<Output Name="ConsoleOutput1"></Output>
+	<Output Name="ConsoleOutput1" />
+      </Outputs>
+    </Rule>
+    <Rule Name="SienaRule">
+      <Inputs>
+	<Input Name="SienaInput1"/>
+      </Inputs>
+      <Transforms>
+	<Transform Name="StoreTransform1" />
+      </Transforms>
+      <Outputs>
+	<Output Name="NullOutput1" />
+      </Outputs>
+    </Rule>
+    <Rule Name="SocketRule">
+      <Inputs>
+	<Input Name="SocketInput1" />
+      </Inputs>
+      <Transforms>
+	<Transform Name="StoreTransform1" />
+      </Transforms>
+      <Outputs>
+	<Output Name="ConsoleOutput1" />
       </Outputs>
     </Rule>
   </Rules>
