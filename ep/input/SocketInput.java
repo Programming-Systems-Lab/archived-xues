@@ -20,6 +20,8 @@ import psl.xues.ep.event.DOMEvent;
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
 import psl.xues.ep.event.StringEvent;
+import psl.xues.ep.util.EPConst;
+import psl.xues.ep.util.WrappedInputStream;
 import psl.xues.util.JAXPUtil;
 
 import siena.Notification;
@@ -31,11 +33,20 @@ import siena.Notification;
  * <p>
  * Required attributes:<ol>
  * <li><b>Port</b>: specify the port to listen on for client connections</li>
- * <li><b>SocketType</b>: specify socket type, either "tcp" or "udp" (tcp is
- * default)</li>
+ * <li><b>SocketType</b>: specify socket type (optional)</li>
  * <li><b>DataType</b>: specify structure of events to listen for</li>
  * </ol>
- *
+ * <p>
+ * Socket types currently supported:<ol>
+ * <li><b>tcpstream</b>: Stream of data over one TCP connection (default;
+ * <i>not supported for XML</i>)</li>
+ * <li><b>tcpwrap</b>: TCP output segmented by an out-of-band character;
+ * use the psl.xues.ep.util.WrappedOutputStream to write to this
+ * connection.</li>
+ * <li><b>tcpconn</b>: One message per TCP connection.</li>
+ * <li><b>udp</b>: UDP packets, one message per packet.</li>
+ * </ol>
+ * <p>
  * Data types currently supported:<ol>
  * <li>Serialized Java objects (via type <b>JavaObject</b>)</li>.  Note
  * that, while this is technically supported under UDP, TCP is strongly
@@ -49,7 +60,7 @@ import siena.Notification;
  *  <li>org.w3c.dom.Element: a DOMEvent is automatically created.</li>
  * </ol></li>
  * <li>String input (via type <b>StringObject</b>).  Note that String input
- * is currently line-delimited.</li>
+ * is newline-delimited for TCP streams.</li>
  * <li>XML plaintext input (via type <b>XMLObject</b>).
  * Note that for TCP, only one XML document per connection is supported!  Gets
  * parsed and inserted as a DOMEvent.</li>
@@ -70,23 +81,7 @@ import siena.Notification;
  * @author Janak J Parekh
  * @version $Revision$
  */
-public class SocketInput extends EPInput {
-  // Data types
-  /** Specifies a Java object-based data type. */
-  public static final short JAVA_OBJECT = 1;
-  /** Specifies a String object-based data type. */
-  public static final short STRING_OBJECT = 2;
-  /** Specifies a XML object-based data type */
-  public static final short XML_OBJECT = 3;
-  
-  // Socket types
-  /** TCP socket */
-  public static final short TCP = 1;
-  /** UDP socket */
-  public static final short UDP = 2;
-  /** Max size of UDP packet */
-  public static final int MAX_SIZE_UDP = 65536;
-  
+public class SocketInput extends EPInput implements EPConst {
   /** Server socket port */
   private short port = -1;
   /** Data type */
@@ -110,24 +105,26 @@ public class SocketInput extends EPInput {
     super(ep,el);
     
     // Get the basic listening socket parameters
-    String port = el.getAttribute("Port");
-    if(port == null || port.length() == 0) {
-      throw new InstantiationException("Port not specified");
-    }
     try {
-      this.port = Short.parseShort(port);
+      this.port = Short.parseShort(el.getAttribute("Port"));
     } catch(Exception e) {
-      throw new InstantiationException("Port value invalid");
+      throw new InstantiationException("Port value invalid or not specified");
     }
     
     // TCP or UDP?
     String socketType = el.getAttribute("SocketType");
     if(socketType == null || socketType.length() == 0) {
-      debug.info("Socket type not specified, assuming TCP");
-      this.socketType = TCP;
+      debug.info("Socket type not specified, assuming TCP stream");
+      this.socketType = TCPSTREAM;
     }
-    else if(socketType.equalsIgnoreCase("tcp")) this.socketType = TCP;
-    else if(socketType.equalsIgnoreCase("udp")) this.socketType = UDP;
+    else if(socketType.equalsIgnoreCase("tcpstream"))
+      this.socketType = TCPSTREAM;
+    else if(socketType.equalsIgnoreCase("tcpwrap"))
+      this.socketType = TCPWRAP;
+    else if(socketType.equalsIgnoreCase("tcpconn"))
+      this.socketType = TCPCONN;
+    else if(socketType.equalsIgnoreCase("udp"))
+      this.socketType = UDP;
     else throw new InstantiationException("Invalid socket type specified");
     
     // Determine data type
@@ -147,8 +144,13 @@ public class SocketInput extends EPInput {
       }
     }
     
+    // Sanity checks for socket/data combinations
+    if(this.socketType == TCPSTREAM && this.dataType == XML_OBJECT)
+      throw new InstantiationException("Can't stream multiple XML messages "+
+      "without wrapping");
+    
     // Now build our socket
-    if(this.socketType == TCP) {
+    if((this.socketType & TCP) != 0) {
       try {
         ss = new ServerSocket(this.port);
       } catch(Exception e) {
@@ -173,7 +175,7 @@ public class SocketInput extends EPInput {
    * to a handler.  For UDP, we just hand the datagram socket to the handler.
    */
   public void run() {
-    if(socketType == TCP) {
+    if((socketType & TCP) != 0) {
       Socket cs = null; // Client socket
       
       while(!shutdown) {
@@ -190,7 +192,7 @@ public class SocketInput extends EPInput {
         // Store a reference to cs, and then hand it to a client.  XXX -
         // does hashing of sockets like this work?
         try {
-          ClientThread ct = new ClientThread(cs, dataType);
+          ClientThread ct = new ClientThread(cs, socketType, dataType);
           clientSockets.put(cs, ct);
           new Thread(ct).start(); // Start it up
         } catch(InstantiationException e) {
@@ -299,44 +301,47 @@ public class SocketInput extends EPInput {
      * @param cs The client socket connection.
      * @param type The datatype.
      */
-    public ClientThread(Socket cs, short dataType)
+    public ClientThread(Socket cs, short socketType, short dataType)
     throws InstantiationException {
       this.cs = cs;
-      this.socketType = TCP;
+      this.socketType = socketType;
       this.dataType = dataType;
       
       // Set up the streams
-      switch(dataType) {
-        case JAVA_OBJECT:
-          try {
-            cin = new ObjectInputStream(cs.getInputStream());
-          } catch(Exception e) {
-            throw new InstantiationException("Could not establish " +
-            "ObjectInputStream: " + e);
-          }
-          break;
-        case STRING_OBJECT:
-          try {
-            cin = new BufferedReader(new InputStreamReader(cs.getInputStream()));
-          } catch(Exception e) {
-            throw new InstantiationException("Could not establish " +
-            "BufferedReader: " + e);
-          }
-          break;
-        case XML_OBJECT:
-          try {
-            cin = cs.getInputStream();
-          } catch(Exception e) {
-            throw new InstantiationException("Could not get inputStream: " +e);
-          }
-          // Now build the parser
-          db = JAXPUtil.newDocumentBuilder();
-          if(db == null) {
-            throw new InstantiationException("Could not set up XML parser");
-          }
-          break;
-        default:
-          throw new InstantiationException("Unhandled type in ClientThread");
+      if(dataType == JAVA_OBJECT) {
+        if(socketType == TCPSTREAM || socketType == TCPCONN) try {
+          cin = new ObjectInputStream(cs.getInputStream());
+        } catch(Exception e) {
+          throw new InstantiationException("Could not establish " +
+          "ObjectInputStream: " + e);
+        }
+      }
+      
+      else if(dataType == STRING_OBJECT) {
+        if(socketType == TCPSTREAM || socketType == TCPCONN) try {
+          cin = new BufferedReader(new InputStreamReader(cs.getInputStream()));
+        } catch(Exception e) {
+          throw new InstantiationException("Could not establish " +
+          "BufferedReader: " + e);
+        }
+      }
+      
+      else if(dataType == XML_OBJECT) {
+        if(socketType == TCPSTREAM || socketType == TCPCONN) try {
+          cin = cs.getInputStream();
+        } catch(Exception e) {
+          throw new InstantiationException("Could not get inputStream: " +e);
+        }
+        
+        // Now build the parser
+        db = JAXPUtil.newDocumentBuilder();
+        if(db == null) {
+          throw new InstantiationException("Could not set up XML parser");
+        }
+      }
+      
+      else {
+        throw new InstantiationException("Unhandled type in ClientThread");
       }
     }
     
@@ -346,11 +351,19 @@ public class SocketInput extends EPInput {
      * @param ds The datagram socket connection
      * @param type The datatype.
      */
-    public ClientThread(DatagramSocket ds, int type) throws
+    public ClientThread(DatagramSocket ds, short dataType) throws
     InstantiationException {
       this.ds = ds;
       this.socketType = UDP;
       this.dataType = dataType;
+      
+      if(dataType == XML_OBJECT) {
+        // Build the parser
+        db = JAXPUtil.newDocumentBuilder();
+        if(db == null) {
+          throw new InstantiationException("Could not set up XML parser");
+        }
+      }
       
       // Set up the UDP packet buffer
       udpbuf = new byte[MAX_SIZE_UDP];
@@ -358,12 +371,12 @@ public class SocketInput extends EPInput {
     
     /**
      * Run.  Receive entities and hand them to our parent.  Yes, this might
-     * eventually need some optimization.
+     * eventually need some optimization.  Yes, this code is ugly.
      */
     public void run() {
       Object input = null;
       while(!shutdown) {
-        // UDP handling: first read the datagram
+        // Common UDP handling: first read the datagram
         if(socketType == UDP) {
           DatagramPacket dp = new DatagramPacket(udpbuf, MAX_SIZE_UDP);
           try {
@@ -371,24 +384,35 @@ public class SocketInput extends EPInput {
             udpbuflen = dp.getLength();
           } catch(Exception e) {
             debug.error("Could not read datagram, closing down client thread",e);
-            if(!shutdown) shutdown();
+            shutdown();
             return;
           }
         }
+        // End common UDP handling
         
         // Now differentiate based on datatype
         if(dataType == JAVA_OBJECT) { //////// JAVA_OBJECT ////////
+          // UDP: create a stream around our udpbuf
           if(socketType == UDP) {
-            // Construct a stream around our udpbuf
             try {
               cin = new ObjectInputStream(new ByteArrayInputStream(udpbuf, 0, udpbuflen));
             } catch(Exception e) {
               debug.error("Could not create ObjectInputStream for UDP buffer, "
               + "closing down client thread", e);
-              if(!shutdown) shutdown();
+              shutdown();
               return;
             }
           }
+          // TCPWRAP: create a new WrappedInputStream
+          else if(socketType == TCPWRAP) try {
+            cin = new ObjectInputStream(new WrappedInputStream(cs.getInputStream()));
+          } catch(Exception e) {
+            debug.error("Could not create WrappedInputStream, closing down " +
+            "client thread", e);
+            shutdown();
+            return;
+          }
+          // TCPSTREAM and TCPCONN need no special handling
           
           // Read using a objectInputStream, and hand the resulting
           // object to the SocketInput mechanism.
@@ -396,49 +420,98 @@ public class SocketInput extends EPInput {
             input = ((ObjectInputStream)cin).readObject();
           } catch(Exception e) {
             debug.error("Could not read object, closing down client thread", e);
-            if(!shutdown) shutdown();
+            shutdown();
             return;
           }
-        } else if(dataType == STRING_OBJECT) { //////// STRING_OBJECT ////////
+        }
+        
+        
+        else if(dataType == STRING_OBJECT) try { //////// STRING_OBJECT ////////
+          // UDP: grab the packet as one string
           if(socketType == UDP) {
-            // Grab the string
             input = new String(udpbuf, 0, udpbuflen);
-          } else {
-            try {
-              input = ((BufferedReader)cin).readLine();
-            } catch(Exception e) {
-              debug.error("Could not read string, closing down client thread", e);
-              if(!shutdown) shutdown();
-              return;
-            }
           }
-        } else if(dataType == XML_OBJECT) { //////// XML_OBJECT ////////
+          // TCPWRAP/TCPCONN: grab the entire InputStream as one string
+          else if(socketType == TCPWRAP || socketType == TCPCONN) {
+            // Set up the stream based on WRAP or CONN first
+            if(socketType == TCPWRAP) {
+              try {
+                cin = new BufferedReader(new InputStreamReader(new
+                WrappedInputStream(cs.getInputStream())));
+              } catch(Exception e) {
+                debug.warn("Could not create WrappedInputStream, closing client socket");
+                shutdown();
+                return;
+              }
+            }
+            else //(socketType == TCPCONN)
+              cin = new BufferedReader(new
+              InputStreamReader(cs.getInputStream()));
+            // Processing common to both TCP types
+            String temp = null;
+            StringBuffer tempBuffer = new StringBuffer();
+            while(((BufferedReader)cin).ready()) {
+              temp = ((BufferedReader)cin).readLine();
+              if(temp == null) break;
+              // Keep on reading and appending to our buffer
+              else tempBuffer.append(temp).append('\n');
+            }
+            input = tempBuffer.toString();
+          }
+          // TCPSTREAM: grab exactly one line
+          else {
+            input = ((BufferedReader)cin).readLine();
+          }
+        } catch(Exception e) {
+          debug.error("Could not read string, closing down client thread", e);
+          shutdown();
+          return;
+        }
+        
+        
+        else if(dataType == XML_OBJECT) { //////// XML_OBJECT ////////
+          // UDP: just create a ByteArrayInputStream
           if(socketType == UDP) {
             try {
               cin = new ByteArrayInputStream(udpbuf, 0, udpbuflen);
             } catch(Exception e) {
               debug.error("Could not create ObjectInputStream for UDP buffer, "
               + "closing down client thread", e);
-              if(!shutdown) shutdown();
+              shutdown();
               return;
             }
           }
+          // TCPWRAP: use WrappedInputStream
+          else if(socketType == TCPWRAP) {
+            try {
+              cin = new WrappedInputStream(cs.getInputStream());
+            } catch(Exception e) {
+              debug.warn("Could not create WrappedInputStream, " +
+              "closing down client thread", e);
+              shutdown();
+              return;
+            }
+          }
+          // TCPSTREAM: not supported; TCPCONN: no presetup needed
           
           // Now hand cin to the parser
           try {
             input = db.parse((InputStream)cin);
           } catch(Exception e) {
             debug.error("Could not parse incoming document", e);
-            if(!shutdown) shutdown();
+            shutdown();
             return;
           }
-          // If TCP, we're done with this socket connection
-          if(socketType == TCP) shutdown();
-        } else {
+          // If TCPCONN, we're done with this socket connection... TCPSTREAM
+          // here for paranoia's sake
+          if(socketType == TCPCONN || socketType == TCPSTREAM) shutdown();
+          
+          
+        } else { /////////////////// UNHANDLED_TYPE ////////////////////////
           // We should NOT get here
           debug.error("Unhandled type in client thread run(), " +
           "shutting thread down");
-          if(!shutdown) shutdown();
+          shutdown();
           return;
         }
         
@@ -446,7 +519,7 @@ public class SocketInput extends EPInput {
         if(!handleObject(input)) {
           // Problem
           debug.error("Invalid object received, closing down client thread");
-          if(!shutdown) shutdown();
+          shutdown();
           return;
         }
       }
@@ -458,6 +531,8 @@ public class SocketInput extends EPInput {
      * Shutdown.  XXX - not clear if this will work correctly.
      */
     public void shutdown() {
+      if(shutdown) return;  // Don't bother
+      
       shutdown = true;
       try {
         if(cs != null) {
