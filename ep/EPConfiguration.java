@@ -32,8 +32,10 @@ import psl.xues.ep.store.EPStoreInterface;
  * City of New York.  All Rights Reserved.
  *
  * <!--
- * TODO: Support propertysets for event formats(?), inputters, outputters,
+ * TODO: 
+ * - Support propertysets for event formats(?), inputters, outputters,
  * and transformers.
+ * - Dynamic (re)configuration
  * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>

@@ -5,6 +5,8 @@ import psl.kx.*;
 import java.io.*;
 import java.util.*;
 
+import psl.xues.ed.acme.EDGaugeMgr;
+
 import siena.*;
 
 import org.apache.log4j.Logger;
@@ -98,6 +100,9 @@ public class EventDistiller implements Runnable, Notifiable {
   /** ACME support? */
   private String acmeBus = null;
   
+  /** ACME gauge manager */
+  private EDGaugeMgr acmeGM = null;
+  
   /** Main. */
   public static void main(String args[]) {
     String of = null, sf = null, sh = null, sp = null;
@@ -130,7 +135,7 @@ public class EventDistiller implements Runnable, Notifiable {
     }
     
     EventDistiller ed = new EventDistiller(sh, sp, sf, e, of, debugging,
-    debugFile);
+    debugFile, acmeBus);
   }
   
   /** Prints usage. */
@@ -283,8 +288,10 @@ public class EventDistiller implements Runnable, Notifiable {
 
     // Initialize gauge manager for ACME, if necessary
     if(acmeBus != null) {
+      debug.debug("Starting gauge manger");
       this.acmeBus = acmeBus;
-      ///////////
+      // Create the ACME gauge manager
+      acmeGM = new EDGaugeMgr(acmeBus, false, publicSiena);
     }
   }
   

@@ -108,7 +108,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     eventQueue = Collections.synchronizedList(new ArrayList());
     
     // Shutdown hook
-    Runtime.getRuntime().addShutdownHook(new Thread() {
+    Runtime.getRuntime().addShutdownHook(new Thread("Shutdown") {
       public void run() {
         shutdown();
       }
@@ -122,21 +122,26 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     // "Start" each of the components.  Inputters last, since they will
     // actually start moving data.
     synchronized(outputters) {
-      Iterator i = outputters.values().iterator();
+      Iterator i = outputters.keySet().iterator();
       while(i.hasNext()) {
-        new Thread((EPOutput)i.next()).start();
+        String outputterName = (String)i.next();
+        new Thread((EPOutput)outputters.get(outputterName), 
+        outputterName).start();
       }
     }
     
     synchronized(inputters) {
-      Iterator i = inputters.values().iterator();
+      Iterator i = inputters.keySet().iterator();
       while(i.hasNext()) {
-        new Thread((EPInput)i.next()).start();
+        String inputterName = (String)i.next();
+        new Thread((EPInput)inputters.get(inputterName), 
+        inputterName).start();
       }
     }
     
     // Store a reference to our current thread
     dequeueThread = Thread.currentThread();
+    dequeueThread.setName("EPDequeueThread");
     
     // Start the dequeue loop
     while(!shutdown) {

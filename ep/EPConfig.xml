@@ -1,53 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- Created by jjp32 on March 8, 2002, 8:31 PM -->
-
 <EventPackagerConfiguration>
   <EventFormats>
-    <EventFormat Name="psl.xues.ep.event.HierarchicalEvent"></EventFormat>
     <EventFormat Name="psl.xues.ep.event.SienaEvent"></EventFormat>
-    <EventFormat Name="psl.xues.ep.event.FlatEvent"></EventFormat>
   </EventFormats>
   <Inputters>
-    <Inputter Name="SienaInput1" Type="psl.xues.ep.input.SienaInput" SienaReceivePort="7890">
-      <SienaFilter Name="TestFilter1">
-	<SienaConstraint AttributeName="TestAttribute" Op="=" ValueType="String" Value="TestValue"></SienaConstraint>
-      </SienaFilter>
-      <SienaFilter Name="TestFilter2">
-	<SienaConstraint AttributeName="TestAttribute" Op="=" ValueType="String" Value="TestValue2"></SienaConstraint>
-      </SienaFilter>
+    <Inputter Name="Random1" Type="psl.xues.ep.input.RandomSienaProbe" delay="1000">
+      <Attribute Name="Temperature" Type="int" />
     </Inputter>
     <!--This inputter allows for a console control-->
-    <Inputter Name="ConsoleInput1" Type="psl.xues.ep.input.ConsoleInput"></Inputter>
+    <Inputter Name="ConsoleInput1" Type="psl.xues.ep.input.ConsoleInput" />
   </Inputters>
   <Outputters>
-    <Outputter Name="SienaOutput1" Type="psl.xues.ep.output.SienaOutput" SienaReceivePort="7891"></Outputter>
-    <Outputter Name="NullOutput1" Type="psl.xues.ep.output.NullOutput"></Outputter>
+    <Outputter Name="ConsoleOutput1" Type="psl.xues.ep.output.ConsoleOutput" />
   </Outputters>
   <Transforms>
-    <Transform Name="Store1" Type="psl.xues.ep.transform.StoreTransform" StoreName="HSQLDB1"></Transform>
   </Transforms>
   <Stores>
-    <Store Name="HSQLDB1" Type="psl.xues.ep.store.JDBCStore" DBType="hsqldb" DBDriver="org.hsqldb.jdbcDriver"
-	   DBName="xues" DBTable="xues" Username="sa" Password=""></Store>
   </Stores>
   <Rules>
-    <Rule Name="TestRule1"><!--Sources specify a disjoint set-->
+    <Rule Name="TestRule1">
       <Inputs>
-	<Input Name="SienaInput1"></Input>
+	<Input Name="Random1" />
       </Inputs>
-      <!--Transforms are applied in order-->
-      <Transforms></Transforms>
+      <Transforms />
       <Outputs>
-	<Output Name="SienaOutput1"></Output>
-      </Outputs>
-    </Rule>
-    <Rule Name="ConsoleRule">
-      <Inputs>
-	<Input Name="ConsoleInput1"></Input>
-      </Inputs>
-      <Outputs>
-	<Output Name="NullOutput1"></Output>
+	<Output Name="ConsoleOutput1"></Output>
       </Outputs>
     </Rule>
   </Rules>

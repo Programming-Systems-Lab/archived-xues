@@ -1,5 +1,7 @@
 package psl.xues.ep.output;
 
+import java.util.Iterator;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -7,6 +9,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import psl.xues.ep.event.*;
+
+import siena.Notification;
 
 /**
  * Console output for debugging purposes.
@@ -16,7 +20,7 @@ import psl.xues.ep.event.*;
  *
  * <!-- 
  * TODO:
- * - Handle every other kind of event other than DOMEvent :)
+ * - Handle every other kind of event other than DOMEvent better:)
  * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
@@ -40,31 +44,36 @@ public class ConsoleOutput extends EPOutput {
   }
   
   /**
-   * Handle an event.  NullOutput does absolutely zip.
+   * Handle an event.
    *
    * @param epe The EPEvent
    * @return Always true.
    */
   public boolean handleEvent(EPEvent epe) {
-    // Print out basic EPEvent information
-    debug.info("Event received: " + epe);
     // Is it a DOM output?
     if(epe instanceof DOMEvent) {
       if(((DOMEvent)epe).getDOMEvent() != null) {
-        debug.info("It's a DOMEvent, now walking");
+        debug.info("Event (DOMEvent) received:");
         // Now walk it
-        walkElement(((DOMEvent)epe).getDOMEvent(),0);
+        printDOMElement(((DOMEvent)epe).getDOMEvent(),0);
       } else {
         debug.info("It's an empty DOMEvent");
       }
-    }
+    } else if(epe instanceof SienaEvent) {
+      debug.info("Event (Siena) received:");
+      printSienaEvent(((SienaEvent)epe).getSienaEvent());
+    } else { // Just try to print it out
+      debug.info("Event (" + epe.getFormat() + ") received");
+      debug.info("Event contents:\n---" + epe + "---");
+    }      
+      
     return true;  // Wasn't that hard?
   }
   
   /**
-   * Walk an element.
+   * Walk a DOM element.
    */
-  public void walkElement(Element el, int level) {
+  private void printDOMElement(Element el, int level) {
     // print myself
     debug.info("" + level + "/Element/" + el.getNodeName());
     
@@ -88,12 +97,24 @@ public class ConsoleOutput extends EPOutput {
     for(int i=0; i < nl.getLength(); i++) {
       if(nl.item(i).getNodeType() == Node.ELEMENT_NODE) {
         // Recurse
-        walkElement((Element)nl.item(i), level + 1);
+        printDOMElement((Element)nl.item(i), level + 1);
       } else { // Just print it out
         debug.info("" + level + 1 + "/Other/" + nl.item(i));
       }
     }
   }
+
+  /**
+   * Print Siena notification
+   */
+  private void printSienaEvent(Notification n) {
+    Iterator i = n.attributeNamesIterator();
+    while(i.hasNext()) {
+      String attrName = (String)i.next();
+      System.out.println("- " + attrName + " : " + n.getAttribute(attrName));
+    }
+  }
+  
   
   /**
    * Handle shutdown.  (Like there's a lot to do in ConsoleOutput's shutdown :))

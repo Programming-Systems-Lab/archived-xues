@@ -2,10 +2,15 @@ package psl.xues.ed.acme;
 
 import java.util.*;
 import java.io.*;
+
 import edu.cmu.cs.able.gaugeInfrastructure.*;
 import edu.cmu.cs.able.gaugeInfrastructure.Events.*;
 import edu.cmu.cs.able.gaugeInfrastructure.util.*;
 import edu.cmu.cs.able.gaugeInfrastructure.Siena.*;
+
+import org.apache.log4j.Logger;
+
+import siena.Siena;
 
 /**
  * ACME Gauge Manager for ED.  Bridges results from ED to the ACME gauge
@@ -18,7 +23,7 @@ import edu.cmu.cs.able.gaugeInfrastructure.Siena.*;
  * TODO:
  * - Fix queryMetaInfo
  * -->
- * 
+ *
  * @author Janak J Parekh
  * @version $Revision$
  */
@@ -32,14 +37,22 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
   //private Vector gaugeTypes = new Vector();
   /** Hash of gauges, indexed by gauge ID's */
   private HashMap gauges = new HashMap();
+  /** Log4j debugger */
+  private Logger debug = Logger.getLogger(EDGaugeMgr.class.getName());
+  /** ED output bus */
+  private Siena EDOutputBus = null;
   
   /**
    * CTOR.
    *
    * @param gaugeBusURL The Siena URL to connect to for gauge transactions.
+   * @param debugging Enable CMU debugging?
+   * @param EDOutputBus The ED output bus to watch for gauge values.
    */
-  public EDGaugeMgr(String gaugeBusURL, boolean debugging) {
+  public EDGaugeMgr(String gaugeBusURL, boolean debugging, Siena EDOutputBus) {
     super();
+    
+    this.EDOutputBus = EDOutputBus;
     
     // Is debugging turned on?
     if(debugging)
@@ -52,6 +65,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
     
     // Finally, register ourselves with the reporting bus entity so we get
     // requests for gauge creation, deletion, etc.
+    debug.debug("Registering myself");
     ((SienaGaugeReportingBus)reportingBus).sienaBus.registerGaugeMgr(this);
   }
   
@@ -69,8 +83,10 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
     if (gauge.gaugeType.equals("EDGauge")) { // Our gauge to manage
       // "Dummy" handle.  What's the point?
       SienaGaugeMgrGaugeHandle gaugeHandle=new SienaGaugeMgrGaugeHandle(gauge);
-      gauges.put(gauge, new SienaEDGauge(gauge, getGaugeMgrID(), setupParams,
-      mappings));
+      synchronized(gauges) {
+        gauges.put(gauge, new SienaEDGauge(gauge, getGaugeMgrID(), setupParams,
+        mappings, EDOutputBus));
+      }
       return gaugeHandle;
     } else return null; // We aren't handling it
   }
@@ -82,11 +98,16 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    * @return A boolean indicating success.
    */
   public boolean deleteGauge(GaugeControl gauge) {
-    SienaEDGauge seg = ((SienaEDGauge)gauges.get(gauge));
+    SienaEDGauge seg = null;
+    synchronized(gauges) {
+      seg = ((SienaEDGauge)gauges.get(gauge.getGaugeID()));
+    }
     if(seg == null) return false; // Can't shut down if we don't have a handle
     
     seg.shutdown();       // Notify the gauge it's about to be shut down
-    gauges.remove(gauge); // Remove it from the hash
+    synchronized(gauges) {
+      gauges.remove(gauge); // Remove it from the hash
+    }
     
     // Signal to the gauge infrastucture that the gauge was successfully
     // deleted.
@@ -98,7 +119,26 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
     return true;
   }
   
-  /** 
+  /**
+   * Handle a shutdown request.  Delete all gauges to do this.
+   */
+  public void shutdown() {
+    synchronized(gauges) {
+      Iterator keys = gauges.keySet().iterator();
+      while(keys.hasNext()) {
+        GaugeID g = (GaugeID)keys.next();
+        SienaEDGauge seg = (SienaEDGauge)gauges.remove(g);
+        seg.shutdown();
+        // Now tell the gauge infrastructure this gauge is gone
+        DeletedEvent event = new DeletedEvent(g);
+        event.gaugeMgrID = getGaugeMgrID();
+        event.status = true;
+        reportingBus.reportDeleted(event);
+      }
+    }
+  }
+  
+  /**
    * Returns the parameters that can be used to configure the gauge,
    * as well as the values reported by the gauge, for a particular
    * gauge type.
@@ -108,18 +148,18 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    * @param valuesMeta
    * @return
    */
-  public boolean queryMetaInfo(String gaugeType, 
+  public boolean queryMetaInfo(String gaugeType,
   StringPairVector configParamsMeta, StringPairVector valuesMeta) {
     if (gaugeType.equals("EDGauge")) { // Yes, we handle it
-      int index = gaugeTypes.indexOf(gaugeType);
-      switch (index) {
-        case 0:
-          configParamsMeta.addElement("ReportingFrequency", "Int");
-          valuesMeta.addElement("Load", "Float");
-          break;
-      }
+      //int index = gaugeTypes.indexOf(gaugeType);
+      //switch (index) {
+      //  case 0:
+      //    configParamsMeta.addElement("ReportingFrequency", "Int");
+      //    valuesMeta.addElement("Load", "Float");
+      //    break;
+      //}
       return true;
-    } 
+    }
     
     return false;
   }

@@ -2,7 +2,12 @@ package psl.xues.ed.acme;
 
 import edu.cmu.cs.able.gaugeInfrastructure.*;
 import edu.cmu.cs.able.gaugeInfrastructure.util.*;
+
 import java.util.*;
+
+import org.apache.log4j.Logger;
+
+import siena.Siena;
 
 /**
  * Event Distiller ACME Gauge Bus implementation.  This maps to a given
@@ -21,14 +26,24 @@ import java.util.*;
  * @version $Revision$
  */
 public class EDGaugeImpl extends GaugeImpl {
+  /** Debugging logger */
+  private Logger debug = Logger.getLogger(EDGaugeImpl.class.getName());
+  /** ED output bus */
+  private Siena EDOutputBus = null;
+  
   /**
    * CTOR.
    */
   public EDGaugeImpl(GaugeID gid, StringPairVector setupParams, 
-  StringPairVector mappings, GaugeReportingBus bus) {
+  StringPairVector mappings, GaugeReportingBus bus, Siena EDOutputBus) {
     super(gid, setupParams, mappings, bus);
+
+    // Store reference to EDOutputBus, and then subscribe to the values
+    // that we are monitoring
+    this.EDOutputBus = EDOutputBus;
     
     // Insert code to check setup parameters
+    debug.debug("Called with mappings " + mappings);
   }
   
   /**
@@ -38,19 +53,23 @@ public class EDGaugeImpl extends GaugeImpl {
    * @return A boolean indicating success.
    */
   public boolean consistentlyCreated() {
-    return true; // For now, we'll cheat
+    return true; // Since it's not an explicit "creation", we assume success
   }
   
   /** 
-   * Configure the gauge.  Hands relevant parameters to the Event Distiller.
+   * Configure the gauge.
    *
    * @param configParams The parameters used to configure the gauge.
    * @return A boolean indicating success.
    */
   public boolean configure(StringPairVector configParams) {
-    for (int i = 0; i < configParams.size(); i++) {
+    // At this moment, we do nothing, since we implicitly assume the
+    // subscription is all we need.  In the future, this might contain
+    // the information we need to create the ED gauge.
+    
+    //for (int i = 0; i < configParams.size(); i++) {
       // Insert code to process configuration parameters
-    }
+    //}
     return true;
   }
   
@@ -63,6 +82,7 @@ public class EDGaugeImpl extends GaugeImpl {
   public boolean queryAllValues(GaugeValueVector values) {
     // Insert code to fill values with the current value of all values that 
     // the gauge reports.
+    return false;
   }
   
   /** 
@@ -101,6 +121,7 @@ public class EDGaugeImpl extends GaugeImpl {
   public String queryValue(String valueName) {
     // Insert code to return the current value of the value referred to 
     // by valueName
+    return null;
   }
   
   /** 
@@ -109,5 +130,13 @@ public class EDGaugeImpl extends GaugeImpl {
    */
   public void reportNewValue() {
     // Insert code to report a new value
+    return;
+  }
+  
+  /**
+   * Shut down this gauge.
+   */
+  public void shutdown() {
+    return; // Do nothing for now.
   }
 }
