@@ -1,11 +1,11 @@
 Event Distiller Development Branch TODO:
 
-1. timebound - figure out how we deal with the reaper
+1. DONE timebound - figure out how we deal with the reaper
 two options: time-driven, or event-driven
 a. options interface
 b. flush event in shutdown when using event-based time
 
-2. (Enrico) Integrate James's Daughter-Of-Siena once he has
+2. DONE (Enrico) Integrate James's Daughter-Of-Siena once he has
 implemented priority dispatching. (call 'reorderRules()' or whatever, 
 when necessary, and return value upon notification - just uncomment)
 
@@ -42,4 +42,11 @@ Tested timeout, different instantiation policies,
 improved ED shutdown 
 added functionality to sed an event that fails all events during runtime 
 
-timestamp validation for loop doesn't work
+timestamp validation for loop doesn't work correctly
+reaper thread sometimes dies when a new machine is instantiated
+(this only seems to happen when dealing with an instantiation 
+
+tested counter feature
+tested flush on shutdown (event-based mode)
+changed skew to depend entirely on skew of last event,
+this seems to work better for the moment

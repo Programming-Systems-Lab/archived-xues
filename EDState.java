@@ -25,7 +25,17 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.20  2001-06-28 20:58:42  eb659
+ * Revision 1.21  2001-06-29 00:03:18  eb659
+ * timestamp validation for loop doesn't work correctly, darn
+ * reaper thread sometimes dies when a new machine is instantiated
+ * (this only happens when dealing with an instantiation
+ *
+ * tested counter feature - works correctly
+ * tested flush on shutdown (event-based mode)
+ * changed skew to depend entirely on skew of last event,
+ * this seems to work better for the moment
+ *
+ * Revision 1.20  2001/06/28 20:58:42  eb659
  * Tested and debugged timeout, different instantiation policies,
  * improved ED shutdown
  * added functionality to sed an event that fails all events during runtime
@@ -263,7 +273,7 @@ public class EDState implements EDNotifiable {
      * Timestamp this state has fired in.  Created and used during
      * timebound validation.
      */
-    private long ts;
+    private long ts = -1;
 
     /** 
      * The list of states that preceded this one. We need this to 
@@ -393,7 +403,7 @@ public class EDState implements EDNotifiable {
     }
 
     /** Kills this state: unsubscribe and set alive to false. */
-    public void kill(){
+    public void kill() {
 	this.alive = false;
 	bus.unsubscribe(this); 
     }
@@ -414,26 +424,29 @@ public class EDState implements EDNotifiable {
 		if (parent != null && parent.getCount() == -1) parent.kill();
 	    }
 	}
-
 	if (count > 1) { // counter feature
-	    parents.removeAllElements();
-	    parents.add(this);
+	    if (!hasStarted) {
+		parents.add(this);
+		hasStarted = true;
+	    }
 	    count --;
+
+	    errorManager.println
+		("EDState: " + myID + ": decreased count to " + count, 
+		 EDErrorManager.STATE);
 	}
 	else if (count < 0) { // loop feature
 	    if (!hasStarted) {
-		/* only bear children (including myself) once, 
-		 * timestamp of this will be updates as we go along */
+		/* only bear children, and myself once, 
+		 * timestamp of this will be updated as we go along */
 		parents.add(this);
-		for (int i = 0; i < children.length; i++) {
+		for (int i = 0; i < children.length; i++) 
 		    sm.getState(children[i]).bear(this);
-		    // tell the kids to kill me if they make it
-		    //...
-		    hasStarted = true;
-		}
+		// the kids will kill me, if they make it
+		hasStarted = true;
 	    }
 	}
-	else { // if (count == 1) -- normal case 
+	else if (count == 1) { // normal case 
 	    // 4. bear children
 	    for (int i = 0; i < children.length; i++) {
 		sm.getState(children[i]).bear(this); 
@@ -453,6 +466,7 @@ public class EDState implements EDNotifiable {
 
 	// reap will instantiate new machine, if necessary
 	//if (sm.getSpecification().getInstantiationPolicy() == EDConst.ONE_AT_A_TIME) sm.reap();
+	// out for now, but uncomment when found why reaper sometimes hangs...
     }
 
     /** 
@@ -536,7 +550,9 @@ public class EDState implements EDNotifiable {
 	    return false;
 
 	// if we're still here, timebound has failed
-	errorManager.println("EDState: " + myID + " - timed out!", EDErrorManager.STATE);
+	errorManager.println("currentTime is " + currentTime + "\nmost recent parent time is " +
+			     getTimestampForState((EDState)parents.lastElement()), EDErrorManager.REAPER);
+	errorManager.println("EDState: " + myID + " - TIMED OUT!", EDErrorManager.STATE);
 	kill();
 	return true;
     }
@@ -680,24 +696,30 @@ public class EDState implements EDNotifiable {
      * returns true).
      *
      * @param prev The previous state
-     * @param t The current event's timestamp (UNIX time format)
+     * @param currentTime The current event's timestamp (UNIX time format)
      * @return a boolean indicating if this state can occurred  
      *         'in time' from the previous state.
      */
-    public boolean validateTimebound(EDState prev, long t) { 
+    public boolean validateTimebound(EDState prev, long currentTime) { 
 	// No time bounds, always good
 	if(tb == -1) return true;
-    
-	/* this is an initial state, we validate 
-	 * against the time when the rule was created */
-	if (prev == null) return (t - sm.timestamp <= this.tb);
-	
-	// Prev state never validated -- should not happen
-	if (prev.ts == -1)  return false;
-    
-	// normal case, compare against the timestamp of the parent
-	return (t - prev.ts <= this.tb);
+	// normal case, compare
+	return (currentTime - getTimestampForState(prev) <= this.tb);
     }
+
+    /** 
+     * Convenience method for getting the relevant timestamp.
+     * Returns the timestamp of this stateMachine, if the 
+     * state's unavailable.
+     * @return the timestamp of this state, for comparison
+     */
+    private long getTimestampForState(EDState prev) {
+	/* null state or unvalidated state, validate 
+	 * against the time when the rule was created */
+	if (prev == null || prev.ts == -1) return sm.timestamp;
+	else return prev.ts;
+    }
+	
 
   /**
    * Convenience accessor method to validateTimebound.

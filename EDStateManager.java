@@ -40,7 +40,17 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.24  2001-06-28 20:58:42  eb659
+ * Revision 1.25  2001-06-29 00:03:18  eb659
+ * timestamp validation for loop doesn't work correctly, darn
+ * reaper thread sometimes dies when a new machine is instantiated
+ * (this only happens when dealing with an instantiation
+ *
+ * tested counter feature - works correctly
+ * tested flush on shutdown (event-based mode)
+ * changed skew to depend entirely on skew of last event,
+ * this seems to work better for the moment
+ *
+ * Revision 1.24  2001/06/28 20:58:42  eb659
  * Tested and debugged timeout, different instantiation policies,
  * improved ED shutdown
  * added functionality to sed an event that fails all events during runtime
@@ -358,6 +368,8 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	    catch(InterruptedException ex) { ; }
 	    reap();
 	}
+	ed.getErrorManager().println
+	    ("reaper ceased due to shutdown", EDErrorManager.REAPER);
     }
 
     void reap() { 

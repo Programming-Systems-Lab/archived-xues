@@ -19,7 +19,17 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.32  2001-06-28 20:58:42  eb659
+ * Revision 1.33  2001-06-29 00:03:18  eb659
+ * timestamp validation for loop doesn't work correctly, darn
+ * reaper thread sometimes dies when a new machine is instantiated
+ * (this only happens when dealing with an instantiation
+ *
+ * tested counter feature - works correctly
+ * tested flush on shutdown (event-based mode)
+ * changed skew to depend entirely on skew of last event,
+ * this seems to work better for the moment
+ *
+ * Revision 1.32  2001/06/28 20:58:42  eb659
  * Tested and debugged timeout, different instantiation policies,
  * improved ED shutdown
  * added functionality to sed an event that fails all events during runtime
@@ -421,6 +431,7 @@ public class EventDistiller implements Runnable, Notifiable {
 	
 	// Create internal dispatcher
 	bus = new EDBus();
+	bus.setErrorManager(errorManager);
 	/*privateSiena = new HierarchicalDispatcher();
 	boolean done = false;
 	int port = 61979;
@@ -465,18 +476,21 @@ public class EventDistiller implements Runnable, Notifiable {
 		    long l = n.getAttribute("timestamp").longValue();
 		    if (eventDriven) lastEventTime = l;
 		    else {
-			// how much does this differ from the previous skew?
-			double skew = (double)(timeSkew - (System.currentTimeMillis() - l));
-			double weight = 1 / processedEvents;
-			// weighted average
-			timeSkew += (long)(skew * weight);
+			// for now, assume the skew of the last event is consistent
+			timeSkew = System.currentTimeMillis() - l;
+			/* // how much does this differ from the previous skew?
+			   double skew = (double)(timeSkew - (System.currentTimeMillis() - l));
+			   double weight = 1 / processedEvents;
+			   // weighted average
+			   timeSkew += (long)(skew * weight); */
 		    }
 		}
 	    }
 	}
+	errorManager.println("EventDistiller: ceased processing events due to shutdown",
+			     EDErrorManager.DISPATCHER);
     }
  
-
     /**
      * Flush all started machines, so that any failure notifications are sent.
      * This implies that all events that are currently subscribed will fail.
@@ -574,8 +588,6 @@ public class EventDistiller implements Runnable, Notifiable {
 	}
 	
 	// Add the event onto the queue 
-	errorManager.println("EventDistiller: Putting event on queue", 
-			   EDErrorManager.DISPATCHER);
 	synchronized(eventProcessQueue) {
 	    eventProcessQueue.addElement(n);
 	}
@@ -591,7 +603,7 @@ public class EventDistiller implements Runnable, Notifiable {
      *          must be in already wrapped format
      */
     void sendPublic(Notification n) {
-	errorManager.println("SENDING " + n, EDErrorManager.STATE);
+	errorManager.println("SENDING " + n, EDErrorManager.DISPATCHER);
 	
 	try {
 	    /* if this is an internal notification

@@ -22,7 +22,7 @@ public class EDTestConstruct implements Notifiable {
     /** Constructs a new EDTestConstruct. */
     public EDTestConstruct() {
 	// instantiate new ED
-	ed = new EventDistiller(this, "psl/xues/SampleRules.xml", false, true, false);
+	ed = new EventDistiller(this, "psl/xues/SampleRules.xml", true, true, true);
 	// give it an input...
 	// and an output -- optional
 	//ed.setOutputFile(new File("psl/xues/currentRulebase.xml"));
@@ -37,14 +37,14 @@ public class EDTestConstruct implements Notifiable {
 
 	
 	// test the loop rule
-	double d = (new Random()).nextDouble();
-	int n = (int)(d * 10);
+	//double d = (new Random()).nextDouble();
+	int n = 10; //(int)(d * 10);
 	for (int i = 0; i < n; i++) sendLoopEvent();
 	sendEndEvent();
 	
 
 	// let ED run for a bit...
-	try { Thread.currentThread().sleep(12000); }
+	try { Thread.currentThread().sleep(15000); }
 	catch (Exception ex) { ; }
 	
 	// then kill it
