@@ -18,7 +18,11 @@ import siena.*;
  * @version 0.02 (1/20/2001)
  *
  * $Log$
- * Revision 1.10  2001-01-26 03:30:53  jjp32
+ * Revision 1.11  2001-01-28 21:34:00  jjp32
+ *
+ * XML parsing complete; almost ready for demo
+ *
+ * Revision 1.10  2001/01/26 03:30:53  jjp32
  *
  * Now supports non-localhost siena servers
  *
@@ -81,6 +85,9 @@ public class EventDistiller implements Notifiable {
   /** XXX - hack */
   private static String sienaHost = "senp://localhost";
   
+  /** State machine specification file */
+  private static String stateSpecFile = null;
+
   /**
    * Main.
    */
@@ -89,21 +96,23 @@ public class EventDistiller implements Notifiable {
       for(int i=0; i < args.length; i++) {
 	if(args[i].equals("-s"))
 	  sienaHost = args[++i];
-	else if(args[i].equals("-?"))
-	  usage();
+	else if(args[i].equals("-f"))
+	  stateSpecFile = args[++i];
 	else
 	  usage();
       }
-    }	   
-
+    }   
     new EventDistiller();
-  } 
+  }
 
   /**
    * Print usage.
    */
   public static void usage() {
-    System.out.println("usage: java EventDistiller [-s sienaHost] [-?]");
+    System.out.println("usage: java EventDistiller [-f stateSpecFile] "+
+		       "[-s sienaHost] [-?]");
+    System.out.println("Warning!  Omitting stateFile causes EventDistiller "+
+		       "to run in demo mode.");
     System.exit(-1);
   }
 
@@ -126,18 +135,17 @@ public class EventDistiller implements Notifiable {
       ((HierarchicalDispatcher)publicSiena).setMaster(sienaHost);
     } catch(Exception e) { e.printStackTrace(); }
    
-    // Subscribe to packager input
+    // Subscribe to packager input, metaparser results, and general input
     Filter packagerFilter = new Filter();
     packagerFilter.addConstraint("Type","PackagedEvent");
-    try {
-      publicSiena.subscribe(packagerFilter, this);
-    } catch(SienaException e) { e.printStackTrace(); }
-
-    // Subscribe to metaparser results
     Filter metaparserFilter = new Filter();
     metaparserFilter.addConstraint("Type","ParsedEvent");
+    Filter generalFilter = new Filter();
+    generalFilter.addConstraint("Type","EDInput");
     try {
+      publicSiena.subscribe(packagerFilter, this);
       publicSiena.subscribe(metaparserFilter, this);
+      publicSiena.subscribe(generalFilter, this);
     } catch(SienaException e) { e.printStackTrace(); }
 
     // Create private siena
@@ -148,7 +156,8 @@ public class EventDistiller implements Notifiable {
     } catch(Exception e) { e.printStackTrace(); }
     
     // Initialize state machine manager.  Hand it the private siena.
-    EDStateManager edsm = new EDStateManager(privateSiena, this);
+    EDStateManager edsm = new EDStateManager(privateSiena, this, 
+					     stateSpecFile);
 
     // Run
     while(true) {

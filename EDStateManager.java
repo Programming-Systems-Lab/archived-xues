@@ -1,8 +1,12 @@
 
 package psl.xues;
 
+import java.io.*;
 import java.util.*;
 import siena.*;
+
+import oracle.xml.parser.v2.SAXParser;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -23,7 +27,11 @@ import org.xml.sax.helpers.DefaultHandler;
  * @version 1.0
  *
  * $Log$
- * Revision 1.2  2001-01-28 19:56:18  jjp32
+ * Revision 1.3  2001-01-28 21:34:00  jjp32
+ *
+ * XML parsing complete; almost ready for demo
+ *
+ * Revision 1.2  2001/01/28 19:56:18  jjp32
  *
  * Added XML support to EDStateManager.  Supplied test rule file.
  *
@@ -32,18 +40,19 @@ import org.xml.sax.helpers.DefaultHandler;
  * First full Siena-aware build of XUES!
  *
  */
-public class EDStateManager implements Runnable extends DefaultHandler {
+public class EDStateManager extends DefaultHandler implements Runnable {
   private EventDistiller ed = null;
   private Siena siena = null;
+  /** Currently unused.  I don't remember what this is for. */
   private int idCounter = -1;
   /** This hashes vectors with EDStateMachineSpecifications */
   private Vector stateMachineTemplates = null;
   private Vector stateMachines = null;
-  /** Pointer to current state machine spec */
-  private EDStateMachineSpecification edsms = null;
   /** SAX parser reference */
   private SAXParser sxp = null;
-     
+  // The current state/statemachine/etc being built.
+  private EDStateMachineSpecification currentEdsms = null;
+  
   /**
    * XML main test
    */
@@ -59,8 +68,7 @@ public class EDStateManager implements Runnable extends DefaultHandler {
    * Test CTOR.  Initialize with test state machine.
    */
   public EDStateManager(Siena siena, EventDistiller ed) {
-    this.ed = ed;
-    this.siena = siena;
+    this(siena,ed,null);
     stateMachineTemplates.
       addElement(EDStateMachineSpecification.buildDemoSpec(siena,this));
   }
@@ -72,6 +80,10 @@ public class EDStateManager implements Runnable extends DefaultHandler {
 			String specFilename) {
     this.ed = ed;
     this.siena = siena;
+    this.stateMachineTemplates = new Vector();
+    this.stateMachines = new Vector();
+    // Do we have a spec filename?
+    if(specFilename == null) return; // No further
     // Initialize SAX parser and run it on the file
     sxp = new SAXParser();
     sxp.setContentHandler(this);
@@ -117,7 +129,49 @@ public class EDStateManager implements Runnable extends DefaultHandler {
    */
   public void startElement(String uri, String localName, String qName,
 			   Attributes attributes) throws SAXException {
-    System.out.println("parsing " + qName);
+    if(EventDistiller.DEBUG) System.out.println("parsing " + localName + "," + 
+						qName);
+    if(localName.equals("rule")) { // Start of new EDSMS
+      currentEdsms = new EDStateMachineSpecification(siena,this);
+      stateMachineTemplates.addElement(currentEdsms);
+    }
+    if(localName.equals("state")) { 
+      if(EventDistiller.DEBUG) {
+	System.out.println("--> attributename = " + 
+			   attributes.getValue("","attributename"));
+	System.out.println("--> value = " + 
+			   attributes.getValue("","value"));
+	System.out.println("--> timebound = " +
+			   attributes.getValue("","timebound"));
+      }
+
+      // Create the state
+      try {
+	currentEdsms.addState(new EDState(attributes.getValue("","attributename"),
+					  attributes.getValue("","value"),
+					  Integer.parseInt(attributes.getValue("","timebound"))));
+      } catch(Exception e) {
+	System.err.println("FATAL: EDStateManager init failed:");
+	e.printStackTrace();
+      }	
+    }
+    if(localName.equals("attribute")) {
+      if(EventDistiller.DEBUG) {
+	System.out.println("--> name = " +
+			   attributes.getValue("","name"));
+	System.out.println("--> value = " +
+			   attributes.getValue("","value"));
+      }
+
+      try {
+	currentEdsms.
+	  setAction(attributes.getValue("","name"),
+		    new AttributeValue(attributes.getValue("","value")));
+      } catch(Exception e) {
+	System.err.println("FATAL: EDStateManager init failed:");
+	e.printStackTrace();
+      }
+    }
   }
 
   /**
@@ -125,7 +179,11 @@ public class EDStateManager implements Runnable extends DefaultHandler {
    */
   public void endElement(String namespaceURI, String localName, String qName) 
   throws SAXException {
-    System.out.println("parsed " + qName);
+    if(EventDistiller.DEBUG) System.out.println("parsed " + localName + "," + 
+						qName);
+
+    
+
   }
 }
 
@@ -162,18 +220,29 @@ class EDStateMachineSpecification implements Notifiable {
 
   /**
    * Add a state.
+   *
+   * NOTE! For this specification to become active, you must set the action
+   * AFTER adding states.
+   *
+   * @param e The state.
    */
   public void addState(EDState e) {
     stateArray.addElement(e);
-    if(stateArray.size() == 1) subscribe(); // Do first event subscription
   }
 
   /**
    * Set action.  (Only one action for now)
+   *
+   * NOTE! IMPORTANT!  You *must* set an action for this state machine
+   * to become live.  Additionally, the state machine assumes that
+   * setting the action implicitly tells it that the states have been set up.
+   * You may add states later, but be forewarned there may already be state
+   * machines executing on the current state setup.
    */
-  public void setAction(AttributeValue av) {
+  public void setAction(String attr, AttributeValue val) {
     action = new Notification();
-    action.putAttribute(av);
+    action.putAttribute(attr,val);
+    subscribe(); // Do first event subscription
   }
 
   /**
