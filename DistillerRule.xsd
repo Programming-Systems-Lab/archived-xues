@@ -5,54 +5,61 @@
 	2001 Trustees of Columbia University in the City of New York.
 	All Rights Reserved.</xsd:documentation>
   </xsd:annotation>
-  <!-- Rule specification.  A rule consists of "states" that make up a pattern, and "actions" to take based on those states. -->
-  <xsd:element name="rule">
+  <!-- Top-level rulebase declaration. -->
+  <xsd:element name="rulebase">
     <xsd:complexType>
       <xsd:sequence>
-	<!-- States consist of many individual attribute/value states.  They should be put in order, with appropriate timebounds. -->
-        <xsd:element name="states">
-	  <xsd:complexType>
-	    <xsd:sequence>
-	      <xsd:element name="state" maxOccurs="unbounded">
-	        <xsd:complexType>
+        <!-- Rule specification.  A rule consists of "states" that make up a pattern, and "actions" to take based on those states. -->
+        <xsd:element name="rule" maxOccurs="unbounded">
+          <xsd:complexType>
+            <xsd:sequence>
+              <!-- States consist of many individual attribute/value states.  They should be put in order, with appropriate timebounds. -->
+              <xsd:element name="states">
+                <xsd:complexType>
                   <xsd:sequence>
-                    <xsd:element name="attribute" maxOccurs="unbounded">
+	            <xsd:element name="state" maxOccurs="unbounded">
                       <xsd:complexType>
-		        <xsd:attribute name="attributename" type="xsd:string"/>
-		        <xsd:attribute name="value" type="xsd:string"/>
+                        <xsd:sequence>
+                          <xsd:element name="attribute" maxOccurs="unbounded">
+                            <xsd:complexType>
+                              <xsd:attribute name="attributename" type="xsd:string"/>
+                              <xsd:attribute name="value" type="xsd:string"/>
+                            </xsd:complexType>
+                          </xsd:element>
+                        </xsd:sequence>
+                        <!-- Timebound for occurrence of this event -->
+                        <xsd:attribute name="timebound" type="xsd:integer" />
                       </xsd:complexType>
-                    </xsd:element>
-                  </xsd:sequence>
-                  <!-- Timebound for occurrence of this event -->
-		  <xsd:attribute name="timebound" type="xsd:integer" />
+                    </xsd:element> <!-- /state -->
+	          </xsd:sequence>
 	        </xsd:complexType>
-	      </xsd:element> <!-- /state -->
-	    </xsd:sequence>
-	  </xsd:complexType>
-	</xsd:element>
+	      </xsd:element>
 
-	<xsd:element name="actions">
-	  <xsd:complexType>
-	    <!-- Eventually, multiple types of notifications will be provided.  Right now, only one notification is supported - and of attribute/value type. -->
-	    <xsd:choice>
-	      <xsd:element name="notification" minOccurs="0" maxOccurs="unbounded">
-		<xsd:complexType>
-		  <xsd:sequence>
-		    <xsd:element name="attribute" maxOccurs="unbounded">
+              <xsd:element name="actions">
+	        <xsd:complexType>
+	          <!-- Eventually, multiple types of notifications will be provided.  Right now, only one notification is supported - and of attribute/value type. -->
+	          <xsd:choice>
+	            <xsd:element name="notification" minOccurs="0" maxOccurs="unbounded">
 		      <xsd:complexType>
-		        <xsd:attribute name="name" type="xsd:string" />
-		        <xsd:attribute name="value" type="xsd:string" />
+		        <xsd:sequence>
+		          <xsd:element name="attribute" maxOccurs="unbounded">
+		            <xsd:complexType>
+		              <xsd:attribute name="name" type="xsd:string" />
+		              <xsd:attribute name="value" type="xsd:string" />
+		            </xsd:complexType>
+		          </xsd:element>
+		        </xsd:sequence>
 		      </xsd:complexType>
-		    </xsd:element>
-		  </xsd:sequence>
-		</xsd:complexType>
-	      </xsd:element> <!-- /notification -->
-	    </xsd:choice> <!-- no other choices right now -->
-	  </xsd:complexType>
-	</xsd:element> <!-- /actions -->
+	            </xsd:element> <!-- /notification -->
+	          </xsd:choice> <!-- no other choices right now -->
+	        </xsd:complexType>
+	      </xsd:element> <!-- /actions -->
+            </xsd:sequence>
+            <!-- The name of this rule. -->
+            <xsd:attribute name="name" type="xsd:string" />
+          </xsd:complexType>
+        </xsd:element> <!-- /rule -->
       </xsd:sequence>
-      <!-- The name of this rule. -->
-      <xsd:attribute name="name" type="xsd:string" />
     </xsd:complexType>
-  </xsd:element> <!-- /rule -->
+  </xsd:element> <!-- /rulebase --> 
 </xsd:schema>
