@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rule xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" name="testRule">
+   <states>
+      <state attributename="foo" value="bar" timebound="1"/>
+   </states>
+   <actions>
+      <notification>
+         <attribute name="abc" value="def"/>
+      </notification>
+   </actions>
+</rule>

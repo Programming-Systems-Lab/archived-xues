@@ -3,6 +3,9 @@ package psl.xues;
 
 import java.util.*;
 import siena.*;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Event Distiller State Machine Manager
@@ -20,26 +23,64 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.1  2001-01-22 02:11:54  jjp32
+ * Revision 1.2  2001-01-28 19:56:18  jjp32
+ *
+ * Added XML support to EDStateManager.  Supplied test rule file.
+ *
+ * Revision 1.1  2001/01/22 02:11:54  jjp32
  *
  * First full Siena-aware build of XUES!
  *
  */
-public class EDStateManager implements Runnable {
-  private EventDistiller ed;
-  private Siena siena;
-  private int idCounter;
+public class EDStateManager implements Runnable extends DefaultHandler {
+  private EventDistiller ed = null;
+  private Siena siena = null;
+  private int idCounter = -1;
   /** This hashes vectors with EDStateMachineSpecifications */
-  private Vector stateMachineTemplates;
-  private Vector stateMachines;
+  private Vector stateMachineTemplates = null;
+  private Vector stateMachines = null;
+  /** Pointer to current state machine spec */
+  private EDStateMachineSpecification edsms = null;
+  /** SAX parser reference */
+  private SAXParser sxp = null;
+     
+  /**
+   * XML main test
+   */
+  public static void main(String[] args) {
+    if(args.length == 0) {
+      System.err.println("Must supply XML filename");
+      System.exit(-1);
+    }
+    new EDStateManager(null, null, args[0]);
+  }
 
+  /**
+   * Test CTOR.  Initialize with test state machine.
+   */
   public EDStateManager(Siena siena, EventDistiller ed) {
     this.ed = ed;
     this.siena = siena;
-    // Need to initialize stateMachineTemplates.  For now, we just
-    // create a demo one.
     stateMachineTemplates.
       addElement(EDStateMachineSpecification.buildDemoSpec(siena,this));
+  }
+  
+  /**
+   * Regular CTOR.  Utilize XML specification file to build state machines.
+   */
+  public EDStateManager(Siena siena, EventDistiller ed, 
+			String specFilename) {
+    this.ed = ed;
+    this.siena = siena;
+    // Initialize SAX parser and run it on the file
+    sxp = new SAXParser();
+    sxp.setContentHandler(this);
+    try {
+      sxp.parse(new FileInputStream(specFilename));
+    } catch(Exception e) {
+      System.err.println("FATAL: EDStateManager init failed:");
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -68,11 +109,28 @@ public class EDStateManager implements Runnable {
     // Garbage-collect the State Machine
     stateMachines.removeElement(m);
   }
+
+  /**
+   * Handle the beginning of a SAX element.  We only use this in
+   * certain cases, e.g. in the case of a new rule where we have to
+   * instantiate a new currentStateMachine.
+   */
+  public void startElement(String uri, String localName, String qName,
+			   Attributes attributes) throws SAXException {
+    System.out.println("parsing " + qName);
+  }
+
+  /**
+   * Handle the end of a SAX element.
+   */
+  public void endElement(String namespaceURI, String localName, String qName) 
+  throws SAXException {
+    System.out.println("parsed " + qName);
+  }
 }
 
 /**
- * Class to specify a machine template.  We also store references to
- * existing state machines here.
+ * Class to specify a machine template.
  */
 class EDStateMachineSpecification implements Notifiable {
   private Vector stateArray;
@@ -80,6 +138,9 @@ class EDStateMachineSpecification implements Notifiable {
   private Siena siena;
   private EDStateManager edsm;
 
+  /**
+   * Basic CTOR.  Make sure to add states.
+   */
   public EDStateMachineSpecification(Siena siena, EDStateManager edsm) {
     this.siena = siena;
     this.edsm = edsm;
@@ -97,6 +158,22 @@ class EDStateMachineSpecification implements Notifiable {
     edsms.action.putAttribute("itworked","true");
     edsms.subscribe();
     return edsms;
+  }
+
+  /**
+   * Add a state.
+   */
+  public void addState(EDState e) {
+    stateArray.addElement(e);
+    if(stateArray.size() == 1) subscribe(); // Do first event subscription
+  }
+
+  /**
+   * Set action.  (Only one action for now)
+   */
+  public void setAction(AttributeValue av) {
+    action = new Notification();
+    action.putAttribute(av);
   }
 
   /**
