@@ -37,6 +37,9 @@ public class EPHandler implements Notifiable{
 	siena =s;
 	filterIndex = filter;
     }
+    /*get the actions associated with the particular Notification since we already know the 
+      filter used for the Notification!
+    */
     
     public void notify(Notification n){
 	StringTokenizer st = null;//string tokenizer to read hashtable string
@@ -63,38 +66,48 @@ public class EPHandler implements Notifiable{
 	    }
 	}
     }
-
+    
     /**Unused Siena construct.*/
     public void notify(Notification[] s){;}
-
+    
     private void addFilter(Notification n){
+	
 	//subscribe the filter to siena
 	if(DEBUG) System.out.println("addFilter method");
+	boolean keepFilter= false;
+	Boolean a;
 	String filterIndex = n.getAttribute("Name").stringValue();//picked up the filter name
 	String attrName = n.getAttribute("AttrName").stringValue();//picked up the attribute
 	String opName = n.getAttribute("AttrOp").stringValue();
 	String attrValue = n.getAttribute("AttrVal").stringValue();
-	//is there an easier way of converting a string to boolean value?
-	// XXX - this will crash if keepFilter is not defined
-	Boolean a = new Boolean(n.getAttribute("keepFilter").stringValue());
-	boolean keepFilter = a.booleanValue();
+	
+	String filterValue = n.getAttribute("keepFilter").stringValue();
+	if(filterValue != null){
+	    a = new Boolean(n.getAttribute("keepFilter").stringValue());
+	    keepFilter = a.booleanValue();
+	}
 	try{
 	    if(filterIndex != null && attrName != null && opName != null && attrValue != null){
 		Filter theFilter = new Filter();
 		theFilter.addConstraint(attrName, Op.op(opName), attrValue);
 		siena.subscribe(theFilter, new EPHandler(list_of_actions, statement, siena, filterIndex));
 	    }//if
-	    if(keepFilter){
-		//add to EventPackager.cfg file for permanent addition of the filter
-		if(DEBUG)System.out.println("filter added permanently");
-		FileWriter writer = new FileWriter("EventPackager.cfg",true);
-		PrintWriter out = new PrintWriter(writer);
-		out.println(filterIndex + " " + attrName + ", " + opName + ", " + attrValue + ";");
-		//		out.flush();
-		out.close();
-		writer.close();
-	    }
+	    if(filterValue != null){
+		if(keepFilter){
+		    //add to EventPackager.cfg file for permanent addition of the filter
+		    if(DEBUG)System.out.println("filter added permanently");
+		    FileWriter writer = new FileWriter("EventPackager.cfg",true);
+		    PrintWriter out = new PrintWriter(writer);
+		    
+		    //XXX bug: if the same filter may be added without checking if its present in the EventPackager.cfg or not.
+		    out.println(filterIndex + " " + attrName + ", " + opName + ", " + attrValue + ";");
+		    //		out.flush();
+		    out.close();
+		    writer.close();
+		}//if
+	    }//if
 	}//try
+	
 	catch(IOException er){
 	    System.out.println(er);
 	}
@@ -103,13 +116,13 @@ public class EPHandler implements Notifiable{
 	}
 	
     }//addFilter
-
+    
     private void extractData_addTuple(Notification n){
 	int myCurrent = ++current; //increment tuple id
 	String data =n.getAttribute(n.getAttribute("Type").stringValue()).stringValue();
 	
 	createNewDataFile(myCurrent, data); // put data in file with name of myCurrent
-	addTuple(System.currentTimeMillis(), n.getAttribute("Type").stringValue(), "Siena", myCurrent, data);
+	addTuple(System.currentTimeMillis(), n.getAttribute("Type").stringValue(), "Siena",data);
 	if(DEBUG)System.out.println("tuple added!!!!");
     }
     
@@ -150,10 +163,9 @@ public class EPHandler implements Notifiable{
 
   
     /* adds a tuple from SmartEvent to the database */
-    public boolean addTuple(long time, String type, String source,
-			    int curId, String data) {
+    public boolean addTuple(long time, String type, String source, String data) {
 	
-	
+	String query = null;
 	source= source.toLowerCase();
 	type= type.toLowerCase();
 	data= data.toLowerCase();
@@ -162,14 +174,14 @@ public class EPHandler implements Notifiable{
 	try {
 	    
 	    if (DEBUG) {
-		System.out.println("INSERTING: " + curId + " " +
-				   time + " " + source + " " + type);
+		System.out.println("INSERTING: " + time + " " + source + " " + type);
 	    }
 	    
-	    statement.executeQuery("insert into EVENTS values (" +
-				   curId + "," + time +
-				   " ,'" + source + "','" + type + "')");            
+	    query = "insert into EVENTS (id, time, source, type) VALUES (NEXTVAL('events_id_seq'), 'time', 'source', 'type')";
+	    int result = statement.executeUpdate(query);
 	    
+	    if(DEBUG)System.out.println("inserted row, result = " + result);
+
 	} catch (SQLException e) {
             System.out.println("ERROR in ADD TUPLE: ");
 	    System.err.println(e);

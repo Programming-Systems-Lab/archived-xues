@@ -12,7 +12,7 @@ import psl.kx.*;
 
 import java.sql.*;
 import java.util.*;
-
+import java.sql.Types;
 /** 
  * EventPackager for Xues.  Now Siena-compliant(TM).
  *
@@ -34,94 +34,9 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.27  2001-09-19 17:33:41  aq41
- * Minor debugging, in process of implementing acceptance of new filters through
- * notification.
+ * Revision 1.28  2001-12-27 23:29:54  aq41
+ * Converting hsql Db to postgresql.
  *
- * Revision 1.26  2001/08/06 17:29:35  aq41
- * Reorganized code, shifted some of the code from EventPackager.java to EPHandler.java
- * Doesn't compile though.
- *
- * Revision 1.25  2001/08/01 13:44:14  aq41
- * Minor code cleanup.
- *
- * Revision 1.24  2001/07/31 19:13:36  aq41
- * Added capability to perform actions on notifications from EPHandler.cfg file
- * instead of hard coding the actions in EventPackager.java
- *
- * Revision 1.23  2001/07/23 02:45:44  aq41
- * Configuration file containing filter properties added instead of being
- * hardcoded within EventPackager.java
- *
- * Revision 1.22  2001/06/29 19:27:45  aq41
- *
- * Put Rose's version in CVS, added Tuple, removed jdom reference
- *
- * Revision 1.17  2001/01/30 02:39:36  jjp32
- *
- * Added loopback functionality so hopefully internal siena gets the msgs
- * back
- *
- * Revision 1.16  2001/01/30 00:24:50  jjp32
- *
- * Bug fixes, added test class
- *
- * Revision 1.15  2001/01/29 05:22:53  jjp32
- *
- * Reaper written - but it's probably a problem
- *
- * Revision 1.14  2001/01/29 02:14:36  jjp32
- *
- * Support for multiple attributes on a output notification added.
- *
- * Added Workgroup Cache test rules
- *
- * Revision 1.13  2001/01/28 22:58:58  jjp32
- *
- * Wildcard support has been added
- *
- * Revision 1.12  2001/01/26 03:30:54  jjp32
- *
- * Now supports non-localhost siena servers
- *
- * Revision 1.11  2001/01/22 02:11:54  jjp32
- *
- * First full Siena-aware build of XUES!
- *
- * Revision 1.10  2001/01/18 01:41:35  jjp32
- *
- * Moved KXNotification to kx; other modifications for demo
- *
- * Revision 1.9  2001/01/01 00:32:28  jjp32
- *
- * Added rudimentary Siena-publishing capabilities to Event Packager.  Created a (possibly, in the future) base notification class with convenience constructors (right now just for EP but in the future also for other KX components).
- *
- * Revision 1.8  2000/12/26 22:25:13  jjp32
- *
- * Updating to latest preview versions
- *
- * Revision 1.7  2000/09/09 18:17:14  jjp32
- *
- * Lots of bugs and fixes for demo
- *
- * Revision 1.6  2000/09/09 15:13:49  jjp32
- *
- * Numerous updates, bugfixes for demo
- *
- * Revision 1.5  2000/09/08 22:40:43  jjp32
- *
- * Numerous server-side bug fixes.
- * Removed TriKXUpdateObject, psl.trikx.impl now owns it to avoid applet permission hassles
- *
- * Revision 1.4  2000/09/08 19:08:27  jjp32
- *
- * Minor updates, added socket communications in TriKXEventNotifier
- *
- * Revision 1.3  2000/09/07 23:15:25  jjp32
- *
- * Added EventNotifier code; updated previous event code
- *
- * Revision 1.2  2000/09/07 19:30:49  jjp32
  *
  * Updating
  *
@@ -143,15 +58,10 @@ public class EventPackager{
     private String filterName; // filter component name
     private int maxresults = 5; // the max num of results that
                                 //can be returned from an EPLookup query
+    private static String userID; //userID for database access
+    private static String password;//password for database access
+
     private EPHandler handler = null;
-    private static String[] tableCreationSQL = {		
-	"create table EVENTS (id integer,"+
-	"time bigint,"+
-	"source varchar(200),"+
-	"type varchar(200),"+
-	"PRIMARY KEY (id) )",
-	"create index time on EVENTS(time)"
-    };
     
     int listeningPort = -1;
     ServerSocket listeningSocket = null;
@@ -159,7 +69,7 @@ public class EventPackager{
     ObjectOutputStream spoolFile;
     int srcIDCounter = 0;
     Siena siena = null;
-    
+   
     /* Debug flag */
     static boolean DEBUG = false;
     
@@ -193,8 +103,9 @@ public class EventPackager{
 	    }
 	}
 	
-	/* create a connection to the database */
-	connectDB("DB", "sa", "");
+	connectDB(userID, password);
+	connectFilterActionDB(userID, password);
+
 	/* Add a shutdown hook */
 	Runtime.getRuntime().addShutdownHook(new Thread() {
 		public void run() {      
@@ -219,94 +130,7 @@ public class EventPackager{
 	    ((HierarchicalDispatcher)siena).setMaster(sienaHost);
 	} catch(Exception e) { e.printStackTrace(); }
 	
-	// making a hashtable containing action Strings to use on a certain
-	// notification. EPHandler.cfg contains the list of actions that
-	// can be performed depending on the filter used for the notification.
 	
-	Hashtable actions = new Hashtable();
-	try{
-	    FileReader reader = new FileReader("EPHandler.cfg");
-	    BufferedReader in2 = new BufferedReader(reader);
-	    String inputLine = in2.readLine();
-	    StringTokenizer st = null;
-	    while(inputLine != null && inputLine.length() > 0){
-		inputLine.trim();
-		st = new StringTokenizer(inputLine);
-		String notificationType = st.nextToken();
-		actions.put(notificationType, inputLine.substring(notificationType.length()+1));
-		inputLine = in2.readLine();
-	    }
-	}
-	catch(IOException e){
-	    System.out.println("Error: " + e);
-	}
-	if(DEBUG){
-	    System.out.println("hashtable: " + actions);
-	}
-	
-	//handler = new EPHandler(actions, statement, siena);
-	
-	
-	// Set up listening.  We listen for SmartEvents (which have a data
-	// field with all the data), DirectEvents (which have the
-	// attributes inline), and EPLookup events 
-	
-	try{
-	    FileReader reader = new FileReader("EventPackager.cfg");
-	    in = new BufferedReader(reader);
-	    String inputLine = in.readLine();
-	    int numberOfFilters =0;
-	    Filter filterName = null;	    
-	    StringTokenizer st = null;
-	    
-	    while(inputLine != null && inputLine.length() > 0){
-		numberOfFilters++;
-		st = new StringTokenizer (inputLine);
-		if(DEBUG)System.out.println("inputLine: "+ inputLine);
-		String filterIndex = null;
-		String word = null;
-		String first = null;
-		String second = null;
-		String third = null;
-		int wordCount = 0;
-		while(st.hasMoreTokens()){
-		    word = st.nextToken();
-		    wordCount++;
-		    if (!word.endsWith(",") && wordCount  == 1){
-			filterIndex = word;
-			filterName  = new Filter();
-			wordCount--;
-			if(DEBUG)System.out.println("filter initialized");
-		    }
-		    else if(word.endsWith(";") && wordCount % 3 == 0){
-			third = word;
-			third = third.substring(0, third.length() -1);
-			
-			filterName.addConstraint(first, Op.op(second), third);
-			if(DEBUG)System.out.println("filter constrain: " + filterName);
-			try{
-			    siena.subscribe(filterName, new EPHandler(actions, statement, siena, filterIndex));
-			}
-			catch(SienaException e){
-			    e.printStackTrace();
-			}
-		    }
-		    
-		    else if (word.endsWith(",") && wordCount % 3 == 1){
-			first = word;
-			first = first.substring(0, first.length()-1);
-		    }
-		    else if(word.endsWith(",") && wordCount % 3 == 2){
-			second = word;
-			second = second.substring(0, second.length()-1);
-		    }
-		}//while more tokens
-		inputLine = in.readLine();
-	    }//while 
-	}//try
-	catch (IOException e){
-	    System.out.println("Error: " + e);
-	}
 	finally{
 	    try{
 		if(in != null)
@@ -355,13 +179,24 @@ public class EventPackager{
 	    for(int i=0; i < args.length; i++) {
 		if(args[i].equals("-s"))
 		    sienaHost = args[++i];
+
+		else if(args[i].equals("-uid"))
+		    userID = args[++i];
+
+		else if(args[i].equals("-pwd"))
+		    password = args[++i];
+
 		else if(args[i].equals("-?"))
 		    usage();
+		
 		else if(args[i].equals("-d"))
 		    DEBUG = true;
+		
 		else
 		    usage();
 	    }
+	    
+
 	}	   
 	
 	EventPackager ep = new EventPackager(7777, "EventPackager.spl");
@@ -372,7 +207,7 @@ public class EventPackager{
      * Print usage.
      */
     public static void usage() {
-	System.out.println("usage: java EventPackager [-s sienaHost] [-d] [-?]");
+	System.out.println("usage: java EventPackager [-s sienaHost] [-uid userid] [-pwd password] [-d] [-?]");
 	System.exit(-1);
     }
     
@@ -430,7 +265,7 @@ public class EventPackager{
 		    
 		    if(numRead == -1 && receivedData) { // Finished - add new tuple now
 			addTuple(System.currentTimeMillis(), "SocketConnection",
-				 clientAddress, myCurrent, "");
+				 clientAddress, "");
 			
 			System.err.println("EPCThread: closing connection");
 			in.close();
@@ -450,9 +285,9 @@ public class EventPackager{
 		    
 		    System.err.println("EPCThread: Got " + newInput);
 		    if(siena != null) {
-			//try {
-			//      siena.publish(new KXNotification(srcID,null));
-			//    } catch(SienaException e) { e.printStackTrace(); }
+			try {
+			    siena.publish(new KXNotification("EventPackager event",srcID,null));
+			} catch(SienaException e) { e.printStackTrace(); }
 		    }
 		}
 		
@@ -468,38 +303,129 @@ public class EventPackager{
 	}
     }
     
+    //    connect to DB carrying filter and action notification information.
     
-    /* establish connection to local database - from Xescii.java*/
-    private void connectDB(String file, String usr, String pwd) {
-	try {
-	    Class.forName("org.hsql.jdbcDriver").newInstance();
-	    conn = DriverManager.getConnection("jdbc:HypersonicSQL:"+
-					       file,usr,pwd);
+    
+    private void connectFilterActionDB(String usr, String pwd){
+	String classname = "org.postgresql.Driver";
+	String host = "liberty.psl.cs.columbia.edu";
+	String db = "psl";
+	String url = "jdbc:postgresql://" + host + "/" + db;
+	String tableName = null;
+	String query = null;
+	
+	// make sure class is available
+	try{
+	    Class.forName(classname);
+	} catch(java.lang.ClassNotFoundException e){
+	    System.err.println("ClassNotFoundException: " + e.getMessage());
+	}
+	
+	try{
+	    conn = DriverManager.getConnection(url, usr, pwd);
 	    statement = conn.createStatement();
-	} catch (Exception e) {
-	    System.err.println("ERROR: FAILS TO ESTABLISH CONNECTION TO " +
-			       file + ".");
-	    System.exit(1);
-	}
-	
-	// create the table EVENTS, if not already exists
-	for(int i=0;i<tableCreationSQL.length;i++) {
-	    try {
-		statement.executeQuery(tableCreationSQL[i]);
-	    }
-	    catch(SQLException e) {
-		if (e.getErrorCode() != 0) {
-		    System.err.println("ERROR: FAILS TO CREATE TABLE");
-		    System.exit(1);
-		} 
+	    
+	    //attemp to get metadata
+	    DatabaseMetaData dmd = conn.getMetaData();
+	    
+	    //get table name from metadata resultSet
+	    ResultSet rs = dmd.getTables(null, null, null, null);
+	    if(DEBUG) System.out.println("Resultset is: " + rs + ", size = " + rs.getFetchSize());
+	    while (rs.next()){
+		tableName = rs.getString(3);
 		
-		System.err.println(e);
+		// Now check to see if table is the one we need
+		// or enter tableName into a vector so we can search after
 	    }
+	    if (DEBUG) System.out.println("table name: " + tableName);
+	    //XXX how to make sure checking for the right table.
+	    
+	    if(tableName == null || !tableName.equalsIgnoreCase("Filter_ID")){
+		//create the tables for filter and related action management
+		query = "CREATE TABLE Filter_ID(id SERIAL, description varchar(200), PRIMARY KEY(id))";
+		statement.executeUpdate(query);
+		
+		if(DEBUG) System.out.println("table created");
+	    }
+	    
+	    if(tableName == null || !tableName.equalsIgnoreCase("Attribute_listing")){
+		//create table listing attributes for various filters
+		query = "CREATE TABLE Attribute_listing(filter_id INT8, attribute_value VARCHAR(200), operator VARCHAR(20), argument VARCHAR(300), CONSTRAINT foreign_id FOREIGN KEY(filter_id) REFERENCES filter_id (id) ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE)";
+		
+		statement.executeUpdate(query);
+		if(DEBUG)System.out.println("table created");
+	    }
+            if(DEBUG)System.out.println("table name " + tableName);
+	    if(tableName == null || !tableName.equalsIgnoreCase("Action_listing")){
+		//create table listing actios associated with various filters
+		query = "CREATE TABLE Action_listing(filter_id BIGINT, action VARCHAR(2000), CONSTRAINT foreign_id FOREIGN KEY(filter_id) REFERENCES filter_id (id) ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE)";
+		
+		statement.executeUpdate(query);
+		if(DEBUG)System.out.println("table created");
+	    }
+      
+	}catch(SQLException e){
+	    System.err.println("SQL EXCEPTION: "+ e.getMessage());
 	}
 	
+    }
+    
+    /* establish connection to local database */
+    private void connectDB(String usr, String pwd) {
+	
+	String classname ="org.postgresql.Driver";
+	String host = "liberty.psl.cs.columbia.edu";
+	String db = "psl";
+	String url = "jdbc:postgresql://" + host + "/" + db;
+	String tableName = null;
+	String query = null;
+	
+	// make sure class is available
+	try {
+	    Class.forName(classname);
+	} catch(java.lang.ClassNotFoundException e) {
+	    System.err.println("ClassNotFoundException: " + e.getMessage());
+	}
+	
+	try {
+	    
+	    conn = DriverManager.getConnection(url, usr, pwd);
+	    statement = conn.createStatement();
+	    
+	    //attempt to get metadata
+	    DatabaseMetaData dmd = conn.getMetaData();
+	    
+	    //get table name from metadata resultSet
+	    ResultSet rs = dmd.getTables(null, null, null, null);
+	    if(DEBUG) System.out.println("Resultset is: " + rs + ", size = " + rs.getFetchSize());
+	    while (rs.next()){
+		//the table name is the third column, according to janak's research :).
+		tableName = rs.getString(3);
+	    }
+	    if(DEBUG)System.out.println("table name: " + tableName);
+	    
+	    if(tableName == null || !tableName.equalsIgnoreCase("Events")){
+		// create the table EVENTS, if not already existing
+		query = "CREATE TABLE Events(id SERIAL, time BIGINT, source VARCHAR, type VARCHAR, PRIMARY KEY(id))";
+		
+		statement.executeUpdate(query);
+		if(DEBUG)System.out.println("table created");
+		
+		query = "CREATE INDEX time ON Events(time)";
+		if(DEBUG)System.out.println("query redefined");
+		
+		statement.executeUpdate(query);
+		System.out.println("index on events created");
+
+		if (DEBUG) System.out.println("table created");
+	    }
+	    
+	}catch(SQLException e){
+	    System.err.println("SQL EXCEPTION: " + e.getMessage());
+	}
 	current = getMaxIndex();
 	
-	System.out.println("CONNECTION TO " + file + " ESTABLISHED.");
+	
 	System.out.println("CURRENT MAX ID: " + current);
     }//end::connectDB
     
@@ -507,22 +433,24 @@ public class EventPackager{
     // close database connection
     private void disconnectDB() {
 	try {
+	    statement.close();
 	    conn.close();
-	} catch (Exception e) {
-	    System.err.println("ERROR: FAILS TO CLOSE DATABASE CONNECTION.");
-            return;
+	} catch (SQLException e) {
+	    System.err.println("SQLException: " + e.getMessage());
 	}
 	
-	System.out.println("CONNECTION TO DATABASE CLOSED.");
+	if(DEBUG) System.out.println("CONNECTION TO DATABASE CLOSED.");
     }//end::disconnectDB
     
     
     // retrieve the maximum id in the database - used in connectDB
     private int getMaxIndex() {
 	int tmp = -1;
+	String query = null;
 	try {
-	    ResultSet r = statement.executeQuery("select max(id) from EVENTS");
-	    if ( r.next() )
+	    query = "SELECT MAX(id) FROM Events";
+	    ResultSet r = statement.executeQuery(query);
+       	    if ( r.next() )
 		tmp = r.getInt(1);
 	} catch(SQLException e) {} 
 	
@@ -535,7 +463,11 @@ public class EventPackager{
 	
 	
 	try {
-	    Vector v = Tuple.parseResultSet(statement.executeQuery("select * from EVENTS E where E.time >"+ starttime + "AND E.time < " + endtime + " AND E.type = '" + typ + "' order by E.time") );
+	    String query = null;
+	    query = "SELECT * FROM Events WHERE Time > 'starttime' AND Time < 'endtime' AND Type = 'typ' ORDER BY Time";
+	    
+	    Vector v = Tuple.parseResultSet(statement.executeQuery(query));
+	    
 	    if (v.size() > max) {
 		for (int k= v.size()-1; k >= max; k--)
 		    v.removeElementAt(k);
@@ -579,43 +511,47 @@ public class EventPackager{
     
     
     /* adds a tuple from SmartEvent to the database */
-    public boolean addTuple(long time, String type, String source,
-			    int curId, String data) {
+    public boolean addTuple(long time1, String type1, String source1, String data1) {
 	
+	String query = null;
 	
-	source= source.toLowerCase();
-	type= type.toLowerCase();
-	data= data.toLowerCase();
+	if (DEBUG)System.out.println("time being added for tuple is: " + time1);
+	String source= source1.toLowerCase();
+	String type= type1.toLowerCase();
+	String data= data1.toLowerCase();
 	
 	/*add tuple to database */
-	try {
-	    
-	    if (DEBUG) {
-		System.out.println("INSERTING: " + curId + " " +
-				   time + " " + source + " " + type);
-	    }
-	    
-	    statement.executeQuery("insert into EVENTS values (" +
-				   curId + "," + time +
-				   " ,'" + source + "','" + type + "')");            
-	    
-	} catch (SQLException e) {
-            System.out.println("ERROR in ADD TUPLE: ");
-	    System.err.println(e);
-	    return false;
-	}
+	int result = 
+	  executeSQLQuery("INSERT INTO Events (id, time, type, source)" +
+			  "VALUES (NEXTVAL('events_id_seq') ,"+ time1 + 
+			  ", '"  + type + "', '" + source +"' )");
+	
+	if(DEBUG)System.out.println("inserted row, result = " + result);
+	
+	if(result == -1) return false;
 	
 	if (DEBUG) { printTable(); }
 	
 	return true;
 	
     }//end::addTuple
+
+  private int executeSQLQuery(String query) {
+    if(DEBUG)
+      System.out.println("Executing " + query);
     
-    
+    try {
+      return statement.executeUpdate(query);
+    } catch(SQLException e) {
+      e.printStackTrace();
+      return -1;
+    }
+  }
+      
     /* creates a file in which to put the data in Notification */
     public void createNewDataFile(int fname, String data) {
 	
-        try {
+        try{
             File f = new File(Integer.toString(fname));
             PrintWriter out = new PrintWriter(new FileWriter(f));
             out.print(data);
@@ -626,18 +562,4 @@ public class EventPackager{
 	
     }//end::createNewDataFile
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
