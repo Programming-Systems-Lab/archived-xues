@@ -165,12 +165,8 @@ public class EDBus {
 	synchronized(subscribers){
 	    subsHash.put(n,s);
 	    subscribers.add(s);
-	    if(DEBUG){
-		dumpSubscribers();
-		System.out.println("EDBus Sort Subscribers.");
-	    }
 	    Collections.sort(subscribers);
-	    //if(DEBUG) dumpSubscribers();
+	    if(DEBUG) dumpSubscribers();
 	}
     }
 
@@ -193,7 +189,9 @@ public class EDBus {
 	    Subscriber s = (Subscriber)subsHash.get(n);
 	    
 	    subsHash.remove(n);
-	    return subscribers.remove(s);
+	    boolean returnVal = subscribers.remove(s);
+	    if(DEBUG) dumpSubscribers();
+	    return returnVal;
 	}
     }
 
