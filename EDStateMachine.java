@@ -1,6 +1,7 @@
 
 package psl.xues;
 
+import psl.kx.KXNotification;
 import siena.*;
 import java.util.*;
 
@@ -12,12 +13,19 @@ import java.util.*;
  *
  * TODO:
  * - Not interested in notification of state zero (CTOR)
+ * - Multiple actions in case of notification
  *
  * @author Janak J Parekh (jjp32@cs.columbia.edu)
  * @version 0.5
  *
  * $Log$
- * Revision 1.2  2001-01-28 22:58:58  jjp32
+ * Revision 1.3  2001-01-29 02:14:36  jjp32
+ *
+ * Support for multiple attributes on a output notification added.
+ *
+ * Added Workgroup Cache test rules
+ *
+ * Revision 1.2  2001/01/28 22:58:58  jjp32
  *
  * Wildcard support has been added
  *
@@ -49,7 +57,7 @@ public class EDStateMachine implements Notifiable {
 		 Notification action) {
     this.siena = siena;
     this.el = el;
-    this.action = action;
+    this.action = new Notification(action);  // Make a copy
     // Are we already done?
     if(stateArray.size() == startState) { // All states done, we work, go home
       finish();
@@ -82,11 +90,26 @@ public class EDStateMachine implements Notifiable {
     } catch(SienaException e) { e.printStackTrace(); }
   }
 
-  public void setAction(String attr, String val) {
-    action = new Notification();
+  /** 
+   * Add an action.  If the notification does not exist it will be
+   * created the first time.  Use setAction if you want to *replace*
+   * the notification with a new one.
+   */
+  public void addAction(String attr, String val) {
+    if(action == null) {
+      action = new Notification();
+    }
     action.putAttribute(attr, val);
   }
 
+  /**
+   * (Re)set the action.
+   */
+  public void setAction(String attr, String val) {
+    action = null;
+    addAction(attr,val);
+  }
+    
   public void notify(Notification n) {
     if(EventDistiller.DEBUG) 
       System.err.println("[EDStateMachine] Received notification " + n);
@@ -120,7 +143,27 @@ public class EDStateMachine implements Notifiable {
     try {
       siena.unsubscribe(this);
     } catch(SienaException e) { e.printStackTrace(); }
-    // Call our manager and tell them we're finished
+
+    // Do we need to amend the Notification?  Iterate through all
+    // attribute values and fill in any wildcard hashes in.
+    Iterator i = action.iterator();
+
+    while(i.hasNext()) {
+      String attr = (String)i.next();
+      AttributeValue val = action.getAttribute(attr);
+      if(val.getType() == AttributeValue.STRING &&
+	 val.stringValue().startsWith("*")) {
+	String key = val.stringValue().substring(1);
+	String bindVal = (String)wildHash.get(key);
+	if(bindVal != null) {
+	  // Replace this attributeValue
+	  action.putAttribute(attr,bindVal);
+	}
+      }
+    }
+
+    // Call our manager and tell them we're finished, and hand them
+    // the (modified) notification to send
     el.finish(this, action);
   }
 }

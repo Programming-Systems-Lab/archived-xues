@@ -26,7 +26,13 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.13  2001-01-28 22:58:58  jjp32
+ * Revision 1.14  2001-01-29 02:14:36  jjp32
+ *
+ * Support for multiple attributes on a output notification added.
+ *
+ * Added Workgroup Cache test rules
+ *
+ * Revision 1.13  2001/01/28 22:58:58  jjp32
  *
  * Wildcard support has been added
  *
@@ -137,11 +143,19 @@ public class EventPackager implements Notifiable {
       ((HierarchicalDispatcher)siena).setMaster(sienaHost);
     } catch(Exception e) { e.printStackTrace(); }
 
-    // Set up listening.
+    // Set up listening.  We listen for SmartEvents (which have a data
+    // field with all the data) and DirectEvents (which have the
+    // attributes inline).
     Filter f = new Filter();
     f.addConstraint("Type","SmartEvent");
     try {
       siena.subscribe(f, this);
+    } catch(SienaException e) { e.printStackTrace(); }
+
+    Filter g = new Filter();
+    g.addConstraint("Type","DirectEvent");
+    try {
+      siena.subscribe(g, this);
     } catch(SienaException e) { e.printStackTrace(); }
   }
     

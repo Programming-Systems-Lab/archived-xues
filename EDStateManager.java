@@ -1,6 +1,7 @@
 
 package psl.xues;
 
+import psl.kx.KXNotification;
 import java.io.*;
 import java.util.*;
 import siena.*;
@@ -30,7 +31,13 @@ import org.xml.sax.helpers.DefaultHandler;
  * @version 1.0
  *
  * $Log$
- * Revision 1.4  2001-01-28 22:58:58  jjp32
+ * Revision 1.5  2001-01-29 02:14:36  jjp32
+ *
+ * Support for multiple attributes on a output notification added.
+ *
+ * Added Workgroup Cache test rules
+ *
+ * Revision 1.4  2001/01/28 22:58:58  jjp32
  *
  * Wildcard support has been added
  *
@@ -123,8 +130,8 @@ public class EDStateManager extends DefaultHandler implements Runnable {
    * Method call made by EDStateMachines to indicate completion.
    */
   void finish(EDStateMachine m, Notification n) {
-    // Propagate the notification up
-    ed.sendPublic(n);
+    // Propagate the notification up, but wrap it in KX form
+    ed.sendPublic(KXNotification.EDOutputKXNotification(12345,n));
     // Garbage-collect the State Machine
     stateMachines.removeElement(m);
   }
@@ -172,7 +179,7 @@ public class EDStateManager extends DefaultHandler implements Runnable {
 
       try {
 	currentEdsms.
-	  setAction(attributes.getValue("","name"),
+	  addAction(attributes.getValue("","name"),
 		    new AttributeValue(attributes.getValue("","value")));
       } catch(Exception e) {
 	System.err.println("FATAL: EDStateManager init failed:");
@@ -188,8 +195,10 @@ public class EDStateManager extends DefaultHandler implements Runnable {
   throws SAXException {
     if(EventDistiller.DEBUG) System.out.println("parsed " + localName + "," + 
 						qName);
-
-    
-
+    if(localName.equals("rule")) {
+      // This state machine is done, subscribe it to Siena so it can
+      // start receiving notifications
+      currentEdsms.subscribe();
+    }
   }
 }

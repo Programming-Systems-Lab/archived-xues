@@ -15,7 +15,13 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.1  2001-01-28 22:58:58  jjp32
+ * Revision 1.2  2001-01-29 02:14:36  jjp32
+ *
+ * Support for multiple attributes on a output notification added.
+ *
+ * Added Workgroup Cache test rules
+ *
+ * Revision 1.1  2001/01/28 22:58:58  jjp32
  *
  * Wildcard support has been added
  *
@@ -51,7 +57,7 @@ class EDStateMachineSpecification implements Notifiable {
   /**
    * Add a state.
    *
-   * NOTE! For this specification to become active, you must set the action
+   * NOTE! For this specification to become active, you must subscribe() 
    * AFTER adding states.
    *
    * @param e The state.
@@ -61,20 +67,24 @@ class EDStateMachineSpecification implements Notifiable {
   }
 
   /**
-   * Set action.  (Only one action for now)
-   *
-   * NOTE! IMPORTANT!  You *must* set an action for this state machine
-   * to become live.  Additionally, the state machine assumes that
-   * setting the action implicitly tells it that the states have been set up.
-   * You may add states later, but be forewarned there may already be state
-   * machines executing on the current state setup.
+   * Add an action.  If the notification does not exist it will be
+   * created the first time.  Use setAction if you want to *replace*
+   * the notification with a new one.
    */
-  public void setAction(String attr, AttributeValue val) {
-    action = new Notification();
+  public void addAction(String attr, AttributeValue val) {
+    if(action == null) 
+      action = new Notification();
     action.putAttribute(attr,val);
-    subscribe(); // Do first event subscription
   }
 
+  /**
+   * (Re)set the action.
+   */
+  public void setAction(String attr, String val) {
+    action = null;
+    addAction(attr,new AttributeValue(val));
+  }
+ 
   /**
    * Subscribe based on the first state.  This way, we can create
    * instances when necessary.

@@ -1,11 +1,50 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- The spamblocker rule -->
 <rule xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" name="testRule">
    <states>
-      <state attributename="foo" value="bar" timebound="1"/>
+      <state attributename="from" value="*1" timebound="-1"/>
+      <state attributename="from" value="*1" timebound="-1"/>
    </states>
    <actions>
       <notification>
-         <attribute name="abc" value="def"/>
+         <attribute name="spamblock" value="*1"/>
+      </notification>
+   </actions>
+</rule>
+
+<!-- First example rule for workgroup cache -->
+<rule xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" name="WGCRule1">
+   <states>
+      <state timebound="-1">
+	<attribute name="Instigator" value="Alpa"/>
+	<attribute name="DataHandle" value="*1"/>
+      </state>
+   </states>
+   <actions>
+     <notification>
+         <attribute name="Action" value="Push"/>
+	 <attribute name="Target" value="Workgroup"/>
+	 <attribute name="TargetName" value="PSL"/>
+	 <attribute name="DataHandle" value="*1"/>
+      </notification>
+   </actions>
+</rule>
+
+<!-- Second example rule for workgroup cache -->
+<rule xmlns="http://www.psl.cs.columbia.edu/2001/01/DistillerRule.xsd" name="WGCRule2">
+   <states>
+      <state timebound="-1">
+	<attribute name="Instigator" value="Phil"/>
+	<attribute name="DataHandle" value="*1"/>
+      </state>
+   </states>
+   <actions>
+     <notification>
+         <attribute name="Action" value="Push"/>
+	 <attribute name="Target" value="Module"/>
+	 <attribute name="TargetName" value="Alpa"/>
+	 <attribute name="DataHandle" value="*1"/>
       </notification>
    </actions>
 </rule>
