@@ -1,6 +1,7 @@
 package psl.xues;
 
 import psl.groupspace.*;
+import psl.trikx.impl.TriKXUpdateObject;
 import java.io.*;
 import java.util.*;
 
@@ -14,7 +15,11 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.4  2000-09-08 19:08:27  jjp32
+ * Revision 1.5  2000-09-09 15:13:49  jjp32
+ *
+ * Numerous updates, bugfixes for demo
+ *
+ * Revision 1.4  2000/09/08 19:08:27  jjp32
  *
  * Minor updates, added socket communications in TriKXEventNotifier
  *
@@ -40,13 +45,13 @@ public class EventDistiller implements GroupspaceService,
    * We maintain a stack of events to process - this way incoming
    * callbacks don't get tied up - they just push onto the stack.
    */
-  Stack eventProcessStack = null;
+  Vector eventProcessQueue = null;
 
   /** My main execution context */
   Thread edContext = null;
 
   public EventDistiller() { 
-    // Nothing right now
+    eventProcessQueue = new Vector();
   }
 
   public boolean gsInit(GroupspaceController gc) {
@@ -55,6 +60,7 @@ public class EventDistiller implements GroupspaceService,
     // Subscribe to EventPackager events
     this.gcRef.subscribeEvent(this,"EventDistillerIncoming");
     this.gcRef.subscribeEvent(this,"MetaparserResult");
+    gcRef.Log(roleName,"Ready.");
     return true;
   }
 
@@ -69,17 +75,80 @@ public class EventDistiller implements GroupspaceService,
 
     while(true) {
       // Poll for events to process
-      if(eventProcessStack.empty()) try {
-	Thread.sleep(1000);
-      } catch(InterruptedException ie) { ; }
+      if(eventProcessQueue.size() == 0) {
+	try {
+	  Thread.sleep(1000);
+	} catch(InterruptedException ie) { ; }
+	continue;
+      } else {
+	// Otherwise pull them off
+	synchronized(eventProcessQueue) {
+	  GroupspaceEvent ge = (GroupspaceEvent)eventProcessQueue.remove(0);
+	  System.err.println("EventDistiller: " + ge);
 
+	  try {
+	    // Unwrap the stuff into separate strings
+	    EPPayload epp = (EPPayload)ge.getDbo();
+	    StringTokenizer st = new StringTokenizer((String)epp.getPayload());
+	    st.nextToken();
+	    String oldRoomName = st.nextToken();
+	    // Horrible hack because of current TriKX implementation
+	    if(oldRoomName.equals("Linux-2.0.36")) oldRoomName = "root";
+	    String newRoomName = st.nextToken();
+	    // Horrible hack because of current TriKX implementation
+	    if(newRoomName.equals("Linux-2.0.36")) newRoomName = "root";
+	    boolean success = Boolean.valueOf(st.nextToken()).booleanValue();
+	    
+	    // IF successful do the switch
+	    if(success == true) {
+
+	      // Clear out old room name
+	      gcRef.groupspaceEvent(new 
+		GroupspaceEvent(new 
+		  TriKXUpdateObject(oldRoomName,null),
+				"TriKXEventIncoming",null,null,false));
+	      
+	      // Set up new room name
+	      gcRef.groupspaceEvent(new
+		GroupspaceEvent(new
+		  TriKXUpdateObject(newRoomName, java.awt.Color.green),
+				"TriKXEventIncoming",null,null,false));
+	    } else {
+	      for(int i=0; i < 5; i++) {
+		// Mark the failed room red for a few seconds
+		gcRef.groupspaceEvent(new
+		  GroupspaceEvent(new
+		    TriKXUpdateObject(newRoomName, java.awt.Color.red),
+				  "TriKXEventIncoming",null,null,false));
+		Thread.currentThread().sleep(500);
+		gcRef.groupspaceEvent(new
+		  GroupspaceEvent(new
+		    TriKXUpdateObject(newRoomName, java.awt.Color.black),
+				  "TriKXEventIncoming",null,null,false));
+		Thread.currentThread().sleep(500);
+	      }
+	      gcRef.groupspaceEvent(new
+		GroupspaceEvent(new
+		  TriKXUpdateObject(newRoomName, null),
+				"TriKXEventIncoming",null,null,false));
+	      
+	    }
+	      
+
+	    
+	    //	  ten.callback(new GroupspaceEvent(new TriKXUpdateObject("drivers",java.awt.Color.blue),"TriKXEventIncoming",null,null,false));
+	  } catch(Exception e) { e.printStackTrace(); }
+	}
+      }
     }
   }
 
   public int callback(GroupspaceEvent ge) {
     if(ge.getEventDescription().equals("EventDistillerIncoming")) {
       // Add the event onto the stack and then wake up the distiller
-      eventProcessStack.add(ge);
+      synchronized(eventProcessQueue) {
+	eventProcessQueue.addElement(ge);
+      }
       edContext.interrupt();
     } else if(ge.getEventDescription().equals("MetaparserResult")) {
       // Need to deal with this

@@ -19,7 +19,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.5  2000-09-08 22:40:43  jjp32
+ * Revision 1.6  2000-09-09 15:13:49  jjp32
+ *
+ * Numerous updates, bugfixes for demo
+ *
+ * Revision 1.5  2000/09/08 22:40:43  jjp32
  *
  * Numerous server-side bug fixes.
  * Removed TriKXUpdateObject, psl.trikx.impl now owns it to avoid applet permission hassles
@@ -109,8 +113,10 @@ public class EventPackager implements GroupspaceService,
     try {
       listeningSocket = new ServerSocket(listeningPort);
     } catch(Exception e) {
-      gcRef.Log(roleName, "Failed in setting up serverSocket");
+      gcRef.Log(roleName, "Failed in setting up serverSocket, "+
+		"shutting down");
       listeningSocket = null;
+      return;
     }
     /* Listen for connection */
     while(true) {
@@ -192,13 +198,20 @@ public class EventPackager implements GroupspaceService,
 	  if(spoolFile != null) spoolFile.writeObject(newInput);
 	  if(gcRef != null) {
 	    /* Send the event */
-	    gcRef.groupspaceEvent(new GroupspaceEvent(newInput,
-						      "EventDistillerIncoming", 
-						      null, null, true));
+	    gcRef.groupspaceEvent(new 
+	      GroupspaceEvent(new EPPayload(srcID,newInput),
+			      "EventDistillerIncoming", 
+			      null, null, true));
 	  }
 	}
+      } catch(SocketException e) {
+	if(gcRef != null)
+	   gcRef.Log(roleName,"Client socket unexpectedly closed");
+	return;
       } catch(Exception e) {
-	gcRef.Log(roleName,"Error communicating with client:" + e.toString());
+	if(gcRef != null)
+	  gcRef.Log(roleName,"Error communicating with client:" + 
+		    e.toString());
 	e.printStackTrace();
 	return;
       }

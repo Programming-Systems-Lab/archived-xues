@@ -16,7 +16,11 @@ import psl.trikx.impl.TriKXUpdateObject;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.4  2000-09-08 22:40:43  jjp32
+ * Revision 1.5  2000-09-09 15:13:49  jjp32
+ *
+ * Numerous updates, bugfixes for demo
+ *
+ * Revision 1.4  2000/09/08 22:40:43  jjp32
  *
  * Numerous server-side bug fixes.
  * Removed TriKXUpdateObject, psl.trikx.impl now owns it to avoid applet permission hassles
@@ -36,6 +40,8 @@ import psl.trikx.impl.TriKXUpdateObject;
  */
 public class TriKXEventNotifier extends EventNotifier
   implements GroupspaceService, GroupspaceCallback {
+
+  public static final String remoteCHIMEhost = "amsterdam";
 
   private String roleName = "TriKXEventNotifier";
   private TriKXSendThread tst = null;
@@ -69,6 +75,8 @@ public class TriKXEventNotifier extends EventNotifier
     this.gcRef.registerRole(roleName, this);
     // Subscribe to EventPackager events
     this.gcRef.subscribeEvent(this,"TriKXEventIncoming");
+    gcRef.Log(roleName, "Ready.");
+
     return true;
   }
 
@@ -128,17 +136,33 @@ public class TriKXEventNotifier extends EventNotifier
 
     public void run() {
       while(true) {
+	String input;
 	try {
-	  String input = in.readLine();
+	  input = in.readLine();
 	  if(input == null) {
 	    System.err.println("TRT: Connection closed");
 	    in.close();
 	    recvSocket.close();
 	    return;
 	  }
-	  System.err.println("RECEIVED " + input + " FROM TRIKX");
 	} catch(Exception e) {
 	  e.printStackTrace(); return;
+	}
+
+	// Received something
+      	System.err.println("Received deny request for room \"" + input + 
+			   "\" from TriKX");
+	if(input.equals("root")) input = "Linux-2.0.36";
+	
+	try { // Send it out
+	  Socket s = new Socket(remoteCHIMEhost, 7777);
+	  PrintWriter pw = new PrintWriter(s.getOutputStream(), true);
+	  pw.println(input);
+	  pw.close();
+	  s.close();
+	} catch(Exception e) {
+	  System.err.println("Error communicating TriKX request to CHIME");
+	  continue;
 	}
       }
     }
@@ -164,7 +188,7 @@ public class TriKXEventNotifier extends EventNotifier
 	  s = new Socket("localhost",sendSocketPort);
 	  oos = new ObjectOutputStream(s.getOutputStream());
 	} catch(ConnectException e) {
-	  System.err.println("Connection to TriKX refused, will try again");
+	  //	  System.err.println("Connection to TriKX refused, will try again");
 	  try {
 	    Thread.currentThread().sleep(1000);
 	  } catch(InterruptedException ie) { ; }
@@ -176,11 +200,12 @@ public class TriKXEventNotifier extends EventNotifier
 	/* Connection made, continue to communicate until the remote side
 	 * fails
 	 */
+	System.err.println("Connection to TriKX established");
 	while(true) {
 	  // Is there stuff in the vector?
 	  while(sendQueue.size() == 0) {
 	    try {
-	      System.err.println("TSTSendThread sleeping");
+	      //	      System.err.println("TSTSendThread sleeping");
 	      Thread.currentThread().sleep(1000);
 	    } catch(InterruptedException ie) { ; }
 	  }
