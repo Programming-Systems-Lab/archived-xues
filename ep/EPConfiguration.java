@@ -60,7 +60,7 @@ public class EPConfiguration {
    */
   public EPConfiguration(String configFile, EventPackager ep) {
     this.ep = ep;
-
+    
     // Create the DocumentBuilder
     db = JAXPUtil.newDocumentBuilder();
     if(db == null) {
@@ -97,20 +97,17 @@ public class EPConfiguration {
     
     // Do we have event formats specified?
     NodeList eventFormatsList = e.getElementsByTagName("EventFormats");
-    if(eventFormatsList.getLength() == 0 ||
-    eventFormatsList.item(0).getChildNodes().getLength() == 0) {
-      debug.fatal("No event formats specified, cannot proceed");
-      return false;
-    }
-    // Try loading all specified event formats
-    NodeList eventFormats = eventFormatsList.item(0).getChildNodes();
-    // (But first) instantiate our container of verified event formats
-    ep.eventFormats = new HashSet();
-    for(int i=0; i < eventFormats.getLength(); i++) {
-      if(eventFormats.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
-      String eventFormat = verifyEventFormat((Element)eventFormats.item(i));
-      if(eventFormat != null)
-        ep.eventFormats.add(eventFormat);
+    if(eventFormatsList.getLength() > 0) { // No warnings if otherwise
+      // Try loading all specified event formats
+      NodeList eventFormats = eventFormatsList.item(0).getChildNodes();
+      // (But first) instantiate our container of verified event formats
+      ep.eventFormats = new HashSet();
+      for(int i=0; i < eventFormats.getLength(); i++) {
+        if(eventFormats.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
+        String eventFormat = verifyEventFormat((Element)eventFormats.item(i));
+        if(eventFormat != null)
+          ep.eventFormats.add(eventFormat);
+      }
     }
     
     // Stores.  We build these first because other modules might need

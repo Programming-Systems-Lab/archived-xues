@@ -1,58 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- Created by jjp32 on March 8, 2002, 8:31 PM -->
+<!-- Basic (minimal) Event Packager configuration.  Doesn't do a whole
+     lot, admittedly.  See the examples for more comprehensive setups. -->
 
 <EventPackagerConfiguration>
-  <EventFormats>
-    <EventFormat Name="psl.xues.ep.event.SienaEvent"></EventFormat>
-    <EventFormat Name="psl.xues.ep.event.DOMEvent"></EventFormat>
-  </EventFormats>
   <Inputters>
-    <Inputter Name="SienaInput1" Type="psl.xues.ep.input.SienaInput" SienaReceivePort="7890">
-      <SienaFilter Name="AllFilter" />
-    </Inputter>
-    <!--This inputter allows for a console control-->
     <Inputter Name="ConsoleInput1" Type="psl.xues.ep.input.ConsoleInput"></Inputter>
   </Inputters>
   <Outputters>
-    <Outputter Name="NullOutput1" Type="psl.xues.ep.output.NullOutput"></Outputter>
     <Outputter Name="ConsoleOutput1" Type="psl.xues.ep.output.ConsoleOutput"></Outputter>
   </Outputters>
-  <Transforms>
-    <Transform Name="StoreTransform"
-	       Type="psl.xues.ep.transform.StoreTransform"
-	       StoreName="Store1"/>
-  </Transforms>
-  <Stores>
-    <Store Name="JDBCStore1"
-	   Type="psl.xues.ep.store.JDBCStore"
-	   DBType="hsqldb" DBDriver="org.hsqldb.jdbcDriver"
-	   Username="sa" Password="" />
-  </Stores>
   <Rules>
-    <Rule Name="SienaInputRule">
-      <Inputs>
-	<Input Name="SienaInput1" />
-      </Inputs>
-      <Outputs>
-	<Output Name="ConsoleOutput1" />
-      </Outputs>
-    </Rule>
-    <Rule Name="SocketInputRule">
-      <Inputs>
-	<Input Name="SocketInput1" />
-      </Inputs>
-      <Outputs>
-	<Output Name="ConsoleOutput1" />
-      </Outputs>
-    </Rule>
     <Rule Name="ConsoleRule">
       <Inputs>
 	<Input Name="ConsoleInput1"></Input>
       </Inputs>
-      <Transforms>
-        <!--<Transform Name="EventConverter1" />-->
-      </Transforms>
       <Outputs>
 	<Output Name="ConsoleOutput1"></Output>
       </Outputs>

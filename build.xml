@@ -87,7 +87,7 @@
   <target name="ed-dist" depends="ed-jar, xues-support-jar, ed-docs">
     <zip zipfile="dist/EventDistiller.zip">
       <zipfileset dir="${distdir}"
-                  includes="EventDistiller.jar, ed-support.jar" />
+                  includes="EventDistiller.jar, xues-support.jar" />
       <zipfileset dir="${basedir}"
                   includes="LICENSE" />
       <zipfileset dir="${basedir}/ed/"
@@ -102,14 +102,14 @@
   <target name="ep-dist" depends="ep-jar, xues-support-jar, ep-docs">
     <zip zipfile="dist/EventPackager.zip">
       <zipfileset dir="${distdir}"
-                  includes="EventPackager.jar, ep-support.jar" />
+                  includes="EventPackager.jar, xues-support.jar" />
       <zipfileset dir="${basedir}"
                   includes="LICENSE" />
-      <!--<zipfileset dir="${basedir}/ed/"
-		  includes="EventPackager.html" />-->
-      <zipfileset dir="${basedir}/ep/" prefix="samples/"
-                  includes="**/*.xml, **/*.xsd" />
-      <zipfileset dir="${basedir}/dist/ep-docs/" prefix="docs/"
+      <zipfileset dir="${basedir}/ep/"
+		  includes="EventPackager.html" />
+      <zipfileset dir="${basedir}/ep/examples/" prefix="examples/"
+                  includes="**/*.xml, **/*.xsd, **/*.java" />
+      <zipfileset dir="${basedir}/dist/ep-docs/" prefix="javadoc/"
                   includes="**/*.html" />
     </zip>
   </target>
