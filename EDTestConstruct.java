@@ -22,14 +22,14 @@ public class EDTestConstruct implements Notifiable {
     /** Constructs a new EDTestConstruct. */
     public EDTestConstruct() {
 	// instantiate new ED
-	ed = new EventDistiller(this, "psl/xues/SampleRules.xml", true, true, true);
+	ed = new EventDistiller(this, "psl/xues/SampleRules.xml", false, true, true);
 	// give it an input...
 	// and an output -- optional
 	//ed.setOutputFile(new File("psl/xues/currentRulebase.xml"));
 
 	/* send it a couple of events, 
 	   to test spamblocker rule */
-	//sendEvent();
+	//for (int i = 1; i <= 10; i++) sendEvent(10 * i);
 	// use delay to simulate time-out
 	/*try { Thread.currentThread().sleep(600); }
 	  catch (Exception ex) { ; }*/
@@ -39,8 +39,8 @@ public class EDTestConstruct implements Notifiable {
 	// test the loop rule
 	//double d = (new Random()).nextDouble();
 	int n = 10; //(int)(d * 10);
-	for (int i = 0; i < n; i++) sendLoopEvent();
-	sendEndEvent();
+	for (int i = 1; i < n; i++) sendLoopEvent(10 * i);
+	//sendEndEvent(n * 10);
 	
 
 	// let ED run for a bit...
@@ -51,7 +51,7 @@ public class EDTestConstruct implements Notifiable {
 	ed.shutdown();
     }
 
-    /** Sends an event, using present time for timestamp. */
+    /** Sends a "spam" event, using present time for timestamp. */
     private void sendEvent() { sendEvent(System.currentTimeMillis()); }
 
     /** Sends an event, with a given timestamp. */
@@ -69,31 +69,35 @@ public class EDTestConstruct implements Notifiable {
 	ed.notify(n1);   
     }
 
+    /** Sends a "loop" event, using present time for timestamp. */
+    private void sendLoopEvent() { sendEvent(System.currentTimeMillis()); }
 
     /** Sends a 'loop' event.  */
-    private void sendLoopEvent() {
+    private void sendLoopEvent(long l) {
 	// make event
 	Notification n1 = new Notification();
 	n1.putAttribute("Source", "EventDistiller");
 	n1.putAttribute("SourceID", 12345);
 	n1.putAttribute("Type", "EDInput");
 	n1.putAttribute("event", "loop");
-	n1.putAttribute("timestamp", System.currentTimeMillis());
+	n1.putAttribute("timestamp", l);
 
 	// send it
 	ed.notify(n1);   
     }
 
+    /** Sends a "loop" event, using present time for timestamp. */
+    private void sendEndEvent() { sendEvent(System.currentTimeMillis()); }
 
     /** Sends an event.  */
-    private void sendEndEvent() {
+    private void sendEndEvent(long l) {
 	// make event
 	Notification n1 = new Notification();
 	n1.putAttribute("Source", "EventDistiller");
 	n1.putAttribute("SourceID", 12345);
 	n1.putAttribute("Type", "EDInput");
 	n1.putAttribute("event", "end");
-	n1.putAttribute("timestamp", System.currentTimeMillis());
+	n1.putAttribute("timestamp", l);
 
 	// send it
 	ed.notify(n1);   

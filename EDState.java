@@ -25,7 +25,16 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.21  2001-06-29 00:03:18  eb659
+ * Revision 1.22  2001-06-29 21:38:43  eb659
+ * thoroughly tested counter-feature:
+ * - success and failure
+ * - event-based and time-based modes
+ * - timestamps using currentTime() and hard-coded
+ *
+ * individuated disfunction due to race/threading condition,
+ * I Will try to fix during the weekend
+ *
+ * Revision 1.21  2001/06/29 00:03:18  eb659
  * timestamp validation for loop doesn't work correctly, darn
  * reaper thread sometimes dies when a new machine is instantiated
  * (this only happens when dealing with an instantiation
@@ -390,16 +399,24 @@ public class EDState implements EDNotifiable {
 	}
 
 	// live!
-	synchronized (parents) { parents.add(parent); }
+	synchronized (parents) { 
+	    /* removing the parent, if already here, has the 
+	     * effect of putting the most recent parent at the 
+	     * end of the vector, which we want to */
+	    parents.remove(parent);
+	    parents.add(parent); }
 	this.alive = true;
 
 	/* make sure there is a hashtable defined at any time,
 	 * for handling wildcards in failure notifications.
+	 * if this is a loop state, that bears itself, don't 
+	 * worry about the wildhash.
 	 * Also see note in fail() */
-	if (parent == null) // this is an initial state
-	    wildHash = new Hashtable();
-	else if (parents.size() == 1) 
-	    wildHash = parent.getWildHash(); 
+	if (wildHash == null) {
+	    if (parent == null) // this is an initial state
+		wildHash = new Hashtable();
+	    else wildHash = parent.getWildHash(); 
+	}
     }
 
     /** Kills this state: unsubscribe and set alive to false. */
@@ -436,15 +453,12 @@ public class EDState implements EDNotifiable {
 		 EDErrorManager.STATE);
 	}
 	else if (count < 0) { // loop feature
-	    if (!hasStarted) {
-		/* only bear children, and myself once, 
-		 * timestamp of this will be updated as we go along */
-		parents.add(this);
-		for (int i = 0; i < children.length; i++) 
-		    sm.getState(children[i]).bear(this);
-		// the kids will kill me, if they make it
-		hasStarted = true;
-	    }
+	    /* bear children, and myself */
+	    bear(this);
+	    for (int i = 0; i < children.length; i++) 
+		sm.getState(children[i]).bear(this);
+	    // the kids will kill me, if they make it
+	    hasStarted = true;
 	}
 	else if (count == 1) { // normal case 
 	    // 4. bear children
@@ -498,9 +512,9 @@ public class EDState implements EDNotifiable {
 		parent = (EDState)parents.get(i);
 
 		/* inherit the wildHash from the candidate parent,
-		 * so we can compare wildcard values while validating  */
-		if (parent == null) wildHash = new Hashtable();
-		else wildHash = parent.getWildHash();
+		 * so we can compare wildcard values while validating.
+		 * (note that when we are born we already have a default wildHash) */
+		if (parent != null) wildHash = parent.getWildHash();
 		
 		// does the notification match us? 
 		if(validate(n, parent)) {

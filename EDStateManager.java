@@ -40,7 +40,16 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.25  2001-06-29 00:03:18  eb659
+ * Revision 1.26  2001-06-29 21:38:43  eb659
+ * thoroughly tested counter-feature:
+ * - success and failure
+ * - event-based and time-based modes
+ * - timestamps using currentTime() and hard-coded
+ *
+ * individuated disfunction due to race/threading condition,
+ * I Will try to fix during the weekend
+ *
+ * Revision 1.25  2001/06/29 00:03:18  eb659
  * timestamp validation for loop doesn't work correctly, darn
  * reaper thread sometimes dies when a new machine is instantiated
  * (this only happens when dealing with an instantiation
@@ -366,7 +375,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 	while(!ed.inShutdown) {
 	    try { Thread.currentThread().sleep(EDConst.REAP_INTERVAL);  }
 	    catch(InterruptedException ex) { ; }
-	    reap();
+	    //reap();
 	}
 	ed.getErrorManager().println
 	    ("reaper ceased due to shutdown", EDErrorManager.REAPER);
@@ -384,9 +393,8 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
 		    EDStateMachine e = (EDStateMachine)stateMachines.get(j);
 		    ed.getErrorManager().println("EDStateManager: Attempting to reap " + e.myID,
 						 EDErrorManager.REAPER);
-		    
 		    if(e.reap()) {
-			ed.getErrorManager().println("REAPED " + e.myID, EDErrorManager.REAPER);
+			ed.getErrorManager().println("REAPED " + e.myID, EDErrorManager.MANAGER);
 			synchronized(stateMachines) {
 			    stateMachines.remove(j);
 			}

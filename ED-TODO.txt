@@ -50,3 +50,8 @@ tested counter feature
 tested flush on shutdown (event-based mode)
 changed skew to depend entirely on skew of last event,
 this seems to work better for the moment
+
+thoroughly tested counter-feature:
+- success and failure
+- event-based and time-based modes
+- timestamps using currentTime() and hard-coded

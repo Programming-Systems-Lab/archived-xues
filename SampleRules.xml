@@ -49,15 +49,15 @@
      happens any number of times (by setting count="-1"), 
      until some 'end' event happens  -->
 
-<rule name="loop" instantiation="1">
+<rule name="loop" instantiation="2">
    <states>
       <state name="start" timebound="-1" children="loop">
         <attribute name="event" value="loop"/>
       </state>
-      <state name="loop" timebound="100" children="end" count="-1" absorb="true" fail_actions="F">
+      <state name="loop" timebound="11" children="end" count="-1" absorb="true" fail_actions="F">
         <attribute name="event" value="loop"/>
       </state>
-      <state name="end" timebound="100" actions="S" fail_actions="F"><!-- fail_actions are not sent here -->
+      <state name="end" timebound="11" actions="S" fail_actions="F"><!-- fail_actions are not sent here -->
         <attribute name="event" value="end"/>
       </state>
    </states>
