@@ -19,8 +19,8 @@
 
   <!-- RULEBASE: topmost declaration -->
   <xsd:complexType name="rulebaseType">
-    <xsd:sequence><!-- a sequence of rules -->
-      <xsd:element name="rule" type="ruleType" maxOccurs="unbounded">
+    <xsd:sequence> <!-- a sequence of rules -->
+      <xsd:element name="rule" type="ruleType" maxOccurs="unbounded"/>
     </xsd:sequence>
   </xsd:complexType> <!-- /rulebaseType -->
 
