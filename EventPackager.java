@@ -12,8 +12,8 @@ import java.io.*;
  * City of New York.  All Rights Reserved.
  *
  * TODO: 
- * - Handling multi-line input as an event - how to delineate?  Right
- *   now, we just IGNORE all socket event!!!
+ * - Handling multi-line socket input as an event - how to delineate?  
+ *   Right now, we just IGNORE all socket event!!!
  * - When socket closes, we wipe out TriKX.  More permanent solution.
  * - Put associated data onto webserver.  Send URL to KXNotification.
  *   Handle streaming in some appropriate way (non-trivial?  custom 
@@ -26,7 +26,11 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.14  2001-01-29 02:14:36  jjp32
+ * Revision 1.15  2001-01-29 05:22:53  jjp32
+ *
+ * Reaper written - but it's probably a problem
+ *
+ * Revision 1.14  2001/01/29 02:14:36  jjp32
  *
  * Support for multiple attributes on a output notification added.
  *

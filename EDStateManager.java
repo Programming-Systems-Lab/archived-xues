@@ -26,12 +26,18 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * TODO:
  * - More efficient way of garbage collecting state machines
+ * - Make sure fudge factor != negative result
+ * - Event/reap collision
  * 
  * @author Janak J Parekh (jjp32@cs.columbia.edu)
  * @version 1.0
  *
  * $Log$
- * Revision 1.7  2001-01-29 04:58:55  jjp32
+ * Revision 1.8  2001-01-29 05:22:53  jjp32
+ *
+ * Reaper written - but it's probably a problem
+ *
+ * Revision 1.7  2001/01/29 04:58:55  jjp32
  *
  * Each rule can now have multiple attr/value pairs.
  *
@@ -134,7 +140,20 @@ public class EDStateManager extends DefaultHandler implements Runnable {
    */
   public void run() {
     //...
-    try { Thread.currentThread().sleep(1000); }
+    try { 
+      Thread.currentThread().sleep(1000); 
+      // Reap!
+      if(EventDistiller.DEBUG) System.err.println("Reaping...");
+
+      synchronized(stateMachines) {
+	int offset = 0;
+	
+	if(((EDStateMachine)stateMachines.elementAt(offset)).reap()) {
+	  System.err.println("Reaped someone!!!");
+	  stateMachines.removeElementAt(offset);
+	} else offset++;	
+      }
+    }
     catch(InterruptedException ex) { ; }
   }
 

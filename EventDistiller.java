@@ -13,12 +13,17 @@ import siena.*;
  *
  * TODO:
  * - Something more complex than a Notification as Action
+ * - Multiple actions
  *
  * @author Janak J Parekh
  * @version 0.02 (1/20/2001)
  *
  * $Log$
- * Revision 1.12  2001-01-28 22:58:58  jjp32
+ * Revision 1.13  2001-01-29 05:22:53  jjp32
+ *
+ * Reaper written - but it's probably a problem
+ *
+ * Revision 1.12  2001/01/28 22:58:58  jjp32
  *
  * Wildcard support has been added
  *
@@ -92,9 +97,14 @@ public class EventDistiller implements Notifiable {
   /** State machine specification file */
   private static String stateSpecFile = null;
 
-  /**
-   * Main.
+  /** 
+   * Reap fudge factor.  IMPORTANT to take care of non-realtime event
+   * buses (can anyone say Siena?)  XXX - should be a better way to do this.
    */
+  public static int reapFudgeMillis = 10000;
+
+  /**
+   * Main.  */
   public static void main(String args[]) {
     if(args.length > 0) { // Siena host specified?
       for(int i=0; i < args.length; i++) {

@@ -19,7 +19,11 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.3  2001-01-29 02:14:36  jjp32
+ * Revision 1.4  2001-01-29 05:22:53  jjp32
+ *
+ * Reaper written - but it's probably a problem
+ *
+ * Revision 1.3  2001/01/29 02:14:36  jjp32
  *
  * Support for multiple attributes on a output notification added.
  *
@@ -165,5 +169,42 @@ public class EDStateMachine implements Notifiable {
     // Call our manager and tell them we're finished, and hand them
     // the (modified) notification to send
     el.finish(this, action);
+  }
+
+  /**
+   * Reap ourselves if necessary.  This involves deregistering us from
+   * EDStateManager stateMachines array, and unsubscribing from
+   * Siena.  The former is done by our StateManager oh-so-nicely.
+   *
+   * The Grim Reaper (in EventDistiller) will eventually get to us by
+   * calling this method.
+   */
+  public boolean reap() {
+
+    boolean reap = false;
+
+    /* Should never happen, but easy boundary cases */
+    if(currentState == 0) reap = false;
+    else if(currentState == states.size()) reap = true;
+    
+    /* Now try calling validateTimebound, assume the current state
+     * occurs --NOW--, and if that fails, then we MUST reap.
+     */
+    else if(((EDState)states.elementAt(currentState)).
+	    validateTimebound((EDState)states.elementAt(currentState-1),
+			      System.currentTimeMillis() - 
+			      EventDistiller.reapFudgeMillis) == false) {
+      reap = true;
+    }
+    
+    /* Now, shall we reap?  :) */
+    if(reap) {
+      // Let's go
+      try {
+	siena.unsubscribe(this);
+      } catch(SienaException e) { e.printStackTrace(); }
+    }
+
+    return reap;    
   }
 }
