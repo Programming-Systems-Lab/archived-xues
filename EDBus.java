@@ -422,9 +422,11 @@ class Subscriber implements Comparable{
 	    AttributeValue value = e.getAttribute(constraintName);
 
 	    if(value==null){
+		/*
 		System.err.println("Missing AttributeValue "+
-			       "in Notification for constraint name"
+			       "in Notification for constraint name: "
 				   +constraintName);
+		*/
 		return false;
 	    }
 
@@ -470,6 +472,20 @@ class Subscriber implements Comparable{
 	}
     }
 }// Subscriber
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
