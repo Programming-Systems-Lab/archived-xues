@@ -19,11 +19,8 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.25  2001-08-17 13:06:00  eb659
- * Bfirst commit for the XML generator for ED rules.
- *
- * AADDDCCC
- * only partial generation at this point, but what's there has been tested thoroughtly. some 10 hrs
+ * Revision 1.26  2001-08-27 17:47:42  eb659
+ * more work done on the XML generator
  *
  * Revision 1.22  2001/07/03 21:36:23  eb659
  * Improved problems in race conditions. The application now hangs in the subscribe()
@@ -306,9 +303,9 @@ public class EDStateMachine implements Comparable {
 	}
 
 	// subscribe initial states
-	String[] initialStates = specification.getInitialStates();
-	for (int i = 0; i < initialStates.length; i++) {
-	    EDState state = (EDState)states.get(initialStates[i]);
+	Vector initialStates = specification.getInitialStates();
+	for (int i = 0; i < initialStates.size(); i++) {
+	    EDState state = (EDState)states.get(((EDState)initialStates.get(i)).getName());
 	    state.bear(null);
 	}
   }

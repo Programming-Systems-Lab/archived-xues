@@ -2,6 +2,7 @@
 package psl.xues;
 
 import java.util.*;
+import javax.swing.tree.*;
 import siena.*;
 
 /**
@@ -25,11 +26,8 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.28  2001-08-17 13:06:00  eb659
- * Bfirst commit for the XML generator for ED rules.
- *
- * AADDDCCC
- * only partial generation at this point, but what's there has been tested thoroughtly. some 10 hrs
+ * Revision 1.29  2001-08-27 17:47:42  eb659
+ * more work done on the XML generator
  *
  * Revision 1.25  2001/07/03 21:36:23  eb659
  * Improved problems in race conditions. The application now hangs in the subscribe()
@@ -454,7 +452,7 @@ public class EDState implements EDNotifiable {
         //errorManager.println("done", EDErrorManager.STATE);
         if(i != -1) { // parent is already in the list, just reset timebound
             errorManager.println("EDState: " + myID + " extending subscription timebound", EDErrorManager.STATE);
-            if(tb != -1) { 
+            if(tb != -1) {
 		// this is how it should be
 		//((EDSubscriber)subscribers.get(i)).resetTimebound(l);
 		// hack -- extend timelimit here
@@ -504,9 +502,9 @@ public class EDState implements EDNotifiable {
         synchronized(sm){
 
 	// check time - this is a hack, see createFilter()
-	if (n.getAttribute(EDConst.TIME_ATT_NAME).longValue() > tl){ 
+	if (n.getAttribute(EDConst.TIME_ATT_NAME).longValue() > tl){
 	    // notif is too late
-	    errorManager.println("EDState: " + myID + " rejecting late notification", 
+	    errorManager.println("EDState: " + myID + " rejecting late notification",
 				 EDErrorManager.STATE);
 	    kill();
 	    return false;
@@ -846,7 +844,7 @@ public class EDState implements EDNotifiable {
 	for(Enumeration keys = constraints.keys(); keys.hasMoreElements();) {
 	    String attName = (String)keys.nextElement();
 	    AttributeConstraint ac = (AttributeConstraint)constraints.get(attName);
-	    s = s + "\t<attribute name =\"" + attName + "\" value=\"" + ac.value + 
+	    s = s + "\t<attribute name =\"" + attName + "\" value=\"" + ac.value +
 		"\" op=\"" + Op.operators[ac.op] + "\" type=\"" + EDConst.TYPE_NAMES[ac.value.getType()] + "\"/>\n";
 	}
 	s += "</state>\n";
@@ -911,7 +909,9 @@ public class EDState implements EDNotifiable {
 	}*/
     }
 
-    // auxiliary static methods
+    /************************************
+         auxiliary static methods
+    *************************************/
 
   /** AttributeValue isEqualTo check that WORKS. *
   public static boolean attrEqual(AttributeValue e1, AttributeValue e2) {
@@ -967,7 +967,9 @@ public class EDState implements EDNotifiable {
 	return a;
     }
 
-    // standard methods
+    /**********************************
+             standars methods
+    **********************************/
 
     /**
      * Returns the wildcard hashtable for this node.
@@ -1010,4 +1012,187 @@ public class EDState implements EDNotifiable {
 
     /** @return the constraints */
     Hashtable getConstraints() { return this.constraints; }
+}
+
+/**
+ * An object that represents a state, in the representation
+ * of the tree used in the RuleGenerator.
+ */
+class StateNode implements TreeNode {
+
+    /**
+     * Names of folders that appear as defining this state.
+     */
+    public static final String[] FOLDER_NAMES =
+        {"attributes", "actions", "fail_actions"};
+
+    /**
+     * The parent of this node, in the tree representation.
+     * Could be a machine, or another state.
+     */
+    private TreeNode parent;
+
+    /** The state represented by this node. */
+    private EDState state;
+
+    /**
+     * The children of this node, in the tree representation.
+     * make sure to add child states to this vector, as they are added to the state.
+     */
+    private Vector treeChildren = new Vector();
+
+    /**
+     * Constructs a new stateNode.
+     * @param e the state represented
+     * @param parent the parent node
+     */
+    public StateNode(EDState state, TreeNode parent) {
+        this.state = state;
+        this.parent = parent;
+
+        // children nodes
+        EDStateMachineSpecification spec = getSpecification();
+        for (int i = 0; i < state.getChildren().length; i++)
+            treeChildren.add(new StateNode(
+                (EDState)spec.getStates().get(state.getChildren()[i]), this));
+        for (int i = 0; i < FOLDER_NAMES.length; i++)
+            ;
+            //v.add(new Folder(this));
+    }
+
+    public EDStateMachineSpecification getSpecification() {
+        if (parent instanceof SpecNode)
+            return ((SpecNode)parent).spec;
+        else return ((StateNode)parent).getSpecification();
+    }
+
+    /** @param the string representation of this object */
+    public String toString() { return state.getName(); }
+
+    /********************************************************
+        methods inherited from the TreeNode interface
+    ********************************************************/
+
+    public Enumeration children() {
+        return treeChildren.elements();
+    }
+
+    public boolean getAllowsChildren() { return true; }
+
+    public TreeNode getChildAt(int childIndex) { return (TreeNode)treeChildren.get(childIndex); }
+
+    public int getChildCount() { return treeChildren.size(); }
+
+    public int getIndex(TreeNode node) { return treeChildren.indexOf(node); }
+
+    public TreeNode getParent() { return parent; }
+
+    public boolean isLeaf() { return false; }
+}
+
+/**
+ * An object that represents a state, in the representation
+ * of the tree used in the RuleGenerator.
+ */
+class FolderNode implements TreeNode {
+
+    /** The name for this folder. */
+    private String name = null;
+
+    /** The parent of this node, in the tree representation. */
+    private StateNode parent;
+
+    /** The state that owns the actions in this folder. */
+    private EDState state;
+
+    /** The children of this node, in the tree representation. */
+    private Vector children = new Vector();
+
+    /**
+     * Constructs a new stateNode.
+     * @param name the name for this folder
+     * @param e the state represented
+     * @param parent the parent node
+     */
+    public FolderNode(String name, EDState state, StateNode parent) {
+        this.name = name;
+        this.state = state;
+        this.parent = parent;
+
+        // children nodes
+        String[] actionNames;
+        if (name.equals(StateNode.FOLDER_NAMES[0]))
+            actionNames = state.getActions();
+        else actionNames = state.getFailActions();
+
+        EDStateMachineSpecification spec = parent.getSpecification();
+        for (int i = 0; i < actionNames.length; i++)
+            children.add(new ActionNode(actionNames[i],
+                (Notification)spec.getActions().get(actionNames[i]), this));
+    }
+
+    /** @param the string representation of this object */
+    public String toString() { return name; }
+
+    /********************************************************
+        methods inherited from the TreeNode interface
+    ********************************************************/
+
+    public Enumeration children() { return children.elements(); }
+    public boolean getAllowsChildren() { return true; }
+    public TreeNode getChildAt(int childIndex) { return (TreeNode)children.get(childIndex); }
+    public int getChildCount() { return children.size(); }
+    public int getIndex(TreeNode node) { return children.indexOf(node); }
+    public TreeNode getParent() { return parent; }
+    public boolean isLeaf() { return (children.size() == 0); }
+}
+
+/**
+ * An object that represents an action, in the representation
+ * of the tree used in the RuleGenerator.
+ */
+class ActionNode implements TreeNode {
+
+    /** The name for this action. */
+    private String name = null;
+
+    /** The parent of this node, in the tree representation. */
+    private FolderNode parent;
+
+    /** The action represented by this node. */
+    private Notification action = null;
+
+    /** The attributes of this action. */
+    private Vector attributes = new Vector();
+
+    /**
+     * Constructs a new ActionNode.
+     * @param name the name for this action
+     * @param action the action represented
+     * @param parent the parent node
+     */
+    public ActionNode(String name, Notification action, FolderNode parent) {
+        this.name = name;
+        this.action = action;
+        this.parent = parent;
+
+        // children nodes
+        for (Iterator iter = action.attributeNamesIterator(); iter.hasNext();)
+            attributes.add(action.getAttribute(iter.next().toString()));
+    }
+
+    /** @param the string representation of this object */
+    public String toString() { return name; }
+
+    /********************************************************
+        methods inherited from the TreeNode interface
+    ********************************************************/
+
+    public Enumeration children() { return null; }
+    public boolean getAllowsChildren() { return false; }
+    public TreeNode getChildAt(int childIndex) { return null; }
+    public int getChildCount() { return 0; }
+    public int getIndex(TreeNode node) { return -1; }
+    public TreeNode getParent() { return parent; }
+    public boolean isLeaf() { return true; }
 }

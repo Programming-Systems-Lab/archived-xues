@@ -3,6 +3,7 @@ package psl.xues;
 
 import java.io.*;
 import java.util.*;
+import javax.swing.tree.*;
 import siena.*;
 
 /**
@@ -15,11 +16,8 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.14  2001-08-17 13:06:00  eb659
- * Bfirst commit for the XML generator for ED rules.
- *
- * AADDDCCC
- * only partial generation at this point, but what's there has been tested thoroughtly. some 10 hrs
+ * Revision 1.15  2001-08-27 17:47:42  eb659
+ * more work done on the XML generator
  *
  * Revision 1.11  2001/06/28 20:58:42  eb659
  * Tested and debugged timeout, different instantiation policies,
@@ -216,7 +214,7 @@ import siena.*;
  * Wildcard support has been added
  *
  */
-class EDStateMachineSpecification {
+public class EDStateMachineSpecification {
 
     /** our manager. */
     private EDStateManager manager;
@@ -236,9 +234,15 @@ class EDStateMachineSpecification {
     /** Counter for ID tagging of EDStateMachines */
     private int counter = -1;
 
-    /** The (names of the) initial states, to be subscribed
-	when a machine is first instantiated. */
-    String[] initialStates;
+    /**
+     * Reference to all initial states.
+     * This is used for 2 reasons:
+     * 1) to subscribed all initial states, when
+     *    a machine is first instantiated;
+     * 2) to display initial states in the XML
+     *    generator tree.
+     */
+    Vector initialStates = null;
 
     /** State machines with this specification. */
     Vector stateMachines = new Vector();
@@ -277,6 +281,15 @@ class EDStateMachineSpecification {
      */
     public void addState(EDState e) {
 	states.put(e.getName(), e);
+    }
+
+    /**
+     * Add a state in intitial position
+     * @param e The state.
+     */
+    public void addInitialState(EDState e) {
+	states.put(e.getName(), e);
+        initialStates.add(e);
     }
 
     /**
@@ -373,44 +386,42 @@ class EDStateMachineSpecification {
      * have any incoming edges.
      */
     private void findInitialStates() {
-	Enumeration keys = states.keys();
-	Vector names = new Vector();
-	while (keys.hasMoreElements())
-	    names.add(keys.nextElement());
-	boolean[] hasIncomingEdges = new boolean[names.size()];
 
-	EDState s;
-	for (int i = 0; i < names.size(); i++) {
-	    s = (EDState)states.get(names.get(i).toString());
-	    String[] children = s.getChildren();
+        // assume all states are initial
+	Enumeration e = states.elements();
+	initialStates = new Vector();
+	while (e.hasMoreElements())
+	    initialStates.add(e.nextElement());
+
+        // flag states with incoming edges
+        // which cannot be initial
+	boolean[] hasIncomingEdges = new boolean[initialStates.size()];
+	for (int i = 0; i < initialStates.size(); i++) {
+	    String[] children = ((EDState)initialStates.get(i)).getChildren();
 	    for (int j = 0; j < children.length; j++) {
-		int index = names.indexOf(children[j]);
+		int index = initialStates.indexOf(states.get(children[j]));
 		hasIncomingEdges[index] = true;
 	    }
 	}
-	// how many initial states?
-	int n = 0;
-	for (int i = 0; i < hasIncomingEdges.length; i++)
-	    if (!hasIncomingEdges[i]) n++;
-	initialStates = new String[n];
 
-	// which ones?
-	n = -1;
-	for (int i = 0; i < names.size(); i++)
-	    if (!hasIncomingEdges[i])
-		initialStates[++n] = names.get(i).toString();
+	// remove states that are not initial
+        int j, i = 0;
+	for (j = 0; j < hasIncomingEdges.length; j++)
+	    if (hasIncomingEdges[j])
+		initialStates.remove(i);
+            else i++;
     }
 
 
     // XML representation
 
-    /** 
+    /**
      * @param position the index of priority of the rule
-     * @return the XML representation of this object 
+     * @return the XML representation of this object
      */
     public String toXML(int position){
 	// start
-	String s = "<rule name=\"" + name + "\" instantiation=\"" + 
+	String s = "<rule name=\"" + name + "\" instantiation=\"" +
 	    instantiationPolicy + "\" position=\"" + position + "\">\n";
 
 	// the states
@@ -509,7 +520,9 @@ class EDStateMachineSpecification {
 	}
     }
 
-    // standars methods
+    /**********************************
+             standars methods
+    **********************************/
 
     /** @return the stateMachineManager */
     public EDStateManager getManager(){ return this.manager; }
@@ -529,17 +542,53 @@ class EDStateMachineSpecification {
     /** @return an index - called by new instances of this specification */
     String getNewID(){ return "" + (++counter); }
 
-    /** @return the names pf the states to subscribe initially */
-    String[] getInitialStates() { return initialStates; }
+    /** @return the vector of states to subscribe initially */
+    Vector getInitialStates() {
+        if (initialStates == null) findInitialStates();
+        return initialStates;
+    }
 }
 
 
+/**
+ * Represents a SMSpec in the tree of the RuleDesigner.
+ */
+class SpecNode implements TreeNode {
 
+    /** The specification represented. */
+    EDStateMachineSpecification spec;
 
+    /** The children nodes. */
+    private Vector children = new Vector();
 
+    /**
+     * Constructs a new SpecNode
+     * @param spec the represented specification
+     */
+    public SpecNode(EDStateMachineSpecification spec) {
+        this.spec = spec;
+        for (int i = 0; i < spec.getInitialStates().size(); i++)
+            children.add(new StateNode((EDState)spec.getInitialStates().get(i), this));
+    }
 
+    /** @param the string representation of this object */
+    public String toString() { return spec.getName(); }
 
+    /********************************************************
+        methods inherited from the TreeNode interface
+    ********************************************************/
 
+    public Enumeration children() { return children.elements(); }
 
+    public boolean getAllowsChildren() { return true; }
 
+    public TreeNode getChildAt(int childIndex) { return (TreeNode)children.get(childIndex); }
 
+    public int getChildCount() { return children.size(); }
+
+    public int getIndex(TreeNode node) { return children.indexOf(node); }
+
+    public TreeNode getParent() { return null; }
+
+    public boolean isLeaf() { return (children.size() == 0); }
+}

@@ -5,7 +5,9 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 import javax.swing.*;
+import javax.swing.border.*;
 import javax.swing.event.*;
+import javax.swing.tree.*;
 
 import org.apache.xerces.parsers.SAXParser;
 import org.xml.sax.*;
@@ -17,12 +19,12 @@ class RuleDesigner extends JFrame implements Rulebase {
 
     // constants
 
-    /** The size for the window. */
-    final Dimension WINDOW_SIZE = new Dimension(450, 400);
-    /** The size for the rules list. */
+    final Dimension WINDOW_SIZE = new Dimension(450, 700);
     final Dimension RULES_LIST_SIZE = new Dimension(300, 120);
-    /** The size for the rules buttons. */
     final Dimension RULES_BUTTONS_SIZE = new Dimension(100, 120);
+    final Dimension TREE_SIZE = new Dimension(405, 300);
+    final Dimension TREE_BUTTONS_SIZE = new Dimension(405, 25);
+
     /** The title for the window. */
     final String TITLE_STRING = "ED rules - XML generator ";
     /** Description for the different instantiation policies. */
@@ -37,6 +39,18 @@ class RuleDesigner extends JFrame implements Rulebase {
 
     // GUI components
 
+    /** The list displaying all the rules in this rulebase. */
+    private JList rulesList = null;
+
+    private JTree tree = null;
+    private JScrollPane treeScrollPane = new JScrollPane();
+    private JButton treeOptionButton = new JButton("No Option");
+    private TitledBorder treePanelBorder =
+        new TitledBorder(new LineBorder(Color.black), "No Rule Selected");
+
+    private TitledBorder statePanelBorder =
+        new TitledBorder(new LineBorder(Color.black), "No Selection");
+
     // File menu components
     private JMenuBar jMenuBar = new JMenuBar();
     private JMenu jMenu_File = new JMenu("File");
@@ -45,9 +59,6 @@ class RuleDesigner extends JFrame implements Rulebase {
     private JMenuItem jMenu_File_Save = new JMenuItem("Save...");
     private JMenuItem jMenu_File_SaveAs = new JMenuItem("Save As...");
     private JMenuItem jMenu_File_Exit = new JMenuItem("Exit...");
-
-    /** The list displaying all the rules in this rulebase. */
-    private JList rulesList = null;
 
     // variables
 
@@ -102,11 +113,51 @@ class RuleDesigner extends JFrame implements Rulebase {
         // add components to viewport
         JPanel vp = new JPanel();
         vp.setLayout(new VerticalLayout());
+        vp.add(createRulesPanel());
+        vp.add(createTreePanel());
+        vp.add(createStatePanel());
 
-        // the panel for the rules
-        vp.add(new JLabel("Rules:"));
+        // add to frame
+        getContentPane().add(new JScrollPane(vp));
+    }
+
+    /** @return the panel with the representation of a state or action. */
+    private JPanel createStatePanel() {
+        JPanel statePanel = new JPanel();
+        treePanel.setLayout(new VerticalLayout());
+        treePanel.setBorder(statePanelBorder);
+
+        // buttons
+        JPanel treeButtonPanel = new JPanel();
+        treeButtonPanel.setLayout(new GridLayout(1, 0));
+
+        treeOptionButton.setEnabled(false);
+        treeButtonPanel.add(treeOptionButton);
+
+        treeButtonPanel.setSize(TREE_BUTTONS_SIZE);
+        treePanel.add(treeButtonPanel);
+
+        // tree representing a rule
+        treeScrollPane.setPreferredSize(TREE_SIZE);
+        treePanel.add(treeScrollPane);
+
+        return treePanel;
+    }
+
+    /** @return the panel with the tree representing a rule. */
+    private JPanel createTreePanel() {
+        JPanel treePanel = new JPanel();
+        treePanel.setLayout(new VerticalLayout());
+        treePanel.setBorder(treePanelBorder);
+        return treePanel;
+    }
+
+    /** @return the panel with the list of rules. */
+    private JPanel createRulesPanel() {
         JPanel rulesPanel = new JPanel();
         rulesPanel.setLayout(new HorizontalLayout());
+        rulesPanel.setBorder(new TitledBorder(new LineBorder(Color.black), "Rules"));
+
         // list of rules
         rulesList = new JList(new AbstractListModel() {
             public int getSize() { return RuleDesigner.this.specifications.size(); }
@@ -117,13 +168,14 @@ class RuleDesigner extends JFrame implements Rulebase {
         rulesList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         rulesList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e)  {
-                RuleDesigner.this.currentSpec = (EDStateMachineSpecification)
-                    RuleDesigner.this.specifications.get(rulesList.getSelectedIndex());
+                setCurrentSpec((EDStateMachineSpecification)
+                    specifications.get(rulesList.getSelectedIndex()));
             }
         });
         JScrollPane rulesScrollPane = new JScrollPane(rulesList);
         rulesScrollPane.setPreferredSize(RULES_LIST_SIZE);
         rulesPanel.add(rulesScrollPane);
+
         // buttons to modify rule properties
         JPanel ruleButtonPanel = new JPanel();
         ruleButtonPanel.setLayout(new GridLayout(0, 1));
@@ -149,7 +201,7 @@ class RuleDesigner extends JFrame implements Rulebase {
 			(RuleDesigner.this, "Enter a new name for this rule:", "Rename rule",
 			 JOptionPane.QUESTION_MESSAGE/*, null, null, currentSpec.getName()*/);
 		    if (s != null) {
-			if (hasName(s) || s.equals("")) 
+			if (hasName(s) || s.equals(""))
 			    JOptionPane.showMessageDialog
 				(RuleDesigner.this, "Could not change name to '" + s + "'\n" +
 				 "name may exist or be invalid", "Bad Name", JOptionPane.ERROR_MESSAGE);
@@ -224,10 +276,7 @@ class RuleDesigner extends JFrame implements Rulebase {
 
         ruleButtonPanel.setPreferredSize(RULES_BUTTONS_SIZE);
         rulesPanel.add(ruleButtonPanel);
-        vp.add(rulesPanel);
-
-        // add to frame
-        getContentPane().add(new JScrollPane(vp));
+        return rulesPanel;
     }
 
     /** Setup menu components and listeners. */
@@ -337,6 +386,79 @@ class RuleDesigner extends JFrame implements Rulebase {
         this.repaint();
     }
 
+    /**
+     * Updates the component, to reflect the element of the tree that is selected.
+     * @param selNode the treeNode currently selected
+     */
+    private void updateTreeSelection(TreeNode selNode) {
+        if (selNode instanceof SpecNode) {
+            treeOptionButton.setText("Add Child State");
+            treeOptionButton.setEnabled(true);
+            treeOptionButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    EDState s = StateDialog.showNewStateDialog();
+                    if (s != null) ((SpecNode)selNode).addChildState(s);
+                }
+            });
+        }
+        else if (selNode instanceof StateNode) {
+            treeOptionButton.setText("Add Child State");
+            treeOptionButton.setEnabled(true);
+            treeOptionButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+
+                }
+            });
+        }
+        else if (selNode instanceof FolderNode) {
+            treeOptionButton.setText("Add Action");
+            treeOptionButton.setEnabled(true);
+            treeOptionButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+
+                }
+            });
+        }
+        else {
+            treeOptionButton.setText("No Option");
+            treeOptionButton.setEnabled(false);
+        }
+    }
+
+    /**
+     * Changes the currently visualized specification.
+     * @param currentSpec the specification to change to
+     */
+    private void setCurrentSpec(EDStateMachineSpecification currentSpec) {
+        if (this.currentSpec == currentSpec) return;
+        if (DEBUG) System.out.println("current spec is: " + currentSpec.getName());
+
+        this.currentSpec = currentSpec;
+
+        // update panels
+        treeOptionButton.setText("No Option");
+        treeOptionButton.setEnabled(false);
+
+        treeScrollPane.getViewport().removeAll();
+        if (currentSpec != null) {
+            treePanelBorder.setText(currentSpec.getName());
+
+            tree = new JTree(new SpecNode(currentSpec));
+            treeScrollPane.getViewport().add(tree);
+            tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+            tree.addMouseListener(new MouseAdapter() {
+                public void mousePressed(MouseEvent e) {
+                    int selRow = tree.getRowForLocation(e.getX(), e.getY());
+                    TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
+                    if(selRow != -1) {
+                        updateTreeSelection((TreeNode)selPath.getLastPathComponent());
+                    }
+                }
+            });
+        }
+        else treePanelBorder.setText("No Rule Selected");
+    }
+
     /**************************************************
        methods inherited from the Rulebase interface
     **************************************************/
@@ -408,6 +530,40 @@ class RuleDesigner extends JFrame implements Rulebase {
 	if (s.length() < 5 || !s.substring(s.length() - 4).equals(".xml"))
 	    f = new File(f.getParent(), s + ".xml");
 	return f;
+    }
+}
+
+/** Dialog to create or edit a state. */
+class StateDialog extends JDialog {
+
+    /** The source to which the input is added. */
+    private TreeNode source;
+
+    /** Value the user has input. */
+    private EDState state;
+
+    /**
+     * Displays a dialog to create a new state.
+     * @param parentComponent the parent frame
+     * @param source the source where the input is added
+     * @param state the state to edit, or null if a new state is being defined
+     * @return the state defined by the user, or null
+     *         if the user chose to cancel the operation
+     */
+    public StateDialog(JFrame parentComponent, TreeNode source, EDState state) {
+        super(parentComponent, true);
+        this.state = state;
+        this.source = source;
+        addComponents();
+
+        if (state == null) setTitle("New State");
+        else setTitle("Edit State");
+
+        show();
+    }
+
+    private void addComponents() {
+
     }
 }
 

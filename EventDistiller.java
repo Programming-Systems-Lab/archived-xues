@@ -19,11 +19,8 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.35  2001-08-17 13:06:00  eb659
- * Bfirst commit for the XML generator for ED rules.
- *
- * AADDDCCC
- * only partial generation at this point, but what's there has been tested thoroughtly. some 10 hrs
+ * Revision 1.36  2001-08-27 17:47:42  eb659
+ * more work done on the XML generator
  *
  * Revision 1.34  2001/07/03 00:29:43  eb659
  * identified and fixed race condition. Others remain
