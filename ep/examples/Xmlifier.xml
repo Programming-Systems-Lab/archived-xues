@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Created by jjp32 on March 8, 2002, 8:31 PM -->
+
+<EventPackagerConfiguration>
+  <EventFormats>
+    <EventFormat Name="psl.xues.ep.event.HierarchicalEvent"></EventFormat>
+    <EventFormat Name="psl.xues.ep.event.SienaEvent"></EventFormat>
+    <EventFormat Name="psl.xues.ep.event.FlatEvent"></EventFormat>
+  </EventFormats>
+  <Inputters>
+    <!--This inputter allows for a console control-->
+    <Inputter Name="ConsoleInput1" Type="psl.xues.ep.input.ConsoleInput"/>
+  </Inputters>
+  <Outputters>
+    <Outputter Name="ConsoleOutput1" Type="psl.xues.ep.output.ConsoleOutput" />
+  </Outputters>
+  <Transforms>
+    <Transform Name="Xmlifier1" Type="psl.xues.ep.transform.Xmlifier">
+      <rule name="test">
+	<pattern>am</pattern>
+	<location>a/b/c</location>
+	<attrname>blah</attrname>
+      </rule>
+      <rule name="test2">
+	<pattern>amna</pattern>
+	<location>a/b/c/g</location>
+	<attrname>blah2</attrname>
+      </rule>
+    </Transform>
+  </Transforms>
+  <Rules>
+    <Rule Name="XMLtestrule">
+      <Inputs>
+	<Input Name="ConsoleInput1" />
+      </Inputs>
+      <Transforms>
+	<Transform Name="Xmlifier1" />
+      </Transforms>
+      <Outputs>
+	<Output Name="ConsoleOutput1" />
+      </Outputs>
+    </Rule>
+  </Rules>
+</EventPackagerConfiguration>
+
