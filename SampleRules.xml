@@ -17,7 +17,7 @@
      created only when the previous instance has succeeded or timed out. 
      note also that the second event is absorbed, if matched -->
 
-<rule name="spamblocker" instantiation="2">
+<rule name="spamblocker" instantiation="1">
    <states>
       <state name="a" timebound="-1" children="b">
         <attribute name="from" value="*1"/>

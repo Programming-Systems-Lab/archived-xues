@@ -29,8 +29,8 @@ public class EDTestConstruct implements Notifiable {
 
 	// send it a couple of events
 	sendEvent();
-	//try { Thread.currentThread().sleep(600); }
-	//catch (Exception ex) { ; }
+	try { Thread.currentThread().sleep(600); }
+	catch (Exception ex) { ; }
 	sendEvent();
 
 	/*
