@@ -108,6 +108,16 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGauge {
   }
   
   /**
+   * Get a list of all the "value types", i.e., the LHS of the mappings along
+   * with a type.
+   *
+   * @return A StringPairVector of the value types
+   */
+  public StringPairVector getValueTypes() {
+    return impl.getValueTypes();
+  }
+  
+  /**
    * Called when a gauge is queried for a value. This provides an
    * alternative to the gauge reporting events.
    *

@@ -43,24 +43,24 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
   /**
    * CTOR.
    */
-  public EDGaugeImpl(GaugeID gid, StringPairVector setupParams, 
+  public EDGaugeImpl(GaugeID gid, StringPairVector setupParams,
   StringPairVector mappings, GaugeReportingBus bus, EDBus EDOutputBus) {
     super(gid, setupParams, mappings, bus);
-
+    
     // Store reference to EDOutputBus, and then subscribe to the values
     // that we are monitoring
     this.EDOutputBus = EDOutputBus;
     
     // Insert code to check setup parameters
     debug.debug("Called with mappings " + mappings);
-
+    
     // Build the subscription filter.
     Filter sienaFilter = new Filter();
     for(int i=0; i < mappings.size(); i++) {
       sienaFilter.addConstraint(mappings.nameAt(i), Op.ANY, "");
     }
     
-    // Create a subscription for the left-hand-side of the mappings.  
+    // Create a subscription for the left-hand-side of the mappings.
     // For now, we assume a conjoined set with ONE subscription.
     try {
       EDOutputBus.subscribe(sienaFilter, this, new Comparable() {
@@ -76,7 +76,7 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
   /**
    * Unused CTOR.  We override to ensure no other class is calling this one.
    */
-  public EDGaugeImpl(GaugeID gid, StringPairVector setupParams, 
+  public EDGaugeImpl(GaugeID gid, StringPairVector setupParams,
   StringPairVector mappings, GaugeReportingBus bus) {
     super(gid, setupParams, mappings, bus);
     
@@ -94,7 +94,7 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
     return true; // Since it's not an explicit "creation", we assume success
   }
   
-  /** 
+  /**
    * Configure the gauge.  For now, we do nothing, since we don't take any
    * parameters.
    *
@@ -107,7 +107,7 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
     return true;
   }
   
-  /** 
+  /**
    * Query all the values.
    *
    * @param values The vector into which to place the gauged data.
@@ -119,7 +119,7 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
     return false;
   }
   
-  /** 
+  /**
    * Returns the state of the gauge.
    *
    * @param setupParams The vector into which the setup parameters are copied.
@@ -127,23 +127,40 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
    * @param mappings The property that each gauge value is associated with.
    * @return Whether the state of the gauge could be queried.
    */
-  public boolean queryState(StringPairVector setupParams, 
+  public boolean queryState(StringPairVector setupParams,
   StringPairVector configParams, StringPairVector mappings) {
     // Copy the setup parameters out opaquely
     this.setupParams.copyInto(setupParams);
-
+    
     // Copy out the latest mapping references
     Enumeration enum = this.mappings.keys();
     while (enum.hasMoreElements()) {
       String key = (String)enum.nextElement();
       mappings.addElement(key, (String)this.mappings.get(key));
     }
-
+    
     // Nothing to configure, so leave it empty
     return true;
   }
   
-  /** 
+  /**
+   * Get a list of all the "value types", i.e., the LHS of the mappings along
+   * with a type.
+   *
+   * @return A StringPairVector of the value types
+   */
+  public StringPairVector getValueTypes() {
+    StringPairVector spv = new StringPairVector();
+    Enumeration enum = this.mappings.keys();
+    while(enum.hasMoreElements()) {
+      String key = (String)enum.nextElement();
+      spv.addElement(key, "String"); // XXX - hardcoded String for now
+    }
+    return spv;
+  }
+  
+  
+  /**
    * The method called to query the value of the gauge. This
    * provides a direct query for the gauge, as opposed to the
    * gauge reporting to value on the bus.  (Note: <I>it is assumed
@@ -151,7 +168,7 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
    * value</I>).
    *
    * @param valueName The name of the value to query.
-   * @return The corresponding value of the gauge. 
+   * @return The corresponding value of the gauge.
    */
   public String queryValue(String valueName) {
     // We can't handle queryValue
@@ -159,7 +176,7 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
     return null;
   }
   
-  /** 
+  /**
    * This method is called periodically by the reporting thread
    * to generate a new value and report it (presumably, on the Siena bus).
    */
@@ -187,15 +204,15 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
     GaugeValueVector gvv = new GaugeValueVector();
     while(values.hasNext()) {
       String attr = (String)values.next();
-      if(mappings.get(attr) != null) { 
+      if(mappings.get(attr) != null) {
         // We have an architecturally-interesting data element
-        gvv.addElement(attr, (String)mappings.get(attr), 
+        gvv.addElement(attr, (String)mappings.get(attr),
         n.getAttribute(attr).stringValue());
       }
     }
-
+    
     // Now report
     gaugeBus.reportMultipleValues(gaugeID, gvv);
-    return true; // Keep on going
+    return false; // Keep on going
   }
 }

@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import psl.xues.ed.EDBus;
 
 import siena.Siena;
+import java.util.HashSet;
 
 /**
  * ACME Gauge Manager for ED.  Bridges results from ED to the ACME gauge
@@ -35,10 +36,12 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
   public String gaugeBusURL = null;
   /** ACME gauge bus */
   private SienaGaugeReportingBus reportingBus = null;
-  /** List of gauge types being tracked (unnecessary?) */
-  //private Vector gaugeTypes = new Vector();
-  /** Hash of gauges, indexed by gauge ID's */
-  private HashMap gauges = new HashMap();
+  /**
+   * List of gauge types being tracked.  We override the SienaGaugeMgr
+   * implementation of this.  Each entry in gaugeTypes is
+   * (String, HashSet of Strings of Gauge Names).
+   */
+  private HashMap gaugeTypes = new HashMap();
   /** Log4j debugger */
   private Logger debug = Logger.getLogger(EDGaugeMgr.class.getName());
   /** ED output bus */
@@ -87,47 +90,69 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    */
   public GaugeControl createGauge(GaugeID gauge, StringPairVector setupParams,
   StringPairVector mappings) {
-    debug.debug("createGauge called for gauge " + gauge);
     if (managesType(gauge.gaugeType)) { // Our gauge to manage
+      debug.debug("createGauge called for gauge " + gauge);
+      
       // "Dummy" handle.  What's the point?
-      debug.debug("Our gauge to handle, mappings are " + mappings);
-      debug.debug("Creating a gauge handle");
       SienaGaugeMgrGaugeHandle gaugeHandle=new SienaGaugeMgrGaugeHandle(gauge);
-      debug.debug("Handle created: " + gaugeHandle);
+      
+      // Create the gauge and put it in the list
       debug.debug("About to start creating gauge");
       SienaEDGauge sed = new SienaEDGauge(gauge, getGaugeMgrID(), setupParams,
-        mappings, EDOutputBus);
-      synchronized(gauges) {
-        debug.debug("Inserting gauge into List");
-        gauges.put(gauge, sed);
-      }
+      mappings, EDOutputBus);
+      gauges.put(gauge, sed);
       debug.debug("Gauge creation complete");
+      
+      // Now maintain the gaugeTypes we are currently managing
+      HashSet gt = (HashSet)gaugeTypes.get(gauge.gaugeType);
+      if(gt == null) { // Create it now, we can deal with the ref afterwards
+        gt = new HashSet();
+        gaugeTypes.put(gauge.gaugeType, gt);
+      }
+      gt.add(sed);
+      
       return gaugeHandle;
     } else return null; // We aren't handling it
   }
   
   /**
-   * Deletes the gauge associated with the gauge ID.
+   * Deletes the gauge associated with the gauge control.
    *
-   * @param gauge The gauge to be deleted.
+   * @param gauge The gauge control whose gauge ID is to be deleted.
    * @return A boolean indicating success.
    */
   public boolean deleteGauge(GaugeControl gauge) {
+    return deleteGauge(gauge.getGaugeID());
+  }
+  
+  /**
+   * Deletes the gauge associated with the gauge ID.
+   *
+   * @param gauge The gauge ID representing the gauge to be deleted.
+   * @return A boolean indicating success.
+   */
+  public boolean deleteGauge(GaugeID gaugeID) {
     debug.debug("deleteGauge called");
     SienaEDGauge seg = null;
-    synchronized(gauges) {
-      seg = ((SienaEDGauge)gauges.get(gauge.getGaugeID()));
-    }
+    seg = (SienaEDGauge)gauges.get(gaugeID);
     if(seg == null) return false; // Can't shut down if we don't have a handle
     
     seg.shutdown();       // Notify the gauge it's about to be shut down
-    synchronized(gauges) {
-      gauges.remove(gauge); // Remove it from the hash
+    gauges.remove(gaugeID); // Remove it from the hash
+    
+    // Remove it from the managing set
+    HashSet gt = (HashSet)gaugeTypes.get(gaugeID.gaugeType);
+    if(gt == null) { // Allow us to continue, but warn
+      debug.warn("Inconsistency detected in gaugeTypes data structure");
+    } else {
+      if(gt.remove(seg) == false) {
+        debug.warn("Inconsistency detected in a gaugeType gauge set");
+      }
     }
     
     // Signal to the gauge infrastucture that the gauge was successfully
     // deleted.
-    DeletedEvent event = new DeletedEvent(gauge.getGaugeID());
+    DeletedEvent event = new DeletedEvent(gaugeID);
     event.gaugeMgrID = getGaugeMgrID();
     event.status = true;
     reportingBus.reportDeleted(event);
@@ -174,7 +199,29 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
   public boolean queryMetaInfo(String gaugeType,
   StringPairVector configParamsMeta, StringPairVector valuesMeta) {
     debug.debug("queryMetaInfo called");
-    if (gaugeType.equals("EDGauge")) { // Yes, we handle it
+    if(managesType(gaugeType)) { // Yes, we handle it
+      // Get the gauge and examine its mappings to determine the values.
+      // XXX - for now, just use the first gauge in the set of this type.
+      HashSet hs = (HashSet)gaugeTypes.get(gaugeType);
+      if(hs == null) {
+        debug.error("Could not queryMetaInfo for type \"" + gaugeType + "\"");
+        return false;
+      }
+      
+      SienaEDGauge seg = null;
+      if(hs.iterator().hasNext()) {
+        seg = (SienaEDGauge)hs.iterator().next();
+      } else {
+        debug.error("Could not queryMetaInfo as type \"" + gaugeType + "\"" +
+        " currently has no gauges");
+      }
+      
+      // Return the values... XXX - all as string for now
+      seg.getValueTypes().copyInto(valuesMeta);
+      debug.debug("Returning value types " + valuesMeta);
+      
+      // No config params for now
+      
       //int index = gaugeTypes.indexOf(gaugeType);
       //switch (index) {
       //  case 0:
@@ -197,7 +244,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    */
   public boolean managesType(String gaugeType) {
     debug.debug("managesType called");
-    if(gaugeType.equals("EDGauge")) return true;
+    if(gaugeType.startsWith("EDGauge")) return true;
     else return false;
   }
 }

@@ -79,8 +79,6 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
   private boolean dequeueing = false;
   /** Is shutdown actually proceeding? */
   private boolean inShutdown = false;
-  /** Shutdown watchdog thread */
-  private Thread shutdownInitiator = null;
   
   /**
    * Default embedded CTOR.
@@ -128,7 +126,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
       Iterator i = outputters.keySet().iterator();
       while(i.hasNext()) {
         String outputterName = (String)i.next();
-        new Thread((EPOutput)outputters.get(outputterName), 
+        new Thread((EPOutput)outputters.get(outputterName),
         outputterName).start();
       }
     }
@@ -137,7 +135,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
       Iterator i = inputters.keySet().iterator();
       while(i.hasNext()) {
         String inputterName = (String)i.next();
-        new Thread((EPInput)inputters.get(inputterName), 
+        new Thread((EPInput)inputters.get(inputterName),
         inputterName).start();
       }
     }
@@ -163,7 +161,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
         }
       }
       
-      // Nothing to do, time to catch a nap.  XXX - handle 
+      // Nothing to do, time to catch a nap.  XXX - handle
       // InterruptedExceptions better?
       try {
         Thread.currentThread().sleep(1000);
@@ -178,7 +176,8 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
   }
   
   /**
-   * Initiate shutdown.
+   * Initiate shutdown.  We need this bizarre wrapped shutdown in case the
+   * dequeue thread gets bogged down.
    */
   public void shutdown() {
     // If we're already in shutdown, do nothing
@@ -186,16 +185,24 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     
     // Commence shutdown otherwise
     debug.info("Initiating EP shutdown...");
-   
-    // Stop ourselves first
-    shutdown = true;
-    shutdownInitiator = Thread.currentThread();
     
-    // Now, wait up to 10 seconds, and if we're not in shutdown by then,
-    // forcibly put ourselves in shutdown.
-    try {
-      Thread.currentThread().sleep(20000);
-    } catch(Exception e) { ; }
+    // Stop ourselves from doing anything "new" first
+    shutdown = true;
+    
+    // Now, wait up to 20 seconds (1 second at a time), and if we're not in 
+    // shutdown by then, forcibly put ourselves in shutdown.  Kind of hacky -
+    // a "poll-then-sleep" cycle.
+    for(int i=0; i < 20; i++) {
+      try {
+        Thread.currentThread().sleep(1000);
+      } catch(Exception e) { ; }
+      if(dequeueing == false || dequeueThread == null) {
+        // We are shutting down
+        break;
+      }
+    }
+
+    // We've waited... are we shutting down???
     if(dequeueing == true && dequeueThread != null) {
       debug.warn("Shutdown did not start yet, attempting forcible shutdown");
       dequeueThread.interrupt();
@@ -208,9 +215,9 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    * Actually handle the shutdown.
    */
   private void doShutdown() {
-    if(inShutdown == true) 
+    if(inShutdown == true)
       return;  // Another thread is doing it, ignore
-       
+    
     debug.info("Shutting down EP...");
     inShutdown = true;
     
@@ -228,6 +235,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
         ((EPOutput)i.next()).shutdown();
       }
     }
+    
     // XXX - transforms?
     
     // ... finally, the stores
@@ -237,9 +245,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
         ((EPStore)i.next()).shutdown();
       }
     }
-
-    // Kill the watchdog thread
-    shutdownInitiator.interrupt();
+    
     debug.info("EP shutdown process complete (process may not terminate if " +
     "there are hung threads).");
   }
@@ -251,9 +257,9 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    */
   public boolean inShutdown() { return shutdown; }
   
-  /** 
+  /**
    * EP main method.
-   * 
+   *
    * @param args The command-line arguments to EP.
    */
   public static void main(String args[]) {

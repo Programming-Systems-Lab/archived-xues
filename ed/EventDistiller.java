@@ -311,10 +311,10 @@ public class EventDistiller implements Runnable, Notifiable {
           // else send it to the public siena
           else publicSiena.publish(n);
           debug.debug("Notification " + n + " sent externally!");
-          return true;
+          return false; // Allow it to go through
         } catch(Exception e) {
           debug.error("Could not publish to outside world", e);
-          return true; // Still continue through
+          return false; // Still allow it to go through
         }
       }
     },

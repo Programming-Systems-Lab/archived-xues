@@ -13,6 +13,29 @@ import siena.SienaException;
 /**
  * Siena outputter for EP.
  * <p>
+ * <b>Configuration:</b>
+ * <ul><li>
+ * <b>Required attributes:</b> <i>none</i>
+ * </li><li>
+ * <b>Optional attributes:</b><ul>
+ *   <li><em>SienaHost</em>: Specifies master to connect to</li>
+ *   <li><em>SienaReceivePort</em>: Specifies port for TCPPacketReceiver</li>
+ *   <li><em>ED</em>: If true, modify Siena event for ED output</li></ul>
+ * </li><li>
+ * <b>Required embedded elements:</b> <i>none</i>
+ * <ul>
+ * <li>(one or more) <tt>Attribute</tt>s, with attributes
+ * <tt>Name</tt> (<em>String</em>) and <tt>Type</tt> (<em>String</em>)
+ * </li>
+ * </ul>
+ * </li><li>
+ * Supported types include:
+ * <ul>
+ * <li>int</li>
+ * <li>float</li>
+ * </ul>
+ * </li></ul>
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
@@ -30,6 +53,8 @@ public class SienaOutput extends EPOutput {
    *  a custom one. */
   private String sienaPort = null;
   private HierarchicalDispatcher hd = null;
+  /** Support ED output? */
+  private boolean outputtingToED = false;
   
   /**
    * CTOR.
@@ -37,7 +62,7 @@ public class SienaOutput extends EPOutput {
    * @exception InstantiationException is thrown if we cannot finish
    * initialization -- this is likely due to networking or parameter problems.
    */
-  public SienaOutput(EPOutputInterface ep, Element el) 
+  public SienaOutput(EPOutputInterface ep, Element el)
   throws InstantiationException {
     super(ep,el); // Set up debugging, etc.
     
@@ -53,7 +78,17 @@ public class SienaOutput extends EPOutput {
       } else {
         debug.info("Siena host not specified, will run as Siena master");
       }
-      
+    }
+
+    // ED configuration information
+    String outputED = el.getAttribute("ED");
+    if(outputED != null && outputED.length() > 0) {
+      try {
+        outputtingToED = new Boolean(outputED).booleanValue();
+      } catch(Exception e) {
+        debug.warn("ED output disabled, invalid ED attribute passed");
+        outputtingToED = false;
+      }
     }
     
     // Now actually try and connect
@@ -79,22 +114,35 @@ public class SienaOutput extends EPOutput {
    */
   public boolean handleEvent(EPEvent epe) {
     debug.debug("Received event, about to publish");
+    Notification eventToPublish = null;
     if(epe.getFormat().equals("SienaEvent")) {
-      // Just get the embedded Siena event and publish it
-      return publishEvent(((SienaEvent)epe).getSienaEvent());
+      eventToPublish = ((SienaEvent)epe).getSienaEvent();
     } else {
       // Convert to Siena form, THEN publish
       EPEvent newepe = epe.convertEvent("SienaFormat");
       if(newepe == null) { // No can do
-        debug.warn("Could not publish event: no conversion from \"" + 
+        debug.warn("Could not publish event: no conversion from \"" +
         epe.getFormat() + "\" to SienaFormat");
         return false;
       }
       // Successful conversion, publish it
-      return publishEvent(((SienaEvent)newepe).getSienaEvent());
+      eventToPublish = ((SienaEvent)newepe).getSienaEvent();
     }
+
+    if(outputtingToED = true) {
+      // Make copy to prevent destroying reference
+      eventToPublish = new Notification(eventToPublish);
+      eventToPublish.putAttribute("Type", "EDInput");
+    }
+    try {
+      hd.publish(eventToPublish);
+    } catch(Exception e) {
+      debug.warn("Could not send event", e);
+      return false;
+    }
+    return true; // Success
   }
- 
+  
   /**
    * Actual publication operation.
    *
@@ -110,7 +158,7 @@ public class SienaOutput extends EPOutput {
     // Success
     return true;
   }
-    
+  
   /**
    * Handle shutdown - first let super do its cleanup, then kill the hd
    */

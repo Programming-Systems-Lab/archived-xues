@@ -72,6 +72,7 @@ Comparable {
     
     // Do we have a spec filename?
     if(specFileName != null) {
+      debug.debug("Parsing state specification file \"" + specFileName + "\""); 
       // Initialize SAX parser and run it on the file
       try {
         sxp = SAXParserFactory.newInstance().newSAXParser();
@@ -422,6 +423,9 @@ interface Rulebase{
  * Class that handles the XML parsing.
  */
 class EDHandler extends DefaultHandler {
+  /** Debugging context */
+  private static Logger debug = 
+  Logger.getLogger(EDHandler.class.getName());
   
   /** The class where the Specifications are to be stored. */
   Rulebase r = null;
@@ -455,38 +459,40 @@ class EDHandler extends DefaultHandler {
   /** Handle the beginning of a SAX element. */
   public void startElement(String uri, String localName, String qName,
   Attributes attributes) throws SAXException {
+
+    debug.debug("Encountered uri \"" + uri + "\", localName \"" + localName + 
+    "\", qName \"" + qName + "\", attributes \"" + attributes + "\"");
     
-    if(localName.equals("rule")) { // Start of new EDSMS
+    if(qName.equals("rule")) { // Start of new EDSMS
       currentEdsms = new EDStateMachineSpecification
-      (attributes.getValue("", "name"));
+      (attributes.getValue("name"));
       
       // position
-      String s = attributes.getValue("", "position");
+      String s = attributes.getValue("position");
       if (s != null) currentPosition = Integer.parseInt(s);
       
       // instantiation policy
-      s = attributes.getValue("", "instantiation");
+      s = attributes.getValue("instantiation");
       if (s != null)
         try { currentEdsms.setInstantiationPolicy(Integer.parseInt(s)); }
         catch(IllegalArgumentException ex) { System.err.println(ex); }
     }
     
-    if(localName.equals("state")) { // Start of new state
+    if(qName.equals("state")) { // Start of new state
       try {
         currentMode = PARSINGSTATE;
-        currentState = new
-        EDState(attributes.getValue("", "name"),
-        Integer.parseInt(attributes.getValue("","timebound")),
-        attributes.getValue("", "children"),
-        attributes.getValue("", "actions"),
-        attributes.getValue("", "fail_actions"));
+        currentState = new EDState(attributes.getValue("name"),
+        Integer.parseInt(attributes.getValue("timebound")),
+        attributes.getValue("children"),
+        attributes.getValue("actions"),
+        attributes.getValue("fail_actions"));
         
         // absorb
-        String s = attributes.getValue("", "absorb");
+        String s = attributes.getValue("absorb");
         if (s != null && s.equals("true")) currentState.setAbsorb(true);
         
         // count
-        s = attributes.getValue("", "count");
+        s = attributes.getValue("count");
         if (s != null) currentState.setCount(Integer.parseInt(s));
         
         currentEdsms.addState(currentState);
@@ -497,36 +503,20 @@ class EDHandler extends DefaultHandler {
       }
     }
     
-    else if(localName.equals("notification")) {
+    else if(qName.equals("notification")) {
       // Start of new notification
       currentAction = new Notification();
-      currentEdsms.addAction(attributes.getValue("", "name"), currentAction);
+      currentEdsms.addAction(attributes.getValue("name"), currentAction);
       currentMode = PARSINGACTION;
     }
     
-    else if(localName.equals("attribute")) { // Start of new attribute
+    else if(qName.equals("attribute")) { // Start of new attribute
       AttributeValue attributevalue =
-      makeAttribute(attributes.getValue("", "value"),
-      attributes.getValue("", "type"));
+      makeAttribute(attributes.getValue("value"),
+      attributes.getValue("type"));
       // Create the attribute
-            /*String s5 = attributes.getValue("", "name");
-            AttributeValue attributevalue = null;
-            String s6 = attributes.getValue("", "type");
-             
-            // wrap the correct type in an attribute
-            if(s6 == null || s6.equals(EDConst.TYPE_NAMES[1]))
-                attributevalue = new AttributeValue(attributes.getValue("", "value"));
-            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[2]))
-                attributevalue = new AttributeValue(Integer.parseInt(attributes.getValue("", "value")));
-            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[2]))
-                attributevalue = new AttributeValue(Long.parseLong(attributes.getValue("", "value")));
-            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[3]))
-                attributevalue = new AttributeValue(Double.parseDouble(attributes.getValue("", "value")));
-            else if(attributes.getValue("", "type").equals(EDConst.TYPE_NAMES[4]))
-                attributevalue = new AttributeValue(Boolean.getBoolean(attributes.getValue("", "value")));
-             */
       short word0 = 1;
-      String s7 = attributes.getValue("", "op");
+      String s7 = attributes.getValue("op");
       if(s7 != null)
         word0 = Op.op(s7);
       s7 = attributevalue.stringValue();
@@ -536,16 +526,19 @@ class EDHandler extends DefaultHandler {
       // add the attribute
       switch(currentMode){
         case PARSINGSTATE:
-          AttributeConstraint attributeconstraint = new AttributeConstraint(word0, attributevalue);
-          currentState.addConstraint(attributes.getValue("", "name"), attributeconstraint);
+          AttributeConstraint attributeconstraint = 
+          new AttributeConstraint(word0, attributevalue);
+          currentState.addConstraint(attributes.getValue("name"), 
+          attributeconstraint);
           break;
           
         case PARSINGACTION:
-          currentAction.putAttribute(attributes.getValue("", "name"), attributevalue);
+          currentAction.putAttribute(attributes.getValue("name"), 
+          attributevalue);
           break;
           
         default:
-          System.out.println("FATAL: EDStateManager init failed in determining mode");
+          debug.fatal("EDStateManager init failed in determining mode");
           System.exit(-1);
           break;
       }
@@ -555,7 +548,7 @@ class EDHandler extends DefaultHandler {
   /** Handle the end of a SAX element. */
   public void endElement(String namespaceURI, String localName, String qName)
   throws SAXException {
-    if(localName.equals("rule")) {
+    if(qName.equals("rule")) {
       
       // is the specified rule legal?
       String error = currentEdsms.checkConsistency();

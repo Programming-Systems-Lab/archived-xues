@@ -83,4 +83,13 @@ public class SienaEvent extends EPEvent {
     return "SienaEvent";
   }
   
+  /**
+   * String representation of SienaEvent
+   *
+   * @return The string representation
+   */
+  public String toString() {
+    return "psl.xues.ep.event.SienaEvent - source \"" + source + 
+    "\", timestamp \"" + timestamp + "\", notification " + n;
+  }
 }
