@@ -11,7 +11,11 @@ import siena.*;
  * @version 0.1
  *
  * $Log$
- * Revision 1.3  2001-07-31 19:13:36  aq41
+ * Revision 1.4  2001-09-19 17:33:41  aq41
+ * Minor debugging, in process of implementing acceptance of new filters through
+ * notification.
+ *
+ * Revision 1.3  2001/07/31 19:13:36  aq41
  * Added capability to perform actions on notifications from EPHandler.cfg file
  * instead of hard coding the actions in EventPackager.java
  *
@@ -98,6 +102,16 @@ public class EPTest {
 	n2.putAttribute("MaxResults", "4");
 	n2.putAttribute("LookupType", "smartevent");
 	
+	Notification n3 = new Notification();
+	n3.putAttribute("Type", "addFilter");
+	n3.putAttribute("keepFilter", true);
+	n3.putAttribute("Name", "cd");
+	n3.putAttribute("AttrName", "Name");
+	n3.putAttribute("AttrOp", "=");
+	n3.putAttribute("AttrVal", "Check");
+	
+	Notification n4 = new Notification();
+	n4.putAttribute("Name", "Check");
 	
 	Filter f = new Filter();
 	f.addConstraint("foo","bar");
@@ -111,17 +125,17 @@ public class EPTest {
 	    out.close();
 	    testSocket.close();
 	} catch (Exception e) {
-	    System.out.println("hello");
 	    System.err.println(e);
 	}
 	
 	
 	try {
-	    //      hd.publish(n);
-	    hd.publish(n2);
-	    System.out.println("notification n1 published");
+	    //publish the test notifications
 	    hd.publish(n1);
-	    System.out.println("notification n2 published");
+	    hd.publish(n2);
+	    hd.publish(n3);
+	    hd.publish(n4);
+	    
 	} catch (SienaException se) {
 	    System.err.println("Siena exception on publish:" + se);
 	    return;

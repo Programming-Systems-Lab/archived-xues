@@ -20,7 +20,7 @@ import org.hsql.util.*;
 import psl.kx.*;
 import java.net.*;
 
-public class EPHandler{
+public class EPHandler implements Notifiable{
     private Hashtable list_of_actions;//hashtable containing list of actions to be performed
     //on a certain type of notification
     private boolean DEBUG = true;//debug flag
@@ -28,19 +28,21 @@ public class EPHandler{
     private int maxresults = 5; //themax num of results that can be returned from an EPLookup query
     private Statement statement;//sql statement
     private Siena siena = null;
+    private String filterIndex = null;
 
     /*constructor*/
-    public EPHandler(Hashtable actions, Statement st, Siena s ){
+    public EPHandler(Hashtable actions, Statement st, Siena s, String filter ){
 	list_of_actions = actions;
 	statement = st;
 	siena =s;
+	filterIndex = filter;
     }
     
-    public void performing_action(Notification n){
+    public void notify(Notification n){
 	StringTokenizer st = null;//string tokenizer to read hashtable string
-	String property = n.getAttribute("Type").stringValue();
-	if(DEBUG)System.out.println("property: "+ property);
-	String toDo = (String)list_of_actions.get(property);
+	//String property = n.getAttribute("Type").stringValue();
+	
+	String toDo = (String)list_of_actions.get(filterIndex);
 	if(toDo!=null){
 	    if(DEBUG)System.out.println("toDo---stuff to do to property " + toDo);
 	    st = new StringTokenizer(toDo);
@@ -53,15 +55,51 @@ public class EPHandler{
 		    if(a.equals("print"))print(n);
 		    else if(a.equals("printCapital")) printCapital(n);
 		    else if(a.equals("extractData_addTuple")){
-			if(DEBUG)System.out.println("does enter the else if statement");
 			extractData_addTuple(n);
 		    }	   
 		    else if(a.equals("extractAttributes_runQuery")) extractAttributes_runQuery(n);
+		    else if(a.equals("addFilter")) addFilter(n);
 		}
 	    }
 	}
     }
-    
+
+    /**Unused Siena construct.*/
+    public void notify(Notification[] s){;}
+
+    private void addFilter(Notification n){
+	//subscribe the filter to siena
+	if(DEBUG) System.out.println("addFilter method");
+	String filterIndex = n.getAttribute("Name").stringValue();//picked up the filter name
+	String attrName = n.getAttribute("AttrName").stringValue();//picked up the attribute
+	String opName = n.getAttribute("AttrOp").stringValue();
+	String attrValue = n.getAttribute("AttrVal").stringValue();
+	//is there an easier way of converting a string to boolean value?
+	Boolean a = new Boolean(n.getAttribute("keepFilter").stringValue());
+	boolean keepFilter = a.booleanValue();
+	try{
+	    if(filterIndex != null && attrName != null && opName != null && attrValue != null){
+		Filter theFilter = new Filter();
+		theFilter.addConstraint(attrName, Op.op(opName), attrValue);
+		siena.subscribe(theFilter, new EPHandler(list_of_actions, statement, siena, filterIndex));
+	    }//if
+	    if(keepFilter){
+		//add to EventPackager.cfg file for permanent addition of the filter
+		if(DEBUG)System.out.println("filter added permanently");
+		FileWriter writer = new FileWriter("EventPackager.cfg");
+		PrintWriter out = new PrintWriter(writer);
+		out.print(filterIndex + " " + attrName + ", " + opName + ", " + attrValue + ";");
+	    }
+	}//try
+	catch(IOException er){
+	    System.out.println(er);
+	}
+	catch(SienaException e){
+	    e.printStackTrace();
+	}
+	
+    }//addFilter
+
     private void extractData_addTuple(Notification n){
 	int myCurrent = ++current; //increment tuple id
 	String data =n.getAttribute(n.getAttribute("Type").stringValue()).stringValue();
