@@ -334,7 +334,7 @@ public class EventDistiller implements Runnable, Notifiable {
       debug.debug("Starting gauge manger");
       this.acmeBus = acmeBus;
       // Create the ACME gauge manager
-      acmeGM = new EDGaugeMgr(acmeBus, debugEnabled, outputBus);
+      acmeGM = new EDGaugeMgr(acmeBus, debugEnabled, internalBus);
     }
   }
   
