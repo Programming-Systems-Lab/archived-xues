@@ -15,8 +15,13 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.12  2001-07-24 17:12:30  eb659
- * dddd
+ * Revision 1.13  2001-08-06 16:43:30  eb659
+ * Tested essentially all features of ED, particularly counter and loop states.
+ * Run EDTestConstruct to test different rules, specifying which rule ot test, and whether the rule should fail. For instance, run 'java psl.xues.EDTestConstruct -r spamblocker -f' to test failure of the spamblocker rule; omit '-f' to test its success.
+ *
+ * Removed a couple of bugs, and added a small hack, unfortunately. See comments in EDState.createFilter(). Unfortunately, the internal dispatching mechanism does not work very well with inequalities of big numbers, possibly due to automatic type conversion or something. This, btw, has nothing to do with James's work.
+ *
+ * A couple of hours of work.
  *
  * Revision 1.11  2001/06/28 20:58:42  eb659
  * Tested and debugged timeout, different instantiation policies,

@@ -50,11 +50,6 @@ public class EDBus {
     // Constants
 
     /**
-     * The key for timestamp in a <code>Notification</code>
-     */
-    private static final String TS_STR = "timestamp";
-
-    /**
      * Disabling autoflush.
      */
     public static final int AUTOFLUSH_DISABLED = 0;

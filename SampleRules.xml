@@ -44,6 +44,29 @@
    </actions>
 </rule>
 
+<!-- The couter rule. Illustrates the possibility of an event 
+     occurring n times. In this example, the event named loop
+     must occur 10 times in a row, within 50ms between events -->
+
+<rule name="counter" instantiation="1" position="1">
+   <states>
+      <state name="start" timebound="-1" children="count" absorb="true">
+        <attribute name="event" value="counter"/>
+      </state>
+      <state name="count" timebound="100" count="9" actions="A" fail_actions="F" absorb="true">
+        <attribute name="event" value="counter"/>
+      </state>
+   </states>
+   <actions>
+      <notification name="A">
+         <attribute name="counter_success" value="true"/>
+      </notification>
+      <notification name="F">
+         <attribute name="counter_success" value="false"/>
+      </notification>
+   </actions>
+</rule>
+
 <!-- The loop rule. Illustrates how you can specify that one event
      happens any number of times (by setting count="-1"), 
      until some 'end' event happens  -->

@@ -15,7 +15,7 @@ public class EDTestConstruct implements Notifiable {
     EventDistiller ed;
 
     /** the rule to test. */
-    static String rule = "temperature";
+    static String rule = "spamblocker";
 
     /** whether we test the failure of the rule. */
     static boolean fail = false;
@@ -52,9 +52,33 @@ public class EDTestConstruct implements Notifiable {
 
 	// test spamblocker rule
 	if(rule.equals("spamblocker")) {
-	    sendSpamEvent();
-	    if(!fail) { // wait beyond timebound
-		sendSpamEvent();
+	    sendSpamEvent(1000000);
+	    if(fail) { 
+		// wait beyond timebound
+		sendSpamEvent(1000200);
+	    }
+	    else {
+		sendSpamEvent(1000005);
+	    }
+	}
+	
+        // test counter feature
+	else if(rule.equals("counter")) {
+	    for(int i = 1; i < 10; i++) {
+		sendEvent("counter", i*10);
+	    }
+	    if (!fail) {
+		sendEvent("counter", 100);
+	    }
+	}
+
+        // test loop feature
+	else if(rule.equals("loop")) {
+	    for(int i = 1; i < 10; i++) {
+		sendEvent("loop", i*10);
+	    }
+	    if (!fail) {
+		sendEvent("end", 100);
 	    }
 	}
 
@@ -120,22 +144,20 @@ public class EDTestConstruct implements Notifiable {
         notification.putAttribute("Type", "EDInput");
         notification.putAttribute("temperature", temp);
         //notification.putAttribute("spam", "true");
-        notification.putAttribute(EDConst.TIME_ATT_NAME, System.currentTimeMillis());
+        notification.putAttribute(EDConst.TIME_ATT_NAME, (long)System.currentTimeMillis());
         // send it
         ed.notify(notification);
     }
 
     /** Sends a "loop" event, using present time for timestamp. */
-    private void sendLoopEvent() { sendLoopEvent(System.currentTimeMillis()); }
+    private void sendEvent(String eventName) { sendEvent(eventName, System.currentTimeMillis()); }
 
     /** Sends a 'loop' event.  */
-    private void sendLoopEvent(long l) {
+    private void sendEvent(String eventName, long l) {
 	// make event
 	Notification n1 = new Notification();
-	n1.putAttribute("Source", "EventDistiller");
-	n1.putAttribute("SourceID", 12345);
 	n1.putAttribute("Type", "EDInput");
-	n1.putAttribute("event", "loop");
+	n1.putAttribute("event", eventName);
 	n1.putAttribute("timestamp", l);
 
 	// send it

@@ -25,8 +25,13 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.26  2001-07-24 17:12:30  eb659
- * dddd
+ * Revision 1.27  2001-08-06 16:43:29  eb659
+ * Tested essentially all features of ED, particularly counter and loop states.
+ * Run EDTestConstruct to test different rules, specifying which rule ot test, and whether the rule should fail. For instance, run 'java psl.xues.EDTestConstruct -r spamblocker -f' to test failure of the spamblocker rule; omit '-f' to test its success.
+ *
+ * Removed a couple of bugs, and added a small hack, unfortunately. See comments in EDState.createFilter(). Unfortunately, the internal dispatching mechanism does not work very well with inequalities of big numbers, possibly due to automatic type conversion or something. This, btw, has nothing to do with James's work.
+ *
+ * A couple of hours of work.
  *
  * Revision 1.25  2001/07/03 21:36:23  eb659
  * Improved problems in race conditions. The application now hangs in the subscribe()
@@ -280,6 +285,13 @@ public class EDState implements EDNotifiable {
      */
     private long ts = -1;
 
+    /**
+     * Time limit. The latest time where we can be matched.
+     * This is temporary. Normally we should be able to put the limit
+     * in the dispatiching mechanism, somehow (see createFilter method)
+     */
+    private long tl = Long.MAX_VALUE;
+
     /** The list of (names of) the  states that may success this one */
     private String[] children;
 
@@ -444,8 +456,12 @@ public class EDState implements EDNotifiable {
         //errorManager.println("done", EDErrorManager.STATE);
         if(i != -1) { // parent is already in the list, just reset timebound
             errorManager.println("EDState: " + myID + " extending subscription timebound", EDErrorManager.STATE);
-            if(tb != -1) ((EDSubscriber)subscribers.get(i)).resetTimebound(l);
-
+            if(tb != -1) { 
+		// this is how it should be
+		//((EDSubscriber)subscribers.get(i)).resetTimebound(l);
+		// hack -- extend timelimit here
+		tl = l;
+	    }
             // put most recent parent at the end of the list -- see reap()
             parents.add(parents.remove(i));
             subscribers.add(subscribers.remove(i));
@@ -488,6 +504,15 @@ public class EDState implements EDNotifiable {
 	errorManager.println("EDState " + myID + ": Received: " + n,
 			     EDErrorManager.STATE);
         synchronized(sm){
+
+	// check time - this is a hack, see createFilter()
+	if (n.getAttribute(EDConst.TIME_ATT_NAME).longValue() > tl){ 
+	    // notif is too late
+	    errorManager.println("EDState: " + myID + " rejecting late notification", 
+				 EDErrorManager.STATE);
+	    kill();
+	    return false;
+	}
 
 	// hang on while the machine is being reaped
 	    /*if (sm.reaping) {
@@ -835,10 +860,10 @@ public class EDState implements EDNotifiable {
      * If expected value begins with an asterisk "*" it will be considered a
      * wildcard and will bind to anything.
      * @param wc the table containing the wildcards values to insert in the subscription
-     * @param timebound the timebound within which the notification must be matched
+     * @param timeLimit the time within which the notification must be matched
      * @return the siena.Filter object to use to subscribe this state
      */
-    private Filter createFilter(Hashtable wc, long timebound){
+    private Filter createFilter(Hashtable wc, long timeLimit){
         Filter f = new Filter();
 
         // go through the constraints
@@ -861,7 +886,12 @@ public class EDState implements EDNotifiable {
             else f.addConstraint(attName, ac);
         }
         // set timebound
-        f.addConstraint(EDConst.TIME_ATT_NAME, new AttributeConstraint(Op.LT, timebound));
+	/* this does not work, for some reason that I don't really understand... any ideas?
+	   for now, we validate timebound in the notify method */
+        //f.addConstraint(EDConst.TIME_ATT_NAME, new AttributeConstraint(Op.LT, timeLimit));
+	// instead, temporarily, we do this
+	tl = timeLimit;
+	return f;
 
 	/* old version
         // We only want events from metaparser that have the state that
@@ -881,8 +911,6 @@ public class EDState implements EDNotifiable {
 		f.addConstraint(attr, new AttributeConstraint(val));
 	    }
 	}*/
-
-	return f;
     }
 
     // auxiliary static methods
