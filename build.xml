@@ -7,7 +7,8 @@
     <include name="tools/siena-1.4.2/siena-1.4.2.jar" />
     <include name="tools/hsqldb-1.61/lib/hsqldb.jar" />
     <include name="tools/log4j-1.2.4/dist/lib/log4j-1.2.4.jar" />
-    <include name="tools/crimson-1.1.3/crimson.jar" />
+    <!-- Only needed for Java 1.3.x, which we no longer support -->
+    <!--<include name="tools/crimson-1.1.3/crimson.jar" />-->
   </patternset>
   <!-- Now build our classpath and tell Ant to ignore the environment 
        classpath -->
@@ -27,6 +28,19 @@
   <target name="all" depends="ed, ep"/>
 
   <target name="ed" depends="xues">
+    <!-- XXX - Can't Java handle the dependencies?  Did ant turn it off?
+      If so, we should ultimately make these proper dependencies in ant. -->
+    <javac debug="${javac.debug}" srcdir="${rootdir}/psl/kx" 
+	   classpath="${classpath}" includes="KXNotification.java" />
+    <javac debug="${javac.debug}" srcdir="${rootdir}/psl/events/siena/utils"
+	   classpath="${classpath}" />
+
+    <javac debug="${javac.debug}" srcdir="ed" classpath="${classpath}" 
+	   excludes="acme/*" />
+  </target>
+
+  <!-- ED with ACME Gauge Bus support - EXPERIMENTAL -->
+  <target name="ed-acme" depends="xues">
     <javac debug="${javac.debug}" srcdir="ed" classpath="${classpath}" />
     <javac debug="${javac.debug}" srcdir="${rootdir}/psl/kx" 
 	   classpath="${classpath}" includes="KXNotification.java" />
