@@ -44,7 +44,6 @@ import siena.*;
  *
  * @author James Wu <jw402@columbia.edu>
  */
-
 public class EDBus {
 
 
@@ -214,7 +213,6 @@ public class EDBus {
      *  <code>EDBus</code> is started.  It monitors the queue, and
      *  <code>dispatch</code>es <code>Notification</code>s when
      *  necessary
-     *
      */
     private void dispatcher(){
 	while(dispatching || (eventQueue.size()!=0)){

@@ -24,20 +24,22 @@ public class EDTestConstruct implements Notifiable {
 	// instantiate new ED
 	ed = new EventDistiller(this, "psl/xues/SampleRules.xml", true);
 	// give it an input...
-	// and an output
+	// and an output -- optional
 	//ed.setOutputFile(new File("psl/xues/currentRulebase.xml"));
 
 	// send it a couple of events
-	//sendEvent();
-	//try { Thread.currentThread().sleep(600); }
-	//catch (Exception ex) { ; }
-	//sendEvent();
+	sendEvent();
+	try { Thread.currentThread().sleep(600); }
+	catch (Exception ex) { ; }
+	sendEvent();
 
+	/*
 	// test the loop rule
 	double d = (new Random()).nextDouble();
 	int n = (int)(d * 10);
 	for (int i = 0; i < n; i++) sendLoopEvent();
 	//sendEndEvent();
+	*/
 
 	// let ED run for a bit...
 	try { Thread.currentThread().sleep(15000); }
