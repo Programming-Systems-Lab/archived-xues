@@ -19,7 +19,10 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.19  2001-05-27 23:59:52  jjp32
+ * Revision 1.20  2001-05-28 00:01:17  jjp32
+ * I'll get it right one of these days
+ *
+ * Revision 1.19  2001/05/27 23:59:52  jjp32
  * Would help compiling if I closed the previous method
  *
  * Revision 1.18  2001/05/27 23:55:13  jjp32
@@ -243,6 +246,8 @@ public class EventDistiller implements Runnable, Notifiable {
       publicSiena.subscribe(metaparserFilter, this);
       publicSiena.subscribe(generalFilter, this);
     } catch(SienaException e) { e.printStackTrace(); }
+
+    run(); /* Don't need to create new thread */
   }
 
   /** Start execution of the new EventDistiller. */
