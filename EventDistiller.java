@@ -19,7 +19,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.20  2001-05-28 00:01:17  jjp32
+ * Revision 1.21  2001-05-29 17:21:30  jjp32
+ * Added embeddable-shutdown functionality (is not a shutdown hook right
+ * now-- you have been warned :)
+ *
+ * Revision 1.20  2001/05/28 00:01:17  jjp32
  * I'll get it right one of these days
  *
  * Revision 1.19  2001/05/27 23:59:52  jjp32
@@ -174,6 +178,9 @@ public class EventDistiller implements Runnable, Notifiable {
   /** State machine specification file */
   private static String stateSpecFile = null;
 
+  /** Whether the ED is to be shut down by the owning application. */
+  boolean inShutdown = false;
+
   /** 
    * Reap fudge factor.  IMPORTANT to take care of non-realtime event
    * buses (can anyone say Siena?)  XXX - should be a better way to do this.
@@ -211,7 +218,8 @@ public class EventDistiller implements Runnable, Notifiable {
   /**
    * Constructs a new EventDistiller with an owner.
    * If you use this constructor, pass events to ED directly through 
-   * the notify method using EDInputNotification.
+   * the notify method using EDInputNotification.  ALSO - make sure
+   * you call shutdown() after you're done.
    *
    * @param owner the object to which we return notifications
    */
@@ -247,6 +255,10 @@ public class EventDistiller implements Runnable, Notifiable {
       publicSiena.subscribe(generalFilter, this);
     } catch(SienaException e) { e.printStackTrace(); }
 
+    /* Add a shutdown hook */
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+	public void run() { finish(); } });
+
     run(); /* Don't need to create new thread */
   }
 
@@ -269,24 +281,14 @@ public class EventDistiller implements Runnable, Notifiable {
     edsm = new EDStateManager(privateSiena, this, 
 					     stateSpecFile);
 
-    /* Add a shutdown hook */
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-	public void run() {      
-	  /* Shut down the hierarchical dispatchers */
-	  System.err.println("EventDistiller: shutting down");
-	  try {
-	    ((HierarchicalDispatcher)publicSiena).shutdown();
-	    ((HierarchicalDispatcher)privateSiena).shutdown();
-	    //	    ((HierarchicalDispatcher)loopbackSiena).shutdown();
-	  } catch(Exception e) { e.printStackTrace(); }
-	}
-      });
-
-
     // Run process injector.  NOTE: Due to parallelism of Siena, ordering
     // is not guaranteed.  Below is a rather hacky way of ensuring a
     // very high probability of order in the internal Siena.
     while(true) {
+      if (inShutdown) { // shutting down -- clean up and terminate
+	finish();
+	break;
+      }
       if(EventDistiller.DEBUG)
 	System.err.println("EventDistiller: Checking process queue");
 
@@ -323,6 +325,23 @@ public class EventDistiller implements Runnable, Notifiable {
 	}	      
       }
     }
+  }
+
+  /** Shuts down the ED. */
+  public void shutdown() {
+    inShutdown = true; 
+    // the loop will die automatically, after cleaning up
+  }
+
+  /** Shutdown hook. */
+  private void finish() {
+    /* Shut down the hierarchical dispatchers */
+    System.err.println("EventDistiller: shutting down");
+    try {
+      if (owner == null) ((HierarchicalDispatcher)publicSiena).shutdown();
+      ((HierarchicalDispatcher)privateSiena).shutdown();
+      //((HierarchicalDispatcher)loopbackSiena).shutdown();
+    } catch(Exception e) { e.printStackTrace(); }
   }
 
   /**
