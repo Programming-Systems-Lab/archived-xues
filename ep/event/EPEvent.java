@@ -16,6 +16,8 @@ import org.apache.log4j.Logger;
  * TODO:
  * - Handle multiple/arbitrary sources
  * - Perhaps support wrapping EPEvent in another?
+ * - Support cloning of EPEvents, with and without cloning the data itself
+ *   (shallow/deep)
  * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
@@ -90,6 +92,17 @@ public abstract class EPEvent implements Comparable, Serializable {
    * @return The sourceID of this event.
    */
   public String getSource() { return source; }
+
+  /**
+   * Set the source of this event.  DO THIS WITH CARE, WE DON'T CLONE.
+   *
+   * @param newSource The new source for this event.
+   * @return A handle to the modified EPEvent.
+   */
+  public EPEvent setSource(String newSource) { 
+    this.source = newSource;
+    return this;
+  }
 
   /**
    * Convert this event to one of another form.

@@ -13,7 +13,7 @@ import psl.xues.ep.event.EPEvent;
  * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
- * 
+ *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
@@ -32,7 +32,7 @@ public abstract class EPStore implements Runnable, EPPlugin {
   /**
    * CTOR.
    */
-  public EPStore(EPStoreInterface ep, Element el) 
+  public EPStore(EPStoreInterface ep, Element el)
   throws InstantiationException {
     this.storeID = el.getAttribute("Name");
     if(storeID == null || storeID.length() == 0) {
@@ -45,7 +45,7 @@ public abstract class EPStore implements Runnable, EPPlugin {
     // Store reference to ep
     this.ep = ep;
   }
-
+  
   /**
    * Get our instance name.
    *
@@ -74,7 +74,9 @@ public abstract class EPStore implements Runnable, EPPlugin {
    * Request an individual event given its (opaque) reference.
    *
    * @param ref The event reference.
-   * @return The event in EPEvent form, or null if it doesn't exist.
+   * @return A copy of the event in EPEvent form, or null if it doesn't exist.
+   * Note that you cannot return the original reference--the store should be
+   * truly persistent.
    */
   public abstract EPEvent requestEvent(Object ref);
   
@@ -113,6 +115,20 @@ public abstract class EPStore implements Runnable, EPPlugin {
   public abstract Object[] requestEvents(String source, long t1, long t2);
   
   /**
+   * Utility method to play back events.  Will create a new playback thread that
+   * injects events into EP on behalf of an input.
+   *
+   * @param source The source to play back as, into EP.
+   * @param objs Object references to play back, from the requestEvents call.
+   * Should be an array of EPEvents.  MUST be sorted by timestamp.
+   * @param originalTime Use original time spacing?
+   */
+  public void playbackEvents(String source, Object[] objs,
+  boolean originalTime) {
+    new Thread(new PlaybackTool(source, objs, originalTime)).start();
+  }
+  
+  /**
    * Run.
    */
   public void run() {
@@ -126,7 +142,7 @@ public abstract class EPStore implements Runnable, EPPlugin {
     // Do nothing by default
     return;
   }
-
+  
   /**
    * Mark this input as having been "fired".  Return the new count.
    *
@@ -138,10 +154,45 @@ public abstract class EPStore implements Runnable, EPPlugin {
   
   /**
    * Get the number of times this has been "fired".
-   * 
+   *
    * @return The new count, as int.
    */
   public final long getCount() {
     return count;
+  }
+  
+  /**
+   * Playback tool.  Implements playback as a separate thread and does
+   * source masquerading so the rules are applied correctly.
+   */
+  class PlaybackTool implements Runnable {
+    private long lastEventTime = -1;
+    private boolean originalTime = false;
+    private Object[] refs = null;
+    private String source = null;
+    
+    public PlaybackTool(String source, Object[] refs, boolean originalTime) {
+      this.originalTime = originalTime;
+      this.refs = refs;
+      this.source = source;
+    }
+    
+    public void run() {
+      EPEvent currentEvent = null;
+      for(int i=0; i < refs.length; i++) {
+        currentEvent = requestEvent(refs[i]);
+        // Play back now, or sleep?
+        if(originalTime && lastEventTime != -1) try {
+          Thread.currentThread().sleep(currentEvent.getTimestamp() -
+          lastEventTime);
+        } catch(InterruptedException iex) {
+          debug.warn("Playback interrupted; stopping");
+          break;
+        }
+        lastEventTime = currentEvent.getTimestamp();
+        // XXX - this is destructive!
+        ep.injectEvent(currentEvent.setSource(source));
+      }
+    }
   }
 }

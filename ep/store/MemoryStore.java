@@ -16,6 +16,7 @@ import psl.xues.ep.event.EPEvent;
  * TODO: 
  * - Support store-to-file (is it possible, actually, to support generalized
  *   serialization?)
+ * - Make sure we return a copy, not a reference, of the event.
  * -->
  *
  * @author Janak J Parekh (janak@cs.columbia.edu)

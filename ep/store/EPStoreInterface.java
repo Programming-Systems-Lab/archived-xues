@@ -1,5 +1,7 @@
 package psl.xues.ep.store;
 
+import psl.xues.ep.event.EPEvent;
+
 /**
  * Interface to Event Packager for stores.
  * <p>
@@ -22,4 +24,14 @@ public interface EPStoreInterface {
    * @return The EPStore reference, or null if not found.
    */
   public EPStore getStore(String storeName);
+  
+  
+  /**
+   * Inject an event into the Event Packager.  Use any supported EPEvent
+   * format.
+   *
+   * @param e The EPEvent you wish to inject.
+   * @return A boolean indicating success.
+   */
+  public boolean injectEvent(EPEvent e);
 }
