@@ -17,8 +17,46 @@ import psl.xues.ep.store.EPStore;
 import psl.xues.util.SienaUtils;
 
 /**
- * Siena input filter for EP.
+ * Siena input filter for EP.  Supports all versions up to and including
+ * Siena 1.4.2.  (Note that Siena 1.4.0-1 is extremely buggy and will probably
+ * not work well.)
  * <p>
+ * Attributes/parameters: <ol>
+ * <li><b>SienaHost</b>: Specifies the Siena master that this node will
+ * connect to (in Siena URL format {which is version-dependent}).  If this field
+ * is left blank, this node will assume that it itself is a Siena master (in
+ * which case, specify a port if you want it to be remotely-accessible; else it
+ * will be completely local).</li>
+ * <li><b>SienaReceivePort</b>: Specifies the port on which this node will
+ * establish a TCPPacketReceiver.  Particularly useful if this node is a
+ * master.</li>
+ * <li><b>Control</b>: Specify "true" if you want this to be a EP control
+ * channel.  See the section below for more details on how to use this.</li>
+ * </ol><p>
+ * Filters:<p>
+ * If no filters are specified, this inputter will not receive any Siena
+ * events.  To create a filter, embed a <b>SienaFilter</b> element within
+ * the declaration of this inputter.  SienaFilter takes one or more
+ * <b>SienaConstraint</b>s, which in turn support the following attributes:<ol>
+ * <li>
+ * 
+ * Siena control: <p>
+ * If this node is enabled for control (see "Attributes" above), this Siena
+ * node will, in addition to custom filters, listen for events that match
+ * the AttributeValue { "Type" = "EPInput" } and dispatch appropriate control
+ * signals to EP, specified as follows: <ol>
+ * <li><b>{ "Request" = "Replay" }</b>: Request a replay.  Other parameters
+ * in the Siena event are:<ul>
+ *   <li>Store (required): Name of the store to replay events from;</li>
+ *   <li>Source (optional): Name of the source to replay events for;</li>
+ *   <li>StartTime (optional): Timestamp, using ms since 1970 in an 8-byte
+ *       Java long;</li>
+ *   <li>EndTime (optional): Timestamp, format same as StartTime; if one of the
+ *       two are specified, the other is required;</li>
+ *   <li>OriginalTime: Play back events in the original time intervals ("true"),
+ *       or stream them contiguously ("false")?</li></ul>
+ * </li>
+ * </ol><p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
  *
@@ -252,7 +290,7 @@ public class SienaInput extends EPInput implements Notifiable {
         } else {
           refs = eps.requestEvents(source);
         }
-
+        
         if(refs != null) {
           // There's data to play back
           eps.playbackEvents(getName(), refs, orgTime);
