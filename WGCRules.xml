@@ -32,7 +32,7 @@
 <!-- Second example rule for workgroup cache -->
 <rule name="WGCRule2">
    <states>
-      <state name="WGCRule2State1" timebound="-1" children="" actions=WGCRule2Action" fail_actions="">
+      <state name="WGCRule2State1" timebound="-1" children="" actions="WGCRule2Action" fail_actions="">
         <attribute name="Instigator" value="Gail"/>
         <attribute name="DataHandle" value="*1"/>
       </state>
