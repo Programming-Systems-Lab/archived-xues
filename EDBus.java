@@ -71,7 +71,7 @@ public class EDBus {
     /**
      * All the subscribers.
      */
-    private TreeSet subscribers;
+    private Vector subscribers;
 
     /**
      * The hashtable linking a notifiable to the Subscriber wrapper class.
@@ -118,7 +118,7 @@ public class EDBus {
     public EDBus (int autoflushMode, long waitTime){
 	this.autoflushMode = autoflushMode;
 	this.waitTime = waitTime;
-	subscribers = new TreeSet();
+	subscribers = new Vector();
 	subsHash = new Hashtable();
 	eventQueue = new EDQueue();
 
@@ -145,7 +145,30 @@ public class EDBus {
 	Subscriber s = new Subscriber(f,n,c);
 	subsHash.put(n,s);
 	subscribers.add(s);
+	Collections.sort(subscribers);
     }
+
+
+    /**
+     *  Unsubscribe from this bus.
+     *
+     *  Further <code>Notification</code>s won't be sent to that
+     *  <code>EDNotifiable</code> object afterwards.
+     *
+     *  <BR><B>NOTE: Unsubscribe implicitly flushes the queue.</B>
+     *
+     *
+     *  @param n  the <code>EDNotifiable</code> to unsubscribe from the bus
+     *
+     *  @return  <code>true</code> if the <code>EDNotifiable</code> was present
+     *           and is successfully removed
+     */
+    public boolean unsubscribe(EDNotifiable n){
+	Subscriber s = (Subscriber)subsHash.get(n);
+	subsHash.remove(n);
+	return subscribers.remove(s);
+    }
+
 
     /**
      *  Puts a <code>Notification</code> on the queue for dispatch.
@@ -170,26 +193,6 @@ public class EDBus {
     public synchronized void shutdown(){
 	flush();
 	dispatching = false;
-    }
-
-    /**
-     *  Unsubscribe from this bus.
-     *
-     *  Further <code>Notification</code>s won't be sent to that
-     *  <code>EDNotifiable</code> object afterwards.
-     *
-     *  <BR><B>NOTE: Unsubscribe implicitly flushes the queue.</B>
-     *
-     *
-     *  @param n  the <code>EDNotifiable</code> to unsubscribe from the bus
-     *
-     *  @return  <code>true</code> if the <code>EDNotifiable</code> was present
-     *           and is successfully removed
-     */
-    public boolean unsubscribe(EDNotifiable n){
-	Subscriber s = (Subscriber)subsHash.get(n);
-	subsHash.remove(n);
-	return subscribers.remove(s);
     }
  
     /**
@@ -259,11 +262,11 @@ public class EDBus {
      * @param e  The <code>Notification</code> to be sent
      */
     private void dispatch(Notification e){
-	Iterator iterator = subscribers.iterator();
+	Enumeration elements = subscribers.elements();
 	boolean absorbed = false;
-	while(iterator.hasNext() && !absorbed){
+	while(elements.hasMoreElements() && !absorbed){
 	    Subscriber thisSubscriber = 
-		(Subscriber) iterator.next();
+		(Subscriber) elements.nextElement();
 	    if(thisSubscriber.acceptsNotification(e)){
 		absorbed = thisSubscriber.n.notify(e);
 	    }
