@@ -3,7 +3,7 @@
  *
  * Created on January 16, 2002, 4:37 PM
  */
-package psl.xues.ed;
+package psl.xues.ed.tests;
 
 import psl.events.siena.utils.*;
 import siena.*;

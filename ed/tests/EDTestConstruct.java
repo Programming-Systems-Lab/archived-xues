@@ -1,4 +1,4 @@
-package psl.xues.ed;
+package psl.xues.ed.tests;
 
 import java.io.*;
 import java.util.*;

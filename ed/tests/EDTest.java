@@ -1,4 +1,4 @@
-package psl.xues.ed;
+package psl.xues.ed.tests;
 
 import java.io.*;
 import java.net.*;
@@ -11,7 +11,10 @@ import siena.*;
  * @version 0.1
  *
  * $Log$
- * Revision 1.3  2002-02-12 00:18:02  jjp32
+ * Revision 1.1  2002-06-18 20:05:58  jjp32
+ * Sorry, some more cleanup
+ *
+ * Revision 1.3  2002/02/12 00:18:02  jjp32
  *
  * Bug fixes.
  *
