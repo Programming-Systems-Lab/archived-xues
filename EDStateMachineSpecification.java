@@ -15,7 +15,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.9  2001-06-18 17:44:51  jjp32
+ * Revision 1.10  2001-06-18 20:58:36  eb659
+ *
+ * integrated version of ED. compiles, no testing done
+ *
+ * Revision 1.9  2001/06/18 17:44:51  jjp32
  *
  * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
  * trunk is now development again, and the aforementioned branches are
@@ -200,7 +204,6 @@ import siena.*;
  *
  */
 class EDStateMachineSpecification {
-    private Siena siena;
 
     /** our manager. */
     private EDStateManager edsm;
@@ -232,10 +235,8 @@ class EDStateMachineSpecification {
     int instantiationPolicy = EDConst.MULTIPLE;
 
   /** Basic CTOR.  Make sure to add states, and to call findInitialStates */
-  public EDStateMachineSpecification(String name, Siena siena, EDStateManager edsm) {
+  public EDStateMachineSpecification(String name, EDStateManager edsm) {
       this.name = name;
-      //this.myID = myID;
-      this.siena = siena;
       this.edsm = edsm;
   }
 

@@ -19,7 +19,11 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.12  2001-06-18 17:44:51  jjp32
+ * Revision 1.13  2001-06-18 20:58:36  eb659
+ *
+ * integrated version of ED. compiles, no testing done
+ *
+ * Revision 1.12  2001/06/18 17:44:51  jjp32
  *
  * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
  * trunk is now development again, and the aforementioned branches are
@@ -176,7 +180,7 @@ import java.util.*;
  * First full Siena-aware build of XUES!
  *
  */
-public class EDStateMachine {
+public class EDStateMachine implements Comparable {
     /** the manager */
     private EDStateManager manager = null;
 
@@ -251,7 +255,7 @@ public class EDStateMachine {
 	while(keys.hasMoreElements()){
 	    String key = keys.nextElement().toString();
 	    EDState e = new EDState((EDState)sourceStates.get(key), 
-				    this, manager.getSiena());
+				    this, manager.getBus());
 	    this.states.put(key, e);
 	}
 
@@ -516,7 +520,35 @@ public class EDStateMachine {
 
     /** @return whether this machine has started receiving notifications */
     public boolean hasStarted(){ return this.hasStarted; }
+
+    // comparable interface
+
+    /** 
+     * We compare state machines to determine priorities in receiving notifs.
+     * For now call indexOf() -- inefficient, but eventually store indexes
+     * with the sm and sms, updating when necessary.
+     * @param o the object to compare to.
+     */
+    public int compareTo(Object o) {
+	// yield to manager
+	if (!(o instanceof EDStateMachine)) return 1;
+
+	else { // proper compare to another state machine
+	    EDStateMachine other = (EDStateMachine)o;
+
+	    if (this.specification == other.getSpecification()) {
+		// different instances of the same specification
+		if (specification.stateMachines.indexOf(this) <
+		    specification.stateMachines.indexOf(other)) return -1;
+		else return 1;
+	    }
+	    
+	    else { // different specifications
+		if (manager.stateMachineTemplates.indexOf(this.specification) < 
+		    manager.stateMachineTemplates.indexOf(other.getSpecification())) return -1;
+		else return 1;
+	    }
+	}
+    }
 }
-
-
 

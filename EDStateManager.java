@@ -40,7 +40,11 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.18  2001-06-18 17:44:51  jjp32
+ * Revision 1.19  2001-06-18 20:58:36  eb659
+ *
+ * integrated version of ED. compiles, no testing done
+ *
+ * Revision 1.18  2001/06/18 17:44:51  jjp32
  *
  * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
  * trunk is now development again, and the aforementioned branches are
@@ -252,18 +256,17 @@ import org.xml.sax.helpers.DefaultHandler;
  * First full Siena-aware build of XUES!
  *
  */
-public class EDStateManager extends DefaultHandler implements Runnable, Notifiable {
+public class EDStateManager extends DefaultHandler implements Runnable, EDNotifiable, Comparable {
   
+    /** The ed that owns us. */
     private EventDistiller ed = null;
-    private Siena siena = null;
-  
-    /** Counts EDStateMachines for ID tagging */
-    //private int idCounter = 0;
+
+    /** The internal dispatcher through which we receive instructions. */
+    private EDBus bus = null;
 
     /** EDStateMachineSpecifications */
     Vector stateMachineTemplates = new Vector();
-    /** EDStateMachines */
-    //private Vector stateMachines = null;
+
 
     // variables used for parsing only
 
@@ -300,34 +303,49 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
 	    addElement(EDStateMachineSpecification.buildDemoSpec(siena,this));
 	    }*/
   
-  /**
-   * Regular CTOR.  Utilize XML specification file to build state machines.
-   */
-  public EDStateManager(Siena siena, EventDistiller ed, 
-			String specFileName) {
-    this.ed = ed;
-    this.siena = siena;
-    
-    // subscribe to internal siena
-    subscribe();
+    /**
+     * Regular CTOR.  Utilize XML specification file to build state machines.
+     * @param ed the EventDistiller that ownes us.
+     */
+    public EDStateManager(EventDistiller ed) {
+	this.ed = ed;
+	this.bus = ed.getBus();
+	String specFileName = ed.getSpecFile();
 
-    // Do we have a spec filename?
-    if(specFileName != null) {
-	if (EventDistiller.DEBUG) System.out.println("parsing file: " + specFileName);
-      // Initialize SAX parser and run it on the file
-      sxp = new SAXParser();
-      sxp.setContentHandler(this);
-      try {
-	sxp.parse(new InputSource(new FileInputStream(specFileName)));
-      } catch(Exception e) {
-	System.err.println("FATAL: EDStateManager init failed:");
-	e.printStackTrace();
-      }
+	// subscribe to internal dispatcher
+	subscribe();
+	
+	// Do we have a spec filename?
+	if(specFileName != null) {
+	    if (EventDistiller.DEBUG) System.out.println("parsing file: " + specFileName);
+	    // Initialize SAX parser and run it on the file
+	    sxp = new SAXParser();
+	    sxp.setContentHandler(this);
+	    try {
+		sxp.parse(new InputSource(new FileInputStream(specFileName)));
+	    } 
+	    catch(Exception e) {
+		System.err.println("FATAL: EDStateManager init failed:");
+		e.printStackTrace();
+	    }
+	}
+	
+	// Start da reapah.  In a new thread.
+	new Thread(this).start();
     }
-
-    // Start da reapah.  In a new thread.
-    new Thread(this).start();
-  }
+    
+    /**
+     * Subscribe, so that we can get notifications asking us to 
+     * dynamically modify the state machines.
+     * @author enrico buonanno
+     */
+    private void subscribe() {
+	//specify what notifications we are interested in
+	Filter f =  new Filter();
+	f.addConstraint("Type", "EDInput");
+	f.addConstraint("EDInput", "ManagerInstruction");
+	bus.subscribe(f, this, this);
+    }
 
     /** OLD -- carried out directly by the stateMachine when it starts
      * Called when a new machine of the given specification needs to be created.
@@ -407,7 +425,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
       //					qName);
     if(localName.equals("rule")) { // Start of new EDSMS
 	currentEdsms = new EDStateMachineSpecification
-	    (attributes.getValue("", "name"), siena, this);
+	    (attributes.getValue("", "name"), this);
 	String s = attributes.getValue("", "position");
 	if (s != null) currentPosition = Integer.parseInt(s);
 	s = attributes.getValue("", "instantiation");
@@ -507,50 +525,45 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
 	}
     }
 
-    // siena methods
 
-  /**
-   * Subscribe, so that we can get notifications asking us to 
-   * dynamically modify the state machines.
-   * @author enrico buonanno
-   */
-  private void subscribe() {
-    try {
-	//specify what notifications we are interested in
-	Filter f =  new Filter();
-	f.addConstraint("Type", "EDInput");
-	f.addConstraint("EDInput", "ManagerInstruction");
-	siena.subscribe(f, this);
-	if(EventDistiller.DEBUG)
-	    System.err.println("EDStateManager: Subscribing with filter " + f);
-    } catch(SienaException e) {
-	e.printStackTrace();
+    // EDNotifiable interface
+    
+    /**
+     * Callback.  We receive callbacks to dynamically
+     * change or query the state of the rules.
+     * @param n the notification received
+     */
+    public boolean notify(Notification n) {
+	if(EventDistiller.DEBUG) System.out.println("EDStateManager: Received notification "+n);
+	// What kind of notification is it?
+	String a = n.getAttribute("Action").stringValue();
+	
+	if(a.equals("AddRule")) {
+	    dynamicAddRule(n.getAttribute("Rule").stringValue());
+	} else if(a.equals("RemoveRule")) {
+	    dynamicRemoveRule(n.getAttribute("Rule").stringValue());
+	} else if(a.equals("QueryRule")) {
+	    dynamicQueryRule(n.getAttribute("Rule").stringValue());
+	} else if(a.equals("QueryRules")) {
+	    dynamicQueryRules();
+	}
+	
+	/* no reason to absorb these events.
+	   also, they could be monitored by rules. */
+	return false;
     }
-  }
 
-  /**
-   * Siena Callback.  We receive callbacks to dynamically
-   * change or query the state of the rules.
-   * @param n the notification received
-   */
-  public void notify(Notification n) {
-      if(EventDistiller.DEBUG) System.out.println("EDStateManager: Received notification "+n);
-      // What kind of notification is it?
-      String a = n.getAttribute("Action").stringValue();
 
-      if(a.equals("AddRule")) {
-	  dynamicAddRule(n.getAttribute("Rule").stringValue());
-      } else if(a.equals("RemoveRule")) {
-	  dynamicRemoveRule(n.getAttribute("Rule").stringValue());
-      } else if(a.equals("QueryRule")) {
-	  dynamicQueryRule(n.getAttribute("Rule").stringValue());
-      } else if(a.equals("QueryRules")) {
-	  dynamicQueryRules();
-      }
-  }
-		
-  /** Unused Siena construct. */
-  public void notify(Notification[] s) { ; }
+    // comparable interface
+
+    /** 
+     * We need to implement comparable to subscribe to EDBus.
+     * Manager instructions always have 
+     * priority over any other notification. 
+     * @param o the object to compare to
+     */
+    public int compareTo(Object o) { return -1; }
+
 
     // methods to handle the dynamic rulebase
 
@@ -671,7 +684,7 @@ public class EDStateManager extends DefaultHandler implements Runnable, Notifiab
     public EventDistiller getEventDistiller(){ return ed; }
 
     /** @return the siena bus */
-    public Siena getSiena(){ return this.siena; }
+    public EDBus getBus(){ return this.bus; }
 }
 
 

@@ -25,7 +25,11 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.13  2001-06-18 17:44:51  jjp32
+ * Revision 1.14  2001-06-18 20:58:36  eb659
+ *
+ * integrated version of ED. compiles, no testing done
+ *
+ * Revision 1.13  2001/06/18 17:44:51  jjp32
  *
  * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
  * trunk is now development again, and the aforementioned branches are
@@ -203,7 +207,7 @@ import siena.*;
  * First full Siena-aware build of XUES!
  * 
  */
-public class EDState implements Notifiable{
+public class EDState implements EDNotifiable {
 
     /** The name of this state. */
     private String name;
@@ -256,8 +260,8 @@ public class EDState implements Notifiable{
      */ 
     private Hashtable wildHash;
 
-    /** the Siena bus; this is passed to us by our parent, when this state is subscribed */
-    private Siena siena = null;
+    /** the internal bus; this is passed to us by our parent, when this state is subscribed */
+    private EDBus bus = null;
     
     /** The state machine that "ownes" us. */
     private EDStateMachine sm = null;
@@ -325,7 +329,7 @@ public class EDState implements Notifiable{
      * @param sm the stateMachine to which this state belongs
      * @param siena the siena bus through which we are to subscribe
      */
-    public EDState(EDState e, EDStateMachine sm, Siena siena) {
+    public EDState(EDState e, EDStateMachine sm, EDBus bus) {
 	this.attributes = (Hashtable)e.attributes.clone();
 	this.tb = e.tb;
 	this.ts = e.ts;
@@ -333,7 +337,7 @@ public class EDState implements Notifiable{
 	this.count = e.count;
 	this.sm = sm;
 	this.myID = sm.myID + ":" + name;
-	this.siena = siena;
+	this.bus = bus;
 
 	this.children = e.children;
 	this.actions = e.actions;
@@ -358,9 +362,8 @@ public class EDState implements Notifiable{
 	if (!alive) {
 	    parents = new Vector();
     
-	    //subscribe
-	    try { siena.subscribe(buildSienaFilter(), this); } 
-	    catch(SienaException e) { e.printStackTrace(); }
+	    //subscribe -- our filter, we handle notifs, our machine determines priority
+	    bus.subscribe(buildSienaFilter(), this, sm);
 
 	    if(EventDistiller.DEBUG) 
 		System.out.println("EDState: subscribing state: " + myID);
@@ -379,11 +382,10 @@ public class EDState implements Notifiable{
 	    wildHash = parent.getWildHash(); 
     }
 
-    /** Kills this state: unsubscribe and set alive to false */
+    /** Kills this state: unsubscribe and set alive to false. */
     public void kill(){
 	this.alive = false;
-	try{ siena.unsubscribe(this); }
-	catch(SienaException se){ se.printStackTrace(); };
+	bus.unsubscribe(this); 
     }
 
     /** 
@@ -455,7 +457,7 @@ public class EDState implements Notifiable{
     }
 
     /** Handles siena callbacks */
-    public void notify(Notification n) {
+    public boolean notify(Notification n) {
 	long millis = n.getAttribute("timestamp").longValue();
 	boolean succeeded = false;
 
@@ -481,21 +483,17 @@ public class EDState implements Notifiable{
 		    ts = millis; // timestamp
 		    succeed();
 		    succeeded = true;
-		    return;
-		    /* when we have a real bus... this also breaks
-		       if (absorb) return true; 
-		       else return false */
+
+		    if (absorb) return true; 
+		    else return false;
 		}
 	    }
 	}
 	if (EventDistiller.DEBUG)  
 	    System.err.println("EDState:" + myID + ": rejected Notification");
-	// return false; // no match, no absorb
+	return false; // no match, no absorb
     }
 
-    /** Unused Siena construct. */
-    public void notify(Notification[] s) { ; }
-  
   /** do we need this?
    * Add an attribute/value pair (strings).  This is accomplished by
    * wrapping an AttributeValue val.

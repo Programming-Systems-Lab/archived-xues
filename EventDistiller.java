@@ -19,7 +19,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.25  2001-06-18 17:44:51  jjp32
+ * Revision 1.26  2001-06-18 20:58:36  eb659
+ *
+ * integrated version of ED. compiles, no testing done
+ *
+ * Revision 1.25  2001/06/18 17:44:51  jjp32
  *
  * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
  * trunk is now development again, and the aforementioned branches are
@@ -217,8 +221,9 @@ public class EventDistiller implements Runnable, Notifiable {
     /** Reference to state machine manager. */
     EDStateManager edsm;
     
-    /** Private (internal) siena for the state machines */
-    private Siena privateSiena = null;
+    /** Internal event dispatcher. */
+    //private Siena privateSiena = null;
+    private EDBus bus;
     
     /** Public (KX) siena to communicate with the outside world */
     private Siena publicSiena = null;
@@ -371,8 +376,9 @@ public class EventDistiller implements Runnable, Notifiable {
 	// it can wake up a sleeping distiller
 	edContext = Thread.currentThread();
 	
-	// Create private siena
-	privateSiena = new HierarchicalDispatcher();
+	// Create internal dispatcher
+	bus = new EDBus();
+	/*privateSiena = new HierarchicalDispatcher();
 	boolean done = false;
 	int port = 61979;
 	while (!done) try {
@@ -383,11 +389,10 @@ public class EventDistiller implements Runnable, Notifiable {
 	} catch (Exception e) { 
 	    port++;
 	    done = false;
-	}
+	    }*/
 	
-	// Initialize state machine manager.  Hand it the private siena.
-	edsm = new EDStateManager(privateSiena, this, 
-				  stateSpecFile);
+	// Initialize state machine manager.
+	edsm = new EDStateManager(this);
     }
 	
     /** Start execution of the new EventDistiller. */
@@ -404,7 +409,7 @@ public class EventDistiller implements Runnable, Notifiable {
 		if(EventDistiller.DEBUG)
 		    System.err.print("+");
 		
-		// every 2 secs...
+		// every 1/2 sec or so...
 		try { Thread.sleep(EDConst.EVENT_PROCESSING); } 
 		catch(InterruptedException ie) { ; }
 		
@@ -414,8 +419,8 @@ public class EventDistiller implements Runnable, Notifiable {
 			Notification n = (Notification)eventProcessQueue.remove(0);
 			if(EventDistiller.DEBUG)
 			    System.err.println("EventDistiller: Publishing internally " + n);
-			try { privateSiena.publish(n); } 
-			catch(SienaException e) { e.printStackTrace(); }
+			bus.publish(n); 
+			// update time 
 			lastEventTime = n.getAttribute("timestamp").longValue();
 		    }
 		}
@@ -436,7 +441,7 @@ public class EventDistiller implements Runnable, Notifiable {
 	System.err.println("EventDistiller: shutting down");
 	try {
 	    if (owner == null) ((HierarchicalDispatcher)publicSiena).shutdown();
-	    ((HierarchicalDispatcher)privateSiena).shutdown();
+	    bus.shutdown();
 	    //((HierarchicalDispatcher)loopbackSiena).shutdown();
 	} catch(Exception e) { e.printStackTrace(); }
 	
@@ -527,7 +532,7 @@ public class EventDistiller implements Runnable, Notifiable {
 	     * we just send it through to ourselves. */
 	    if (n.getAttribute("internal") != null && 
 		n.getAttribute("internal").booleanValue()) 
-		privateSiena.publish(KXNotification.EDInternalNotification(n)); 
+		bus.publish(KXNotification.EDInternalNotification(n)); 
 	    else { // the notification goes outside
 		// if we have an owner, send him the notification
 		if (owner != null) owner.notify(n);
@@ -545,4 +550,10 @@ public class EventDistiller implements Runnable, Notifiable {
 
     /** @return the timestamp on the last processed event on the queue. */
     long getLastEventTime() { return lastEventTime; }
+
+    /** @return the internal event dispatcher */
+    EDBus getBus() { return this.bus; }
+
+    /** @return the specification file */
+    String getSpecFile() { return this.stateSpecFile; }
 }

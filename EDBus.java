@@ -53,18 +53,18 @@ public class EDBus {
     /**
      * The key for timestamp in a <code>Notification</code>
      */
-    private static String TS_STR = "timestamp";
+    private static final String TS_STR = "timestamp";
 
     /**
      * Disabling autoflush.
      */
-    public static int AUTOFLUSH_DISABLED = 0;
+    public static final int AUTOFLUSH_DISABLED = 0;
 
 
     /**
      * Enabling autoflush(DEFAULT).
      */
-    public static int AUTOFLUSH_ENABLED = 1;
+    public static final int AUTOFLUSH_ENABLED = 1;
 
 
 
@@ -111,11 +111,9 @@ public class EDBus {
     }
 
     /**
-     *
      * Constructor with more options.
      *
      * @param autoflushMode whether or not to use autoflush
-     *
      * @param waitTime  how long to wait for reorder(default 1000ms)
      */
     public EDBus (int autoflushMode, long waitTime){
@@ -154,7 +152,6 @@ public class EDBus {
      *  Puts a <code>Notification</code> on the queue for dispatch.
      *
      *  @param e  the event to send out
-     *
      */
     public void publish(Notification e){
 	if(dispatching){
@@ -190,7 +187,6 @@ public class EDBus {
      *  @return  <code>true</code> if the <code>EDNotifiable</code> was present
      *           and is successfully removed
      */
-
     public boolean unsubscribe(EDNotifiable n){
 	Subscriber s = (Subscriber)subsHash.get(n);
 	subsHash.remove(n);
@@ -280,10 +276,6 @@ public class EDBus {
     public static void main(String[] args){
 	EDBusTester.main(null);
     }
-
-   
-
-
 }// EDBus
 
 /**
@@ -421,6 +413,4 @@ class Subscriber implements Comparable{
 	    return true;// for fancy operators I don't understand, I let it slide
 	}
     }
-    
-
 }// Subscriber
