@@ -19,7 +19,10 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.26  2001-06-18 20:58:36  eb659
+ * Revision 1.27  2001-06-20 18:54:44  eb659
+ * handle self-comparison
+ *
+ * Revision 1.26  2001/06/18 20:58:36  eb659
  *
  * integrated version of ED. compiles, no testing done
  *
@@ -242,14 +245,16 @@ public class EventDistiller implements Runnable, Notifiable {
      */
     private long lastEventTime = 0;
 
-    /** Private loopback Siena */
-    //private Siena loopbackSiena = null;
-
+    /** 
+     * The model for keeping time. This can be time-driven (current time is 
+     * computed by consulting system time, and adjusting usin a skew factor 
+     * computed on the 
+     */
+    private boolean timeDriven = true;
+	
+    /** The number of 
     /** Debug flag. */
     static boolean DEBUG = false;
-
-    /** XXX - hack */
-    //private String sienaHost = "senp://localhost";
   
     /** State machine specification file */
     private String stateSpecFile = null;
@@ -548,8 +553,8 @@ public class EventDistiller implements Runnable, Notifiable {
     /** @param otputFile the file to write the rulebase on shutdown */
     public void setOutputFile(File outputFile) { this.outputFile = outputFile; }
 
-    /** @return the timestamp on the last processed event on the queue. */
-    long getLastEventTime() { return lastEventTime; }
+    /** @return the time to use a s a refernece. */
+    long getTime() { return lastEventTime; }
 
     /** @return the internal event dispatcher */
     EDBus getBus() { return this.bus; }

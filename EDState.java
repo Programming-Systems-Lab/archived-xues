@@ -25,7 +25,10 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.14  2001-06-18 20:58:36  eb659
+ * Revision 1.15  2001-06-20 18:54:44  eb659
+ * handle self-comparison
+ *
+ * Revision 1.14  2001/06/18 20:58:36  eb659
  *
  * integrated version of ED. compiles, no testing done
  *
@@ -516,7 +519,7 @@ public class EDState implements EDNotifiable {
 	 * else we would need to check all the parents */
 	if(validateTimebound 
 	   ((EDState)parents.lastElement(), 
-	    sm.getSpecification().getManager().getEventDistiller().getLastEventTime() 
+	    sm.getSpecification().getManager().getEventDistiller().getTime() 
 	    - EDConst.REAP_FUDGE)) 
 	    return false;
 

@@ -14,8 +14,8 @@
 
   <xsd:element name="rulebase" type="rulebaseType"/>
 
-<!-- ******************************************************************************* -->
-<!-- ******************************************************************************* -->
+<!-- ******************************************************************* -->
+
 
   <!-- RULEBASE: topmost declaration -->
   <xsd:complexType name="rulebaseType">
@@ -23,6 +23,7 @@
       <xsd:element name="rule" type="ruleType" maxOccurs="unbounded"/>
     </xsd:sequence>
   </xsd:complexType> <!-- /rulebaseType -->
+
 
 
   <!-- RULE: specification of an individual rule -->
@@ -48,8 +49,9 @@
     </xsd:sequence> 
 
     <!-- The name of this rule. -->
-    <xsd:attribute name="name" type="xsd:string" />
-    <!-- the position where this rule is inserted: lower positions have higher priority -->
+    <xsd:attribute name="name" type="xsd:string" use="required"/>
+    <!-- the position where this rule is inserted: lower positions have higher priority 
+         (by default the rule it is inserted at the end of the current rulebase) -->
     <xsd:attribute name="position" type="xsd:decimal" />
     <!-- the cyterion for instantiating this state machine:
 	 '0' means the machine will only be instantiated once
@@ -59,27 +61,29 @@
   </xsd:complexType> <!-- /ruleType -->
 
 
+
   <!-- STATE: states consist of many individual attribute/value states, and the relevant attributes. -->
   <xsd:complexType name="stateType">
     <xsd:sequence> <!-- all the attribute/value pairs that describe this state -->
       <xsd:element name="attribute" type="attributeType" maxOccurs="unbounded"/>
     </xsd:sequence>
 
-    <!-- name for this event. Must be specifyed -->
-    <xsd:attribute name="name" type="xsd:string" />	
-    <!-- Timebound for occurrence of this event, unlimited by default -->
-    <xsd:attribute name="timebound" type="xsd:integer" />
-    <!-- comma-delimited list of (names of) events that may follow this (optional).  -->
+    <!-- name for this state; use this name when specifying children of other states. -->
+    <xsd:attribute name="name" type="xsd:string" use="required"/>
+    <!-- Timebound for occurrence of this event. -->
+    <xsd:attribute name="timebound" type="xsd:integer" use="required"/>
+    <!-- comma-delimited list of (names of) events that may follow this.  -->
     <xsd:attribute name="children" type="xsd:string" />
-    <!-- List of (names of) notifications to send in the case that this event is matched (optional).  -->
+    <!-- List of (names of) notifications to send in the case that this event is matched.  -->
     <xsd:attribute name="actions" type="xsd:string" />
-    <!-- List of (names of) notifications to send in the case that this event is NOT matched (optional). -->
+    <!-- List of (names of) notifications to send in the case that this event is NOT matched. -->
     <xsd:attribute name="fail_actions" type="xsd:string" />
-    <!-- Whether this state will absorb the events that match it (optional; false by default) -->
+    <!-- Whether this state will absorb the events that match it (false by default) -->
     <xsd:attribute name="absorb" type="xsd:boolean" />
-    <!-- how many times this event will need to be matched to pass (optional; '1' by default) -->
+    <!-- how many times this event will need to be matched to pass ('1' by default) -->
     <xsd:attribute name="count" type="xsd:decimal" />
   </xsd:complexType>
+
 
 
   <!-- NOTIFICATION: This is the action we take, or, event we send. -->
@@ -88,14 +92,15 @@
       <xsd:element name="attribute" type="attributeType" maxOccurs="unbounded"/>
     </xsd:sequence>
     <!-- name for this action; use this name when specifying actions in states -->
-    <xsd:attribute name="name" type="xsd:string" />	
+    <xsd:attribute name="name" type="xsd:string" use="required"/>	
   </xsd:complexType> <!-- /notification -->
+
 
 
   <!-- ATTRIBUTE: attribute/value pair: the building blocks for Siena events. -->
   <xsd:complexType name="attributeType">
-    <xsd:attribute name="name" type="xsd:string" />
-    <xsd:attribute name="value" type="xsd:string" />
+    <xsd:attribute name="name" type="xsd:string" use="required"/>
+    <xsd:attribute name="value" type="xsd:string" use="required"/>
   </xsd:complexType>
 
 </xsd:schema>

@@ -19,7 +19,10 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.13  2001-06-18 20:58:36  eb659
+ * Revision 1.14  2001-06-20 18:54:44  eb659
+ * handle self-comparison
+ *
+ * Revision 1.13  2001/06/18 20:58:36  eb659
  *
  * integrated version of ED. compiles, no testing done
  *
@@ -532,6 +535,9 @@ public class EDStateMachine implements Comparable {
     public int compareTo(Object o) {
 	// yield to manager
 	if (!(o instanceof EDStateMachine)) return 1;
+
+	// comparing to self
+	else if (this == o) return 0;
 
 	else { // proper compare to another state machine
 	    EDStateMachine other = (EDStateMachine)o;

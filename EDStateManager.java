@@ -40,7 +40,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * added dynamicAddMachine() method
  *
  * $Log$
- * Revision 1.19  2001-06-18 20:58:36  eb659
+ * Revision 1.20  2001-06-20 18:54:44  eb659
+ * handle self-comparison
+ *
+ * Revision 1.19  2001/06/18 20:58:36  eb659
  *
  * integrated version of ED. compiles, no testing done
  *
@@ -562,7 +565,10 @@ public class EDStateManager extends DefaultHandler implements Runnable, EDNotifi
      * priority over any other notification. 
      * @param o the object to compare to
      */
-    public int compareTo(Object o) { return -1; }
+    public int compareTo(Object o) { 
+	if (this == o) return 0;
+	return -1; 
+    }
 
 
     // methods to handle the dynamic rulebase
