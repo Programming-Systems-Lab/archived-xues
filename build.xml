@@ -28,9 +28,14 @@
 	 includes="psl/kx/*, psl/xues/ed/*" />
   </target>
 
+  <target name="ed-docs" depends="ed">
+    <javadoc sourcepath="${rootdir}" destdir="dist/ed-docs" 
+	     packagenames="psl.xues.ed.*" access="public" />
+  </target>
+
   <target name="dist" depends="ed-dist" />
 
-  <target name="ed-dist" depends="ed-jar">
+  <target name="ed-dist" depends="ed-jar, ed-docs">
     <zip zipfile="dist/EventDistiller.zip">
       <zipfileset dir="${basedir}/dist/"
 		  includes="EventDistiller.jar" />
@@ -40,6 +45,8 @@
 		  includes="EventDistiller.html, LICENSE" />
       <zipfileset dir="${basedir}/ed/" prefix="samples/"
 		  includes="*.xml, *.xsd" />
+      <zipfileset dir="${basedir}/dist/ed-docs/" prefix="docs/"
+		  includes="**/*.html" />
     </zip>
   </target>
 
@@ -49,5 +56,6 @@
       <fileset dir="." includes="**/*.class, **/*~, **/#*#, **/.#*, **/%*%" 
 	       casesensitive="false" defaultexcludes="no" />
     </delete>
+    <delete dir="dist/ed-docs" includeEmptyDirs="true" />
   </target>
 </project>

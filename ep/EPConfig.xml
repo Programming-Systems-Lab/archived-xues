@@ -17,9 +17,16 @@
                 <SienaConstraint AttributeName="TestAttribute" Op="EQ" ValueType="String" Value="TestValue2"></SienaConstraint>
             </SienaFilter>
         </Inputter>
+        <!--This inputter allows for a console control-->
+        <Inputter Name="ConsoleInput1" Type="psl.xues.ep.input.ConsoleInput">
+            
+            
+        </Inputter>
+        
     </Inputters>
 <Outputters>
         <Outputter Name="SienaOutput1" Type="psl.xues.ep.output.SienaOutput" SienaHost="senp://localhost:7891"></Outputter>
+        <Outputter Name="NullOutput1" Type="psl.xues.ep.output.NullOutput"></Outputter>
     </Outputters>
 <Transforms></Transforms>
     <Rules>
@@ -32,6 +39,14 @@
             <Transforms></Transforms>
             <Outputs>
                 <Output Name="SienaOutput1"></Output>
+            </Outputs>
+        </Rule>
+        <Rule Name="ConsoleRule">
+            <Inputs>
+                <Input Name="ConsoleInput1"></Input>
+            </Inputs>
+            <Outputs>
+                <Output Name="NullOutput1"></Output>
             </Outputs>
         </Rule>
     </Rules>

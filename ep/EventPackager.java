@@ -1,6 +1,5 @@
 package psl.xues.ep;
 
-import bsh.Interpreter;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,15 +98,7 @@ public class EventPackager implements Runnable, EPInputInterface {
       }
     });
     
-    // Start up a beanshell
-    try {
-      new Thread(new Interpreter(new InputStreamReader(System.in),
-      System.out, System.err, true)).start();
-    } catch(Exception e) {
-      debug.error("Could not start shell", e);
-    }
-    
-    // Start ourselves up.  XXX - do we want to do this?
+    // Start ourselves up.  XXX - do we want to do this permanently?
     new Thread(this).start();
   }
   
@@ -158,6 +149,10 @@ public class EventPackager implements Runnable, EPInputInterface {
    * Handle shutdown.
    */
   public void shutdown() {
+    // If we're already in shutdown, do nothing
+    if(shutdown == true) return;
+
+    // Commence shutdown otherwise
     debug.info("Shutting down EP...");
     
     // Stop ourselves first

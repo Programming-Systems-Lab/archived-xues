@@ -54,7 +54,8 @@ public class ConsoleInput extends EPInput {
     // Actually listen for requests now
     String command = null;
     while(true) {
-      out.println("> ");
+      out.print("> ");
+      out.flush();
       try {
         command = in.readLine();
       } catch(Exception e) {
@@ -63,22 +64,38 @@ public class ConsoleInput extends EPInput {
       }
       
       // Now try to determine if the command is important
-      if(isCommand(command, "help"))
+      if(command == null) { // Bad
+        out.println("Warning: null encountered, shutting down input");
+        break;
+      } else if(command.trim().length() == 0) {
+        // ignore - it's whitespace
+      } else if(isCommand(command, "help")) {
         out.println("-------------------\n" +
         "Available commands:\n"+
         "- HELP: produces this output\n"+
         "- SHUTDOWN: shuts down the Event Packager cleanly\n" +
         "-------------------");
-      else if(isCommand(command, "shutdown")) {
+      } else if(isCommand(command, "shutdown")) {
         ep.shutdown();
         break;
-      }
-      else {
+      } else {
         // If we're in ep-shutdown, let bygones be bygones
         if(ep.inShutdown()) break;
         else out.println("Invalid command; please try again, or try HELP.");
       }
     }
+  }
+  
+  /**
+   * Shutdown method.  Overridden from EPInput to eliminate warnings about
+   * thread shutdown.
+   */
+  public void shutdown() {
+    shutdown = true;
+    
+    // XXX - now we hope the user had actually used the console to initiate
+    // a shutdown, in which case we have to do nothing.  Otherwise, any way
+    // of terminating a readLine call?
   }
   
   /**

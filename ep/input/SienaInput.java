@@ -172,8 +172,10 @@ public class SienaInput extends EPInput implements Notifiable {
    */
   public void shutdown() {
     super.shutdown();
-    hd.shutdown(); // Unsubscribe from everything
-    hd = null;
+    if(hd != null) {
+      hd.shutdown(); // Unsubscribe from everything
+      hd = null;
+    }
   }
   
   /**
