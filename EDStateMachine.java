@@ -19,7 +19,10 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.16  2001-06-27 17:46:53  eb659
+ * Revision 1.17  2001-06-27 22:08:43  eb659
+ * color-coded error output for ED
+ *
+ * Revision 1.16  2001/06/27 17:46:53  eb659
  * added EDErrorManager, so James can have a look. We'll use implementors of
  * this class for the output of ED
  *
@@ -223,14 +226,8 @@ public class EDStateMachine implements Comparable {
     /** timestamp registered when machine is instantiated. */
     long timestamp;
 
-    /** no! percolated down to the state level, so we can really have multiple paths
-     * with independent wildcard values
-     * Wildcard binding hashtable.  If there are wildcards in states that must
-     * match later states, we store them in this table.  In the future, this
-     * might be used for more than just wildcards.
-     */ 
-    //Hashtable wildHash = new Hashtable();
-
+    /** error manager for output. */
+    EDErrorManager errorManager;
     /**
      * Constructs a new stateMachine based on a stateMachineSpecification.
      * @param specification the specification on which this machine is constructed
@@ -240,13 +237,12 @@ public class EDStateMachine implements Comparable {
 	this.specification = specification;
 	this.manager = specification.getManager();
 	this.timestamp = System.currentTimeMillis();
-	//this.siena = manager.getSiena();
+	this.errorManager = manager.getEventDistiller().getErrorManager();
 
 	/* get an ID - for debugging
 	 * this is in the form 'rulename:index' */
 	this.myID = specification.getName() + ":" + specification.getNewID();
-	if (EventDistiller.DEBUG) 
-	    System.out.println("NEW EDStateMachine: " + myID);
+	errorManager.println("NEW EDStateMachine: " + myID, EDErrorManager.MANAGER);
 
 	// copy the actions - using the cloning constructor
 	Hashtable sourceActions = specification.getActions();
@@ -299,8 +295,7 @@ public class EDStateMachine implements Comparable {
 	if(containsLiveStates()) return false;
 
 	/* if all states are dead by now: */
-	if (EventDistiller.DEBUG) 
-	    System.out.println("EDStateMachine: " + myID + " about to get reaped");
+	errorManager.println("EDStateMachine: " + myID + " about to get reaped", EDErrorManager.REAPER);
 
 	/* 1) send failure notifications for SOME state that failed */
 	if (failedStateNames.size() > 0) 
@@ -405,8 +400,8 @@ public class EDStateMachine implements Comparable {
 		}
 	    }
 	}
-	if (EventDistiller.DEBUG)
-	    System.out.println("EDStateMachine: "+ myID + " sending notification: " + actionName);
+	errorManager.println("EDStateMachine: "+ myID + " sending notification: " + actionName,
+			     EDErrorManager.STATE);
 	manager.getEventDistiller().sendPublic(KXNotification.EDOutput(action));
     }
 

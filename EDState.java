@@ -25,7 +25,10 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.18  2001-06-27 17:46:53  eb659
+ * Revision 1.19  2001-06-27 22:08:43  eb659
+ * color-coded error output for ED
+ *
+ * Revision 1.18  2001/06/27 17:46:53  eb659
  * added EDErrorManager, so James can have a look. We'll use implementors of
  * this class for the output of ED
  *
@@ -289,6 +292,9 @@ public class EDState implements EDNotifiable {
      *  i.e. that can occur an indefinite number of times. */
     private boolean hasStarted = false;
 
+    /** Error manager for output. */
+    private EDErrorManager errorManager;
+
     /**
      * Constructs a new EDState. This constructor is used in the definition
      * of the stateMachineSpecification, when parsing the rule, so the states that
@@ -335,6 +341,7 @@ public class EDState implements EDNotifiable {
 	this.sm = sm;
 	this.myID = sm.myID + ":" + name;
 	this.bus = bus;
+	this.errorManager = sm.getSpecification().getManager().getEventDistiller().getErrorManager();
 
 	this.children = e.children;
 	this.actions = e.actions;
@@ -362,8 +369,7 @@ public class EDState implements EDNotifiable {
 	    //subscribe -- our filter, we handle notifs, our machine determines priority
 	    bus.subscribe(buildSienaFilter(), this, sm);
 
-	    if(EventDistiller.DEBUG) 
-		System.out.println("EDState: subscribing state: " + myID);
+	    errorManager.println("EDState: subscribing state: " + myID, EDErrorManager.STATE);
 	}
 
 	// live!
@@ -426,11 +432,9 @@ public class EDState implements EDNotifiable {
 		sm.getState(children[i]).bear(this); 
 	    }
 	    // 5. tell the world we succeeded
-	    if (EventDistiller.DEBUG) 
-		System.out.println("Mathced state will send notifs: " + arrayToList(actions));
 	    for (int i = 0; i < actions.length; i++) {
-		if (EventDistiller.DEBUG) 
-		    System.out.println("EDState: " + myID + ": sending notification: " + actions[i]);
+		errorManager.println("EDState: " + myID + ": sending notification: " + actions[i],
+				     EDErrorManager.STATE);
 		sm.sendAction(actions[i], wildHash); 
 	    }
 	    // 6. commit suicide
@@ -465,9 +469,7 @@ public class EDState implements EDNotifiable {
 	long millis = n.getAttribute("timestamp").longValue();
 	boolean succeeded = false;
 
-	if(EventDistiller.DEBUG) 
-	    System.err.println("EDState " + myID +
-			       ": Received: " + n);
+	errorManager.println("EDState " + myID + ": Received: " + n, EDErrorManager.STATE);
 	EDState parent;
 	synchronized (parents) {
 	    for (int i = 0; i < parents.size(); i++) {
@@ -480,8 +482,7 @@ public class EDState implements EDNotifiable {
 		
 		// does the notification match us? 
 		if(validate(n, parent)) {
-		    if(EventDistiller.DEBUG)
-			System.err.println("EDState " + myID + " matched at time: " + millis);
+		    errorManager.println("EDState " + myID + " matched at time: " + millis, EDErrorManager.STATE);
 		    
 		    // yes!
 		    ts = millis; // timestamp
@@ -489,16 +490,14 @@ public class EDState implements EDNotifiable {
 		    succeeded = true;
 
 		    if (absorb) {
-			if (EventDistiller.DEBUG) 
-			    System.out.println("EDState:" + myID + ": absorbing event");
+			errorManager.println("EDState:" + myID + ": absorbing event", EDErrorManager.STATE);
 			return true;
 		    }
 		    else return false;
 		}
 	    }
 	}
-	if (EventDistiller.DEBUG)  
-	    System.err.println("EDState:" + myID + ": rejected Notification");
+	errorManager.println("EDState:" + myID + ": rejected Notification", EDErrorManager.STATE);
 	return false; // no match, no absorb
     }
 
@@ -509,8 +508,7 @@ public class EDState implements EDNotifiable {
      * @return whether this state has timed out and is now dead
      */
     public boolean reap() {
-	if (EventDistiller.DEBUG)
-	    System.out.println("checking state: " + myID);
+	errorManager.println("checking state: " + myID, EDErrorManager.REAPER);
 	/* can we still be matched? check the last (most recent) parent.
 	 * NOTE: this assumes that events are processed sequentially,
 	 * else we would need to check all the parents */
@@ -521,8 +519,7 @@ public class EDState implements EDNotifiable {
 	    return false;
 
 	// if we're still here, all the parents have failed
-	if (EventDistiller.DEBUG)
-	    System.out.println("EDState: " + myID + " - timed out!");
+	errorManager.println("EDState: " + myID + " - timed out!", EDErrorManager.REAPER);
 	kill();
 	return true;
     }
@@ -538,9 +535,7 @@ public class EDState implements EDNotifiable {
     // fails, then we don't need to go further.
     AttributeValue timestamp = n.getAttribute("timestamp");
     if(!validateTimebound(prev, timestamp)) {
-	if (EventDistiller.DEBUG) 
-	    System.out.println("EDState: " + myID + 
-			       ": timestamp validation failed");
+	errorManager.println("EDState: " + myID + ": timestamp validation failed", EDErrorManager.STATE);
       return false;
     }
 
@@ -566,9 +561,8 @@ public class EDState implements EDNotifiable {
     if (tempNames != null) 
 	for (int i = 0; i < tempNames.size(); i++) { 
 	    wildHash.put(tempNames.get(i), tempValues.get(i));
-	    if (EventDistiller.DEBUG)
-		System.out.println("EDState: " + myID + ": wildcard '*" + tempNames.get(i) +
-				   "' BOUND to: " + tempValues.get(i));
+	    errorManager.println("EDState: " + myID + ": wildcard '*" + tempNames.get(i) +
+				 "' BOUND to: " + tempValues.get(i), EDErrorManager.STATE);
 	}
     return true;
   }
@@ -597,11 +591,11 @@ public class EDState implements EDNotifiable {
     }
 
     // Debug
-    if(EventDistiller.DEBUG) {
+    /*if(EventDistiller.DEBUG) {
       System.err.println("EDState: comparing attribute \"" + attr +
 			 "\", internalVal = " + internalVal + ", " +
 			 "externalVal = " + externalVal);
-    }
+			 }*/
 
     // "**" is the escape character for "*"
     if (internalVal.getType() == AttributeValue.STRING &&
@@ -614,13 +608,13 @@ public class EDState implements EDNotifiable {
       // Is this one previously bound?
       String bindName = internalVal.stringValue().substring(1);
       if(bindName.length() == 0) { // Simple wildcard
-	if(EventDistiller.DEBUG)
-	  System.err.println("EDState: Simple wildcard, match");
+	  //if(EventDistiller.DEBUG)
+	  //System.err.println("EDState: Simple wildcard, match");
 	return true;
       } else { // Binding
 	if(sm == null || wildHash == null) { // BAD
-	  System.err.println("EDState: ERROR - No State Machine hash "+
-			     "assigned, wildcard binding requested");
+	  errorManager.println("EDState: ERROR - No State Machine hash "+
+			       "assigned, wildcard binding requested", EDErrorManager.ERROR);
 	  return false;
 	}
 	// Now check the bind
@@ -628,14 +622,14 @@ public class EDState implements EDNotifiable {
 	  if(attrEqual((AttributeValue)wildHash.get(bindName),externalVal)){
 	    // YES!
 	    if(EventDistiller.DEBUG)
-	      System.err.println("EDState: wildcard already bound to \"" + 
-				 wildHash.get(bindName) + "\" and match");
+		//System.err.println("EDState: wildcard already bound to \"" + 
+		//	 wildHash.get(bindName) + "\" and match");
 	    return true;
 	  }
 	  else {
 	    if(EventDistiller.DEBUG)
-	      System.err.println("EDState: wildcard already bound to \"" + 
-				 wildHash.get(bindName) + "\" but nomatch");
+		//System.err.println("EDState: wildcard already bound to \"" + 
+		//	 wildHash.get(bindName) + "\" but nomatch");
 	    return false; // Complex wildcard doesn't match
 	  }
 	} 
@@ -653,9 +647,9 @@ public class EDState implements EDNotifiable {
     }
 
     // No wildcard binding, SIMPLE match
-    if(EventDistiller.DEBUG)
+    /*if(EventDistiller.DEBUG)
       System.err.println("EDState: performing SIMPLE match on " + 
-			 externalVal + "," + internalVal);
+      externalVal + "," + internalVal);*/
     return attrEqual(internalVal,externalVal);
   }
 

@@ -7,6 +7,7 @@ package psl.xues;
 
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.text.*;
 
 /**
  * Classes that handle output of the ED must implement this interface.
@@ -19,10 +20,10 @@ interface EDErrorManager {
      * if debug is set to false 
      */
     public static final int ERROR = -1;
-    public static final int REAPER = 0;
-    public static final int MANAGER = 1;
-    public static final int STATE = 2;
-    public static final int DISPATCHER = 3;
+    public static final int MANAGER = 0;
+    public static final int STATE = 1;
+    public static final int DISPATCHER = 2;
+    public static final int REAPER = 3;
 
     /**
      * Prints message to output.
@@ -83,7 +84,16 @@ class EDErrorGUI extends JFrame implements EDErrorManager {
     private boolean debug = false;
     
     /** The text pane to which we print. */
-    private JTextArea textArea = new JTextArea();
+    private JTextPane textPane = new JTextPane();
+
+    /** The scroll pane for the text area. */
+    private JScrollPane scrollPane;
+
+    /** Names for the styles we use for different outputs. */
+    static final String[] STYLE_NAMES = {"error", "manager", "state", "dispatcher", "reaper"};
+
+    /** Colors for the styles. */
+    static final Color[] COLORS = {Color.red, Color.orange, Color.blue, Color.darkGray, Color.lightGray };
 
     /** 
      * Constructs a new EDErrorGUI.
@@ -94,9 +104,20 @@ class EDErrorGUI extends JFrame implements EDErrorManager {
 
 	setTitle("Event Distiller output");
 	setSize(500, 500);
-	JScrollPane scrollPane = new JScrollPane(textArea);
+	scrollPane = new JScrollPane(textPane);
 	getContentPane().add(scrollPane, BorderLayout.CENTER);
+	addStyles();
 	show();
+    }
+
+    /** Adds the styles we need for the output. */
+    private void addStyles() {
+	Style def = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE); 
+        Style s = null;
+	for (int i = 0; i < STYLE_NAMES.length; i++) {
+	    s = textPane.addStyle(STYLE_NAMES[i], def);
+	    StyleConstants.setForeground(s, COLORS[i]);
+	}
     }
 
     /**
@@ -114,6 +135,14 @@ class EDErrorGUI extends JFrame implements EDErrorManager {
      */
     public void print(String message, int type) {
 	if (!debug && type >= 0) return;
-	textArea.append(message);
+	Document document = textPane.getDocument();
+
+	try { document.insertString(document.getLength(), message, textPane.getStyle(STYLE_NAMES[type])); }
+	catch (Exception ex) { ; }
+	//	textArea.append(message);
+	
+	//scroll down
+	JScrollBar vert = scrollPane.getVerticalScrollBar();
+	vert.setValue(vert.getMaximum());
     }
 }
