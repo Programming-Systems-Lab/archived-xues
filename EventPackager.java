@@ -19,7 +19,12 @@ import java.io.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.4  2000-09-08 19:08:27  jjp32
+ * Revision 1.5  2000-09-08 22:40:43  jjp32
+ *
+ * Numerous server-side bug fixes.
+ * Removed TriKXUpdateObject, psl.trikx.impl now owns it to avoid applet permission hassles
+ *
+ * Revision 1.4  2000/09/08 19:08:27  jjp32
  *
  * Minor updates, added socket communications in TriKXEventNotifier
  *
@@ -62,7 +67,7 @@ public class EventPackager implements GroupspaceService,
     if(this.spoolFilename != null) { 
       try {
 	this.spoolFile = new ObjectOutputStream(new
-	  FileOutputStream(this.spoolFilename));	
+	  FileOutputStream(this.spoolFilename,true));	
       } catch(Exception e) { 
 	System.err.println("Error creating spool file");
 	e.printStackTrace();
@@ -112,7 +117,7 @@ public class EventPackager implements GroupspaceService,
       try {
 	Socket newSock = listeningSocket.accept();
 	/* Hand the hot potato off! */
-	new Thread(new EPClientThread(srcIDCounter++,newSock));
+	new Thread(new EPClientThread(srcIDCounter++,newSock)).start();
       } catch(Exception e) {
 	gcRef.Log(roleName, "Failed in accept from serverSocket");
       }
@@ -126,7 +131,15 @@ public class EventPackager implements GroupspaceService,
     System.err.println("EventPackager: received GroupspaceEvent " + ge);
     return GroupspaceCallback.CONTINUE;
   }
- 
+
+  /**
+   * Tester.
+   */
+  public static void main(String args[]) {
+    EventPackager ep = new EventPackager(7777, "EventPackager.spl");
+    ep.run();
+  } 
+
   /**
    * Small thread for the addShutdownHook method.
    */
@@ -169,6 +182,13 @@ public class EventPackager implements GroupspaceService,
       try {
 	while(true) {
 	  String newInput = in.readLine();
+	  if(newInput == null) { // Finished
+	    System.err.println("EPCThread: closing connection");
+	    in.close();
+	    clientSocket.close();
+	    return;
+	  }
+	  System.err.println("EPCThread: Got " + newInput);
 	  if(spoolFile != null) spoolFile.writeObject(newInput);
 	  if(gcRef != null) {
 	    /* Send the event */

@@ -4,6 +4,7 @@ import psl.groupspace.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import psl.trikx.impl.TriKXUpdateObject;
 
 /**
  * TriKX EventNotifier for Xues.
@@ -15,7 +16,12 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.3  2000-09-08 20:03:26  jjp32
+ * Revision 1.4  2000-09-08 22:40:43  jjp32
+ *
+ * Numerous server-side bug fixes.
+ * Removed TriKXUpdateObject, psl.trikx.impl now owns it to avoid applet permission hassles
+ *
+ * Revision 1.3  2000/09/08 20:03:26  jjp32
  *
  * Finished network functionality in TriKXEventNotifier
  *
@@ -55,6 +61,7 @@ public class TriKXEventNotifier extends EventNotifier
     }
 
     tst = new TriKXSendThread();
+    new Thread(tst).start();
   }
 
   public boolean gsInit(GroupspaceController gc) {
@@ -74,7 +81,8 @@ public class TriKXEventNotifier extends EventNotifier
       try {
 	Socket newRecvSocket = recvSocket.accept();
 	// Start up a new thread
-	new Thread(new TriKXRecvThread(newRecvSocket));
+	System.err.println("Starting up new Receive Thread");
+	new Thread(new TriKXRecvThread(newRecvSocket)).start();
       } catch(Exception e) { e.printStackTrace(); }
     }
   }
@@ -84,6 +92,7 @@ public class TriKXEventNotifier extends EventNotifier
     if(!(ge.getDbo() instanceof TriKXUpdateObject)) {
       System.err.println("Invalid GroupspaceEvent!");
     } else {
+      System.err.println("Requesting tst to send " + ge.getDbo());
       tst.sendUpdate((TriKXUpdateObject)ge.getDbo());
     }
 
@@ -93,11 +102,12 @@ public class TriKXEventNotifier extends EventNotifier
   public String roleName() { return this.roleName; }
     
   /**
-   * Test method
+   * Test method for TriKX
    */
   public static void main(String[] args) {
-    TriKXEventNotifier ten = new TriKXEventNotifier(31338,31337);
-    new Thread(ten).run();
+    TriKXEventNotifier ten = new TriKXEventNotifier(31337,31338);
+    new Thread(ten).start();
+    System.err.println("TEN is running");
     ten.callback(new GroupspaceEvent(new TriKXUpdateObject("drivers",java.awt.Color.blue),"TriKXEventIncoming",null,null,false));
     ten.callback(new GroupspaceEvent(new TriKXUpdateObject("drivers-isdn",java.awt.Color.red),"TriKXEventIncoming",null,null,false));
     
@@ -120,14 +130,20 @@ public class TriKXEventNotifier extends EventNotifier
       while(true) {
 	try {
 	  String input = in.readLine();
-	  System.err.println("RECEIVED " + input + "FROM TRIKX");
+	  if(input == null) {
+	    System.err.println("TRT: Connection closed");
+	    in.close();
+	    recvSocket.close();
+	    return;
+	  }
+	  System.err.println("RECEIVED " + input + " FROM TRIKX");
 	} catch(Exception e) {
 	  e.printStackTrace(); return;
 	}
       }
     }
   }
-
+  
   class TriKXSendThread implements Runnable {
     private Socket s = null;
     private ObjectOutputStream oos = null;
@@ -135,40 +151,62 @@ public class TriKXEventNotifier extends EventNotifier
     private Thread tstExecutionContext = null;
 
     public TriKXSendThread() {
-      try {
-	s = new Socket("localhost",sendSocketPort);
-	oos = new ObjectOutputStream(s.getOutputStream());
-      } catch(Exception e) {
-	e.printStackTrace(); return;
-      }
       sendQueue = new Vector();
-
     }
 
     public void run() {
       this.tstExecutionContext = Thread.currentThread();
       TriKXUpdateObject tuo;
+
       while(true) {
-	// Is there stuff in the vector?
-	if(sendQueue.size() == 0) {
+	/* Connect repeatedly to TriKX until connection is made */
+	try {
+	  s = new Socket("localhost",sendSocketPort);
+	  oos = new ObjectOutputStream(s.getOutputStream());
+	} catch(ConnectException e) {
+	  System.err.println("Connection to TriKX refused, will try again");
 	  try {
 	    Thread.currentThread().sleep(1000);
 	  } catch(InterruptedException ie) { ; }
+	  continue;
+	} catch(Exception e) {
+	  e.printStackTrace(); return;
 	}
-	synchronized(sendQueue) {
-	  // Try sending stuff in the vector
-	  tuo = (TriKXUpdateObject)sendQueue.remove(0);
-	}
-	try {
-	  oos.writeObject(tuo);
-	} catch(Exception e) { 
-	  e.printStackTrace();
+	
+	/* Connection made, continue to communicate until the remote side
+	 * fails
+	 */
+	while(true) {
+	  // Is there stuff in the vector?
+	  while(sendQueue.size() == 0) {
+	    try {
+	      System.err.println("TSTSendThread sleeping");
+	      Thread.currentThread().sleep(1000);
+	    } catch(InterruptedException ie) { ; }
+	  }
+	  System.err.println("TSTSendThread awake, size == " + 
+			     sendQueue.size());
+	  synchronized(sendQueue) {
+	    // Try sending stuff in the vector
+	    System.err.println("TSTSendThread remove from queue");
+	    tuo = (TriKXUpdateObject)sendQueue.remove(0);
+	  }
+	  try {
+	    System.err.println("Sending " + tuo + " now!!!!");
+	    oos.writeObject(tuo);
+	  } catch(IOException e) {
+	    System.err.println("Connection with remote side failed");
+	    break;
+	  } catch(Exception e) { 
+	    e.printStackTrace();
+	  }
 	}
       }
     }
 
     public void sendUpdate(TriKXUpdateObject tuo) {
       synchronized(sendQueue) {
+	System.err.println("TSTSendThread adding to queue");
 	sendQueue.addElement(tuo);
       }
       if(tstExecutionContext != null) tstExecutionContext.interrupt();
