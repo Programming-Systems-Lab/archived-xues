@@ -1,0 +1,8 @@
+
+EDBus work:
+
+1. Warning for AUTOFLUSH_DISABLED.
+
+2. Proper error handling for EDQueue.
+
+3. Explain why we do insertion sort, so that strcmp(jw402, "lazyass")

@@ -1,0 +1,57 @@
+Event Distiller Development Branch TODO:
+
+1. DONE timebound - figure out how we deal with the reaper
+two options: time-driven, or event-driven
+a. options interface
+b. flush event in shutdown when using event-based time
+
+2. DONE (Enrico) Integrate James's Daughter-Of-Siena once he has
+implemented priority dispatching. (call 'reorderRules()' or whatever, 
+when necessary, and return value upon notification - just uncomment)
+
+7. (Janak) Test event loopback support.
+
+to be designed:
+
+5. (Janak) Decide if we want to take and modify matched notifications
+into an action.
+
+6. (Janak) Decide if we want to save ED state on shutdown
+(i.e. serialize objects).  Feasibility needs to be determined.
+
+14. (Enrico/Janak) Build an XML generator for the rules.
+
+-------------------------------
+Notes about counter states:
+
+1) The counter feature for states: say I have a state like this:
+<state name="s" timebound="50" children="t" actions="a" fail_actions="F"  
+absorb="true" count="10">etc..
+- timebound applies to all states, including the first right? (so if this
+is the first state, we compare against the time of the creation of the    
+machine itself?)
+- children applies only to the last of the 10 states?
+- actions applies only to the last state?
+- fail_actions apply to all states?
+- absorb applies to all states?
+
+2) if the count is '-1' this is a loop state. Then the 'children' are states
+that are a valid exit from the loop
+
+Tested timeout, different instantiation policies, 
+improved ED shutdown 
+added functionality to sed an event that fails all events during runtime 
+
+timestamp validation for loop doesn't work correctly
+reaper thread sometimes dies when a new machine is instantiated
+(this only seems to happen when dealing with an instantiation 
+
+tested counter feature
+tested flush on shutdown (event-based mode)
+changed skew to depend entirely on skew of last event,
+this seems to work better for the moment
+
+thoroughly tested counter-feature:
+- success and failure
+- event-based and time-based modes
+- timestamps using currentTime() and hard-coded
