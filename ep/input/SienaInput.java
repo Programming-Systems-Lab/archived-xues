@@ -180,19 +180,28 @@ public class SienaInput extends EPInput implements Notifiable {
           debug.info("Subscribing filter \"" + filterName + "\"...");
           hd.subscribe(f, this);
         } catch(SienaException se) {
-          debug.error("Cannot subscribe filter \"" + filterName + "\"", se);
+          debug.warn("Cannot subscribe filter \"" + filterName + "\"", se);
           continue; // Do we need to make this explicit?
         }
       }
-      
-      if(control) {
-        // Subscription for EP control channel
-        
-      }
-      
-      
       // And we continue with the next filter...
     } // end subscription loop
+    
+    
+    if(control) {
+      // Subscription for EP control channel
+      Filter f = new Filter();
+      f.addConstraint("Type", "EPControl");
+      try {
+        debug.info("Subscribing control-channel filter \"" + filterName +
+        "\"...");
+        hd.subscribe(f, this);
+      } catch(SienaException se) {
+        debug.warn("Cannot subscribe control-channel filter \"" +
+        filterName + "\"", se);
+        // XXX - do we need to do anything here?
+      }
+    }
     
     // Now we don't need to do a whole lot here, since Siena runs in its own
     // thread when it notifies us, so let's just use the default
@@ -203,11 +212,28 @@ public class SienaInput extends EPInput implements Notifiable {
   public void notify(Notification n) {
     debug.debug("Received notification " + n);
     
-    // Construct a new SienaEvent and wrap the notification in there
-    SienaEvent se = new SienaEvent(getName(), n);
-    
-    // Inject it into the EP
-    ep.injectEvent(se);
+    // If it's not a control event, inject it into the EP
+    if(!control || n.getAttribute("Type") == null ||
+    (!n.getAttribute("Type").stringValue().equals("EPControl"))) {
+      // Construct a new SienaEvent and wrap the notification in there
+      SienaEvent se = new SienaEvent(getName(), n);
+      ep.injectEvent(se);
+    } else {
+      // Sanity check
+      if(n.getAttribute("Request") == null) {
+        debug.error("Invalid request \"" + n + "\" to EP, ignoring");
+        return;
+      }
+
+      // Try to parse the control message
+      if(n.getAttribute("Request").stringValue().equals("Replay")) {
+        // Get replay parameters
+        if(n.getAttribute("Source") != null) {
+          
+        
+        }
+      }
+    }
   }
   
   public void notify(Notification[] n) {
