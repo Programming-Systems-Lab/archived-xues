@@ -71,9 +71,7 @@ public class Xmlifier extends EPTransform {
       debug.warn("extractDomInfo failed, returning original");
       return org;
     }
-    //get root of the created Dom
-    Element e = doc.getDocumentElement();
-    return new DOMEvent(original.getSource(), e);
+    return new DOMEvent(original.getSource(), doc);
   }
   
   /** extract information from the xml file given to create the DOM tree

@@ -23,6 +23,8 @@ import psl.xues.ep.transform.EPTransform;
 import psl.xues.ep.transform.EPTransformInterface;
 import psl.xues.ep.store.EPStore;
 import psl.xues.ep.store.EPStoreInterface;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
 
 /**
  * Event Packager for XUES.
@@ -104,7 +106,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
   public EventPackager(String configFile, boolean debugging, String debugFile) {
     // Initialize the debugging context
     initDebug(debugging, debugFile);
-    
+   
     // Parse the configuration file
     epc = new EPConfiguration(configFile, this);
     

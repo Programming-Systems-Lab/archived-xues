@@ -4,27 +4,18 @@
 
 <EventPackagerConfiguration>
   <EventFormats>
-    <EventFormat Name="psl.xues.ep.event.HierarchicalEvent"></EventFormat>
     <EventFormat Name="psl.xues.ep.event.SienaEvent"></EventFormat>
-    <EventFormat Name="psl.xues.ep.event.FlatEvent"></EventFormat>
+    <EventFormat Name="psl.xues.ep.event.DOMEvent"></EventFormat>
   </EventFormats>
   <Inputters>
+    <Inputter Name="SocketInput1" Type="psl.xues.ep.input.SocketInput" Port="9001" SocketType="TCP" DataType="XMLObject" />
     <Inputter Name="SienaInput1" Type="psl.xues.ep.input.SienaInput" SienaReceivePort="7890">
-      <!--
-	<SienaFilter Name="TestFilter1">
-	  <SienaConstraint AttributeName="TestAttribute" Op="=" ValueType="String" Value="TestValue"></SienaConstraint>
-	</SienaFilter>
-	<SienaFilter Name="TestFilter2">
-	  <SienaConstraint AttributeName="TestAttribute" Op="=" ValueType="String" Value="TestValue2"></SienaConstraint>
-	</SienaFilter>
-	-->
       <SienaFilter Name="AllFilter" />
     </Inputter>
     <!--This inputter allows for a console control-->
     <Inputter Name="ConsoleInput1" Type="psl.xues.ep.input.ConsoleInput"></Inputter>
   </Inputters>
   <Outputters>
-    <Outputter Name="SienaOutput1" Type="psl.xues.ep.output.SienaOutput" SienaReceivePort="7891"></Outputter>
     <Outputter Name="NullOutput1" Type="psl.xues.ep.output.NullOutput"></Outputter>
     <Outputter Name="ConsoleOutput1" Type="psl.xues.ep.output.ConsoleOutput"></Outputter>
   </Outputters>
@@ -33,15 +24,20 @@
   <Stores>
   </Stores>
   <Rules>
-    <Rule Name="TestRule1"><!--Sources specify a disjoint set-->
+    <Rule Name="SienaInputRule">
       <Inputs>
-	<Input Name="SienaInput1"></Input>
+	<Input Name="SienaInput1" />
       </Inputs>
-      <!--Transforms are applied in order-->
-      <Transforms></Transforms>
       <Outputs>
-	<Output Name="SienaOutput1"></Output>
-	<Output Name="ConsoleOutput1"></Output>
+	<Output Name="ConsoleOutput1" />
+      </Outputs>
+    </Rule>
+    <Rule Name="SocketInputRule">
+      <Inputs>
+	<Input Name="SocketInput1" />
+      </Inputs>
+      <Outputs>
+	<Output Name="ConsoleOutput1" />
       </Outputs>
     </Rule>
     <Rule Name="ConsoleRule">

@@ -14,6 +14,7 @@ import psl.xues.ep.event.DOMEvent;
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.event.SienaEvent;
 import psl.xues.ep.event.StringEvent;
+import psl.xues.util.JAXPUtil;
 
 import siena.Notification;
 import java.net.DatagramSocket;
@@ -21,16 +22,17 @@ import java.util.Iterator;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.io.ByteArrayInputStream;
+import javax.xml.parsers.DocumentBuilder;
 
 /**
  * Socket event input mechanism.  Allows EP to be a server which receives
  * socket input.  We currently allocate one thread per socket.
  * <p>
  * Required attributes:<ol>
- * <li><b>port</b>: specify the port to listen on for client connections</li>
- * <li><b>socketType</b>: specify socket type, either "tcp" or "udp" (tcp is
+ * <li><b>Port</b>: specify the port to listen on for client connections</li>
+ * <li><b>SocketType</b>: specify socket type, either "tcp" or "udp" (tcp is
  * default)</li>
- * <li><b>dataType</b>: specify structure of events to listen for (currently
+ * <li><b>DataType</b>: specify structure of events to listen for (currently
  * only <b>JavaObject</b> is supported)</li>
  * </ol>
  *
@@ -40,10 +42,15 @@ import java.io.ByteArrayInputStream;
  * recommended to support large objects.
  * <p>Java objects are treated opaquely, with the following exceptions:
  * <ol>
- *  <li>Siena notifications: a SienaEvent is automatically created.</li>
+ *  <li>siena.Notification: a SienaEvent is automatically created.</li>
+ *  <li>org.w3c.dom.Document: a DOMEvent is automatically created.</li>
+ *  <li>org.w3c.dom.Element: a DOMEvent is automatically created.</li>
  * </ol>
  * <li>String input (via type <b>StringObject</b>).  Note that String input
  * is currently line-delimited.</li>
+ * <li>XML plaintext input (via type <b>XMLObject</b>).
+ * Note that for TCP, only one XML document per connection is supported!  Gets
+ * parsed and inserted as a DOMEvent.</li>
  * </ol>
  * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
@@ -54,6 +61,7 @@ import java.io.ByteArrayInputStream;
  * - Support simple XML Siena representations in addition to serialized Java
  * - Consider using NBIO instead for lots of clients
  * - Support non-serialized for non-Java-specific objects
+ * - Make XML parsing more bulletproof
  * -->
  *
  * @author Janak J Parekh
@@ -65,6 +73,8 @@ public class SocketInput extends EPInput {
   public static final short JAVA_OBJECT = 1;
   /** Specifies a String object-based data type. */
   public static final short STRING_OBJECT = 2;
+  /** Specifies a XML object-based data type */
+  public static final short XML_OBJECT = 3;
   
   // Socket types
   /** TCP socket */
@@ -97,7 +107,7 @@ public class SocketInput extends EPInput {
     super(ep,el);
     
     // Get the basic listening socket parameters
-    String port = el.getAttribute("port");
+    String port = el.getAttribute("Port");
     if(port == null || port.length() == 0) {
       throw new InstantiationException("Port not specified");
     }
@@ -108,7 +118,7 @@ public class SocketInput extends EPInput {
     }
     
     // TCP or UDP?
-    String socketType = el.getAttribute("socketType");
+    String socketType = el.getAttribute("SocketType");
     if(socketType == null || socketType.length() == 0) {
       debug.info("Socket type not specified, assuming TCP");
       this.socketType = TCP;
@@ -118,7 +128,7 @@ public class SocketInput extends EPInput {
     else throw new InstantiationException("Invalid socket type specified");
     
     // Determine data type
-    String dataType = el.getAttribute("dataType");
+    String dataType = el.getAttribute("DataType");
     if(dataType == null || dataType.length() == 0) {
       debug.warn("Type not specified, assuming \"StringObject\"");
       this.dataType = STRING_OBJECT;
@@ -127,6 +137,8 @@ public class SocketInput extends EPInput {
         this.dataType = JAVA_OBJECT;
       } else if(dataType.equalsIgnoreCase("StringObject")) {
         this.dataType = STRING_OBJECT;
+      } else if(dataType.equalsIgnoreCase("XMLObject")) {
+        this.dataType = XML_OBJECT;
       } else {
         throw new InstantiationException("Invalid data type specified");
       }
@@ -217,7 +229,7 @@ public class SocketInput extends EPInput {
     } else if(o instanceof Element) {
       ret = new DOMEvent(getName(), (Element)o);
     } else if(o instanceof Document) {
-      ret = new DOMEvent(getName(), ((Document)o).getDocumentElement());
+      ret = new DOMEvent(getName(), (Document)o);
     } else if(o instanceof String) {
       ret = new StringEvent(getName(), (String)o);
     } else {
@@ -273,6 +285,8 @@ public class SocketInput extends EPInput {
     private byte[] udpbuf = null;
     /** UDP packet valid data length */
     private int udpbuflen = -1;
+    /** XML parser, if we need it */
+    private DocumentBuilder db = null;
     
     /**
      * CTOR for TCP connection.
@@ -295,6 +309,7 @@ public class SocketInput extends EPInput {
             throw new InstantiationException("Could not establish " +
             "ObjectInputStream: " + e);
           }
+          break;
         case STRING_OBJECT:
           try {
             cin = new BufferedReader(new InputStreamReader(cs.getInputStream()));
@@ -302,6 +317,19 @@ public class SocketInput extends EPInput {
             throw new InstantiationException("Could not establish " +
             "BufferedReader: " + e);
           }
+          break;
+        case XML_OBJECT:
+          try {
+            cin = cs.getInputStream();
+          } catch(Exception e) {
+            throw new InstantiationException("Could not get inputStream: " +e);
+          }
+          // Now build the parser
+          db = JAXPUtil.newDocumentBuilder();
+          if(db == null) {
+            throw new InstantiationException("Could not set up XML parser");
+          }
+          break;
         default:
           throw new InstantiationException("Unhandled type in ClientThread");
       }
@@ -379,6 +407,28 @@ public class SocketInput extends EPInput {
               return;
             }
           }
+        } else if(dataType == XML_OBJECT) { //////// XML_OBJECT ////////
+          if(socketType == UDP) {
+            try {
+              cin = new ByteArrayInputStream(udpbuf, 0, udpbuflen);
+            } catch(Exception e) {
+              debug.error("Could not create ObjectInputStream for UDP buffer, "
+              + "closing down client thread", e);
+              if(!shutdown) shutdown();
+              return;
+            }
+          }
+          
+          // Now hand cin to the parser
+          try {
+            input = db.parse((InputStream)cin);
+          } catch(Exception e) {
+            debug.error("Could not parse incoming document", e);
+            if(!shutdown) shutdown();
+            return;
+          }
+          // If TCP, we're done with this socket connection
+          if(socketType == TCP) shutdown();
         } else {
           // We should NOT get here
           debug.error("Unhandled type in client thread run(), " +

@@ -52,10 +52,10 @@ public class ConsoleOutput extends EPOutput {
   public boolean handleEvent(EPEvent epe) {
     // Is it a DOM output?
     if(epe instanceof DOMEvent) {
-      if(((DOMEvent)epe).getDOMEvent() != null) {
+      if(((DOMEvent)epe).getDOMRoot() != null) {
         debug.info("Event (DOMEvent) received:");
         // Now walk it
-        printDOMElement(((DOMEvent)epe).getDOMEvent(),0);
+        printDOMElement(((DOMEvent)epe).getDOMRoot(),0);
       } else {
         debug.info("It's an empty DOMEvent");
       }

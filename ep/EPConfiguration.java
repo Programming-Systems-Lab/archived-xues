@@ -23,6 +23,7 @@ import psl.xues.ep.transform.EPTransform;
 import psl.xues.ep.transform.EPTransformInterface;
 import psl.xues.ep.store.EPStore;
 import psl.xues.ep.store.EPStoreInterface;
+import psl.xues.util.JAXPUtil;
 
 /**
  * Event packager configuration module.
@@ -48,6 +49,9 @@ public class EPConfiguration {
   /** Reference to the event packager */
   private EventPackager ep = null;
   
+  /** Our private XML parser */
+  private DocumentBuilder db = null;
+  
   /**
    * CTOR.
    *
@@ -56,12 +60,18 @@ public class EPConfiguration {
    */
   public EPConfiguration(String configFile, EventPackager ep) {
     this.ep = ep;
+
+    // Create the DocumentBuilder
+    db = JAXPUtil.newDocumentBuilder();
+    if(db == null) {
+      debug.fatal("Could not create documentBuilder");
+      System.exit(-1); // XXX - should we be quitting here?
+    }
     
     // Try to parse the configFile into a DOM tree
     Document config = null;
     try {
-      config = DocumentBuilderFactory.newInstance().newDocumentBuilder().
-      parse(configFile);
+      config = db.parse(configFile);
     } catch(Exception e) {
       debug.fatal("Failed to read the configuration file", e);
       System.exit(-1); // XXX - should we be quitting here?
