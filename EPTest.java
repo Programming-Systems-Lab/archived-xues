@@ -11,7 +11,10 @@ import siena.*;
  * @version 0.1
  *
  * $Log$
- * Revision 1.1  2001-06-27 18:09:42  jjp32
+ * Revision 1.2  2001-07-23 17:05:32  jjp32
+ * Minor change to exception handling in EPTest
+ *
+ * Revision 1.1  2001/06/27 18:09:42  jjp32
  *
  * Added EP test code from Rose's distro
  *
@@ -105,7 +108,7 @@ public class EPTest {
 	out.close();
 	testSocket.close();
     } catch (Exception e) {
-	System.err.println(e);
+      e.printStackTrace();
     }
     
 
