@@ -19,33 +19,51 @@ import org.hsql.*;
 import org.hsql.util.*;
 import psl.kx.*;
 import java.net.*;
+import java.sql.*;
 
 public class EPHandler implements Notifiable{
-    private Hashtable list_of_actions;//hashtable containing list of actions to be performed
-    //on a certain type of notification
+    
     private boolean DEBUG = true;//debug flag
     private int current;// the largest assigned index
     private int maxresults = 5; //themax num of results that can be returned from an EPLookup query
-    private Statement statement;//sql statement
     private Siena siena = null;
-    private String filterIndex = null;
-
+    private int filterIndex = 0;
+    private String uid = null;
+    private String pwd = null;
+    private Statement statement = null;
     /*constructor*/
-    public EPHandler(Hashtable actions, Statement st, Siena s, String filter ){
-	list_of_actions = actions;
-	statement = st;
+    
+    public EPHandler(Siena s, Statement state, int filter, String uid, String pwd ){
 	siena =s;
 	filterIndex = filter;
+	uid=uid;
+	pwd=pwd;
+	statement = state;
     }
-    /*get the actions associated with the particular Notification since we already know the 
-      filter used for the Notification!
-    */
+    /*
+     * get the actions associated with the particular Notification since we already know the 
+     * filter used for the Notification and execute the actions by calling method 
+     * executeAction(n)
+     */
     
     public void notify(Notification n){
-	StringTokenizer st = null;//string tokenizer to read hashtable string
-	//String property = n.getAttribute("Type").stringValue();
-	
-	String toDo = (String)list_of_actions.get(filterIndex);
+	try{
+	String action = null;
+	ResultSet rs = statement.executeQuery("SELECT * FROM Action_listing WHERE filter_id = filter_index");
+	while(!rs.isAfterLast()){
+	    action = rs.getString(2);
+	    executeAction(action, n);
+	}
+	}
+	catch(SQLException e){
+	    e.printStackTrace();
+	}
+        
+	/*
+	  StringTokenizer st = null;//string tokenizer to read hashtable string
+	  //String property = n.getAttribute("Type").stringValue();
+	  
+	  String toDo = (String)list_of_actions.get(filterIndex);
 	if(toDo!=null){
 	    if(DEBUG)System.out.println("toDo---stuff to do to property " + toDo);
 	    st = new StringTokenizer(toDo);
@@ -65,37 +83,89 @@ public class EPHandler implements Notifiable{
 		}
 	    }
 	}
+	*/    
     }
     
     /**Unused Siena construct.*/
+    
     public void notify(Notification[] s){;}
     
+    private void executeAction(String action, Notification n){
+	if(action.equals("addFilter")) addFilter(n);
+    }
+
+    /*XXX to be documented: any filter that to be added must have the attributes of 1) desc,
+     * 2)AttrName, 3)AttrOp, 4)AttrVal 5)actionVal
+     */ 
     private void addFilter(Notification n){
-	
-	//subscribe the filter to siena
-	if(DEBUG) System.out.println("addFilter method");
-	boolean keepFilter= false;
-	Boolean a;
-	String filterIndex = n.getAttribute("Name").stringValue();//picked up the filter name
-	String attrName = n.getAttribute("AttrName").stringValue();//picked up the attribute
+	String description = n.getAttribute("Type").stringValue();//picked up new filter desc.
+	String attrName = n.getAttribute("AttrName").stringValue();//picked up attribute
 	String opName = n.getAttribute("AttrOp").stringValue();
 	String attrValue = n.getAttribute("AttrVal").stringValue();
+	String actionValue = n.getAttribute("ActVal").stringValue();
+	int temp = 0;
+	try{
+	    if(attrName != null && opName != null && attrValue != null){
+		executeSQLQuery("INSERT INTO Filter_ID (id, description)" + "VALUES (NEXTVAL('filter_id_id_seq'),'" + description + "')");
+		ResultSet r = statement.executeQuery("SELECT MAX(id) FROM Filter_ID");
+		if (r.next())
+		    temp = r.getInt(1);
+		
+		executeSQLQuery("INSERT INTO Attribute_listing(filter_id, attribute_value, operator, argument)" + " VALUES('"+temp+"', '" + attrName+"', '" + opName+"','"+ attrValue +"')");
+		executeSQLQuery("INSERT INTO Action_listing(filter_id, action)" + 
+				" VALUES('"+temp+"','" + actionValue + "')");
+	    }
+	    /*XXX right now siena subscribes to the new filter immediately. one may consider implementation to come in effect in a new session*/ 
+	    try{
+		siena.subscribe(new Filter(), new EPHandler(siena, statement, temp, uid, pwd));
+	    }
+	    catch(SienaException e){
+		e.printStackTrace();
+	    }
+	}
+	catch(SQLException e){
+	    e.printStackTrace();
+	}
+    }
+
+    private int executeSQLQuery(String query) {
+	if(DEBUG)
+	    System.out.println("Executing " + query);
+    
+	try {
+	    return statement.executeUpdate(query);
+	} catch(SQLException e) {
+	    e.printStackTrace();
+	    return -1;
+	}
+    }
+    /*
+      private void addFilter(Notification n){
+      
+      //subscribe the filter to siena
+      if(DEBUG) System.out.println("addFilter method");
+      boolean keepFilter= false;
+      Boolean a;
+      String filterIndex = n.getAttribute("Name").stringValue();//picked up the filter name
+      String attrName = n.getAttribute("AttrName").stringValue();//picked up the attribute
+      String opName = n.getAttribute("AttrOp").stringValue();
+      String attrValue = n.getAttribute("AttrVal").stringValue();
 	
-	String filterValue = n.getAttribute("keepFilter").stringValue();
-	if(filterValue != null){
-	    a = new Boolean(n.getAttribute("keepFilter").stringValue());
-	    keepFilter = a.booleanValue();
+      String filterValue = n.getAttribute("keepFilter").stringValue();
+      if(filterValue != null){
+      a = new Boolean(n.getAttribute("keepFilter").stringValue());
+      keepFilter = a.booleanValue();
 	}
 	try{
-	    if(filterIndex != null && attrName != null && opName != null && attrValue != null){
-		Filter theFilter = new Filter();
-		theFilter.addConstraint(attrName, Op.op(opName), attrValue);
-		siena.subscribe(theFilter, new EPHandler(list_of_actions, statement, siena, filterIndex));
+	if(filterIndex != null && attrName != null && opName != null && attrValue != null){
+	Filter theFilter = new Filter();
+	theFilter.addConstraint(attrName, Op.op(opName), attrValue);
+	siena.subscribe(theFilter, new EPHandler(siena, filterIndex));
 	    }//if
 	    if(filterValue != null){
-		if(keepFilter){
-		    //add to EventPackager.cfg file for permanent addition of the filter
-		    if(DEBUG)System.out.println("filter added permanently");
+	    if(keepFilter){
+	    //add to EventPackager.cfg file for permanent addition of the filter
+	    if(DEBUG)System.out.println("filter added permanently");
 		    FileWriter writer = new FileWriter("EventPackager.cfg",true);
 		    PrintWriter out = new PrintWriter(writer);
 		    
@@ -105,19 +175,19 @@ public class EPHandler implements Notifiable{
 		    out.close();
 		    writer.close();
 		}//if
-	    }//if
-	}//try
-	
+		}//if
+		}//try
+		
 	catch(IOException er){
-	    System.out.println(er);
+	System.out.println(er);
 	}
 	catch(SienaException e){
-	    e.printStackTrace();
+	e.printStackTrace();
 	}
 	
-    }//addFilter
-    
-    private void extractData_addTuple(Notification n){
+	}//addFilter
+	
+	private void extractData_addTuple(Notification n){
 	int myCurrent = ++current; //increment tuple id
 	String data =n.getAttribute(n.getAttribute("Type").stringValue()).stringValue();
 	
@@ -127,12 +197,12 @@ public class EPHandler implements Notifiable{
     }
     
     private void extractAttributes_runQuery(Notification n){
-	long starttime = Long.parseLong(n.getAttribute("Start").stringValue());
-	long endtime = Long.parseLong(n.getAttribute("End").stringValue());
+    long starttime = Long.parseLong(n.getAttribute("Start").stringValue());
+    long endtime = Long.parseLong(n.getAttribute("End").stringValue());
 	String lookuptype = n.getAttribute("LookupType").stringValue();
 	int max = Integer.parseInt(n.getAttribute("MaxResult").stringValue());
 	if(max<0)
-	    max = 0;
+	max = 0;
 	else if (max > maxresults)
 	    max = maxresults;
 	queryTimes (starttime, endtime, lookuptype, max);
@@ -146,8 +216,9 @@ public class EPHandler implements Notifiable{
     private void printCapital(Notification n){
 	System.out.println("printing notificatio n in capitals: " + n);
     }
-
+    */
      /* creates a file in which to put the data in Notification */
+    /*
     public void createNewDataFile(int fname, String data) {
 	
         try {
@@ -161,17 +232,20 @@ public class EPHandler implements Notifiable{
 	
     }//end::createNewDataFile
 
-  
+    */
+
     /* adds a tuple from SmartEvent to the database */
-    public boolean addTuple(long time, String type, String source, String data) {
+    /*
+      public boolean addTuple(long time, String type, String source, String data) {
 	
 	String query = null;
 	source= source.toLowerCase();
 	type= type.toLowerCase();
 	data= data.toLowerCase();
-	
+    */
 	/*add tuple to database */
-	try {
+    /*
+      try {
 	    
 	    if (DEBUG) {
 		System.out.println("INSERTING: " + time + " " + source + " " + type);
@@ -240,6 +314,7 @@ public class EPHandler implements Notifiable{
 	    System.err.println(e);
 	}
     }//end::printtable	
+    */    
     
 }
 

@@ -34,14 +34,18 @@ import java.sql.Types;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.28  2001-12-27 23:29:54  aq41
+ * Revision 1.29  2002-01-11 03:30:17  aq41
+ * Eventpackager now accepts filters and adds them to the postgresql database.
+ * Minor debugging is underway.
+ *
+ * Revision 1.28  2001/12/27 23:29:54  aq41
  * Converting hsql Db to postgresql.
  *
  *
  * Updating
  *
  * java siena.StartServer -port 1982
- * java psl.xues.EventPackager -s senp://localhost:1982 -d
+ * java psl.xues.EventPackager -s senp://localhost:1982 -d 
  * java psl.xues.EPTest senp://localhost:1982
  */
 
@@ -60,7 +64,7 @@ public class EventPackager{
                                 //can be returned from an EPLookup query
     private static String userID; //userID for database access
     private static String password;//password for database access
-
+    
     private EPHandler handler = null;
     
     int listeningPort = -1;
@@ -69,7 +73,7 @@ public class EventPackager{
     ObjectOutputStream spoolFile;
     int srcIDCounter = 0;
     Siena siena = null;
-   
+    
     /* Debug flag */
     static boolean DEBUG = false;
     
@@ -105,7 +109,7 @@ public class EventPackager{
 	
 	connectDB(userID, password);
 	connectFilterActionDB(userID, password);
-
+	
 	/* Add a shutdown hook */
 	Runtime.getRuntime().addShutdownHook(new Thread() {
 		public void run() {      
@@ -130,7 +134,37 @@ public class EventPackager{
 	    ((HierarchicalDispatcher)siena).setMaster(sienaHost);
 	} catch(Exception e) { e.printStackTrace(); }
 	
-	
+	/*
+	 *setup listening for events by subscribing to filters
+	 */
+	try{
+	    Filter the_filter = null;
+	    int filter_id = 0;
+	    String attribute_constraint = null;
+	    String operator = null;
+	    String attribute_value = null;
+	    
+	    ResultSet answer = statement.executeQuery("SELECT * FROM Attribute_listing WHERE filter_id <= MAX(filter_id)");
+	    System.out.println("answer: " + answer);
+	    
+	    while(!answer.isAfterLast()){
+		filter_id = answer.getInt(1);
+		attribute_constraint = answer.getString(2);
+		operator = answer.getString(3);
+		attribute_value = answer.getString(4);
+		the_filter = new Filter();
+		the_filter.addConstraint(attribute_constraint, Op.op(operator), attribute_value);
+		try{
+		    siena.subscribe(the_filter, new EPHandler(siena, statement, filter_id, userID, password));
+		}
+		catch(SienaException e){
+		    e.printStackTrace();
+		}
+	    }//while
+	}//try
+	catch (SQLException e){
+	    System.err.println(e);
+	}
 	finally{
 	    try{
 		if(in != null)
@@ -140,8 +174,8 @@ public class EventPackager{
 		System.out.println("Error "+ e);
 	    }
 	}//finally
-	
-	
+    
+
     }//constructor
     
     /**
@@ -195,8 +229,6 @@ public class EventPackager{
 		else
 		    usage();
 	    }
-	    
-
 	}	   
 	
 	EventPackager ep = new EventPackager(7777, "EventPackager.spl");
@@ -342,7 +374,7 @@ public class EventPackager{
 	    
 	    if(tableName == null || !tableName.equalsIgnoreCase("Filter_ID")){
 		//create the tables for filter and related action management
-		query = "CREATE TABLE Filter_ID(id SERIAL, description varchar(200), PRIMARY KEY(id))";
+		query = "CREATE TABLE Filter_ID(id SERIAL NOT NULL, description varchar(200), PRIMARY KEY(id))";
 		statement.executeUpdate(query);
 		
 		if(DEBUG) System.out.println("table created");
@@ -350,7 +382,7 @@ public class EventPackager{
 	    
 	    if(tableName == null || !tableName.equalsIgnoreCase("Attribute_listing")){
 		//create table listing attributes for various filters
-		query = "CREATE TABLE Attribute_listing(filter_id INT8, attribute_value VARCHAR(200), operator VARCHAR(20), argument VARCHAR(300), CONSTRAINT foreign_id FOREIGN KEY(filter_id) REFERENCES filter_id (id) ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE)";
+		query = "CREATE TABLE Attribute_listing(filter_id INT8 NOT NULL, attribute_value VARCHAR(200) NOT NULL, operator VARCHAR(20), argument VARCHAR(300), PRIMARY KEY(filter_id, attribute_value), CONSTRAINT foreign_id FOREIGN KEY(filter_id) REFERENCES filter_id (id) ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE)";
 		
 		statement.executeUpdate(query);
 		if(DEBUG)System.out.println("table created");
@@ -358,12 +390,26 @@ public class EventPackager{
             if(DEBUG)System.out.println("table name " + tableName);
 	    if(tableName == null || !tableName.equalsIgnoreCase("Action_listing")){
 		//create table listing actios associated with various filters
-		query = "CREATE TABLE Action_listing(filter_id BIGINT, action VARCHAR(2000), CONSTRAINT foreign_id FOREIGN KEY(filter_id) REFERENCES filter_id (id) ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE)";
+		query = "CREATE TABLE Action_listing(filter_id BIGINT NOT NULL, action VARCHAR(2000),CONSTRAINT foreign_id FOREIGN KEY(filter_id) REFERENCES filter_id (id) ON DELETE NO ACTION ON UPDATE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE)";
 		
 		statement.executeUpdate(query);
 		if(DEBUG)System.out.println("table created");
 	    }
-      
+	    String desc = "add filter";
+	    //Adding initial filters which can then add more filters etc.
+	    //int index_of_Filter_ID = NEXTVALUE('filter_id_id_seq');
+	    executeSQLQuery("INSERT INTO Filter_ID (id, description)" + "VALUES (NEXTVAL('filter_id_id_seq'),'" + desc + "')");
+	    //executeSQLQuery("INSERT INTO Filter_ID (id, description)" + "VALUES ('index_of_Filter_ID','" + desc + "')");
+	    if(DEBUG) System.out.println("inserting filter description");
+
+	    //adding filter attributes
+	    executeSQLQuery("INSERT INTO Attribute_listing (filter_id, attribute_value, operator, argument) VALUES(1,'type','=','addFilter')");
+	    if(DEBUG) System.out.println("inserting attributes");
+	    
+	    //add reaction to the filtered event
+	    executeSQLQuery("INSERT INTO Action_listing(filter_id, action) VALUES(1,'addFilter')");
+	    if(DEBUG) System.out.println("inserting actions");
+	    
 	}catch(SQLException e){
 	    System.err.println("SQL EXCEPTION: "+ e.getMessage());
 	}
@@ -448,7 +494,7 @@ public class EventPackager{
 	int tmp = -1;
 	String query = null;
 	try {
-	    query = "SELECT MAX(id) FROM Events";
+	    query = "SELECT MAX(id) FROM EVENTS";
 	    ResultSet r = statement.executeQuery(query);
        	    if ( r.next() )
 		tmp = r.getInt(1);
@@ -562,4 +608,7 @@ public class EventPackager{
 	
     }//end::createNewDataFile
 }
+
+
+
 
