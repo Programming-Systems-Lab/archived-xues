@@ -25,7 +25,10 @@ import siena.*;
  * @version 1.0
  *
  * $Log$
- * Revision 1.22  2001-06-29 21:38:43  eb659
+ * Revision 1.23  2001-06-30 21:13:17  eb659
+ * *** empty log message ***
+ *
+ * Revision 1.22  2001/06/29 21:38:43  eb659
  * thoroughly tested counter-feature:
  * - success and failure
  * - event-based and time-based modes
@@ -430,8 +433,6 @@ public class EDState implements EDNotifiable {
      * now lives the climax of its brief existence.
      */
     private void succeed() {
-	// 1. machine is in transition
-	sm.setInTransition(true);
 	// 2. the machine has started
 	sm.setStarted(); 
 	// 3. this state may be breaking the loop of its parent
@@ -475,9 +476,6 @@ public class EDState implements EDNotifiable {
 	    kill();
 	}
 
-	// 7. end of transition
-	sm.setInTransition(false);
-
 	// reap will instantiate new machine, if necessary
 	//if (sm.getSpecification().getInstantiationPolicy() == EDConst.ONE_AT_A_TIME) sm.reap();
 	// out for now, but uncomment when found why reaper sometimes hangs...
@@ -500,7 +498,7 @@ public class EDState implements EDNotifiable {
     }
 
     /** Handles siena callbacks */
-    public boolean notify(Notification n) {
+    synchronized public boolean notify(Notification n) {
 	long millis = n.getAttribute("timestamp").longValue();
 	boolean succeeded = false;
 
@@ -523,8 +521,9 @@ public class EDState implements EDNotifiable {
 		    
 		    // yes!
 		    ts = millis; // timestamp
-		    succeed();
-		    succeeded = true;
+		    /* lock the state machine, so that the reaper doesn't mess with it 
+		     * while there is a transition between states */
+		    synchronized(sm) { succeed(); }
 
 		    if (absorb) {
 			errorManager.println("EDState:" + myID + ": ABSORBING event", 
@@ -546,7 +545,9 @@ public class EDState implements EDNotifiable {
      * and we can kill it.
      * @return whether this state has timed out and is now dead
      */
-    public boolean reap() {
+    synchronized boolean reap() {
+	if (!alive) return false;
+
 	errorManager.println("checking live state: " + myID, EDErrorManager.REAPER);
 	long currentTime =  sm.getSpecification().getManager().getEventDistiller().getTime();
 
@@ -561,7 +562,7 @@ public class EDState implements EDNotifiable {
 	 * else we would need to check all the parents */
 	if(validateTimebound 
 	   ((EDState)parents.lastElement(), currentTime - EDConst.REAP_FUDGE)) 
-	    return false;
+   	    return false;
 
 	// if we're still here, timebound has failed
 	errorManager.println("currentTime is " + currentTime + "\nmost recent parent time is " +
@@ -875,7 +876,7 @@ public class EDState implements EDNotifiable {
     long getTimebound(){ return tb; }
 
     /** @return whether this EDState is currently subscribed */
-    boolean isAlive(){ return alive; }
+    synchronized boolean isAlive(){ return alive; }
 	
     /** @return the (names of the) children of this EDState */
     String[] getChildren() { return children; }

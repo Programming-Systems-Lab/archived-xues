@@ -19,7 +19,10 @@ import java.util.*;
  * @version 0.5
  *
  * $Log$
- * Revision 1.19  2001-06-29 00:03:18  eb659
+ * Revision 1.20  2001-06-30 21:13:17  eb659
+ * *** empty log message ***
+ *
+ * Revision 1.19  2001/06/29 00:03:18  eb659
  * timestamp validation for loop doesn't work correctly, darn
  * reaper thread sometimes dies when a new machine is instantiated
  * (this only happens when dealing with an instantiation
@@ -229,7 +232,7 @@ public class EDStateMachine implements Comparable {
      * subscribing the children. Do not allow reaping 
      * when the machine is in transition.
      */
-    private boolean inTransition = false;
+    //private boolean inTransition = false;
 
     /** an ID number for debugging */
     String myID = null;
@@ -293,20 +296,22 @@ public class EDStateMachine implements Comparable {
      * calling this method.
      * @return whether this machine is 'dead' and can be removed 
      */
-    public boolean reap() {
-	/* if machine has not started yet, keep it
-	   if it is in a state of transition, don't check it */
-	if(!hasStarted || inTransition) return false;
+    synchronized boolean reap() {
+	/* if machine has not started yet, no need to check it 
+	 * may reconsider this, once we will have rules that are made on the fly,
+	 * with limited validity */
+	if(!hasStarted) return false;
+
+	errorManager.println("EDStateMachine: " + myID + " attempting to reap itself", EDErrorManager.REAPER);
 
 	/* go through individual states,
 	 * which will kill themselves if they timed out */
 	Vector failedStateNames = new Vector();
-	Enumeration keys = states.keys();
-	while(keys.hasMoreElements()){
-	    String key = keys.nextElement().toString();
-	    EDState e = (EDState)states.get(key);
+	Enumeration elements = states.elements();
+	while(elements.hasMoreElements()) {
+	    EDState e = (EDState)elements.nextElement();
 	    // remember which states timed out
-	    if (e.isAlive() && e.reap()) failedStateNames.add(e.getName());
+	    if (e.reap()) failedStateNames.add(e.getName());
 	}
 
 	if(containsLiveStates()) return false;
@@ -416,7 +421,7 @@ public class EDStateMachine implements Comparable {
      * when it is bearing children.
      * @param inTransition the new value for inTransition
      */
-    void setInTransition(boolean inTransition) { this.inTransition = inTransition; }
+    //void setInTransition(boolean inTransition) { this.inTransition = inTransition; }
 
     /** @return the specification for this machine */
     public EDStateMachineSpecification getSpecification(){ return specification;  }
