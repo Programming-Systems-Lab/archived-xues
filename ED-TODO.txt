@@ -21,3 +21,26 @@ e.g. an action is generated if X instances of the notification are
 encountered.
 
 Take and modify matched notifications into an action.
+
+Save (dynamically) modified rulebase on exit.  Perhaps save WildHash
+into a separate file as well that can be read back - thi sallows for
+separat executions of EventDistiller to maintain the same WildHash.
+Make sure these are hooked on CTRL-C so that they do get closed off
+correctly.
+
+Duplicate state names supported assuming cross-rules?
+
+What happens if actions/failactions are specified for nonterminal
+states?  Do they get executed?
+
+What happens if state parameters are missing, e.g., fail_actions?
+
+What happens if notification names contain whitespace, etc.?
+
+What happens it the notification's *key doesn't exist in the wildHash?
+What happens if there is a * anywhere else?  (Just checking :))
+
+"**" should be reduced to "*" by the WildHash code in both states and
+notifications, and then the rest of the string should be left alone.
+
+Direct (non-Siena) interface
