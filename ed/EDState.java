@@ -83,10 +83,11 @@ public class EDState implements EDNotifiable {
   private Vector parents;
   
   /**
-   * List of subscribers used to subscribe. We need more than one subscriber for states
-   * that have more than one parent: if several parents bear us, we need to subscribe with
-   * different wildcard values - since different parents may have different values for wildcards.
-   * "parents" and "subscribers" are therefore parallel vectors.
+   * List of subscribers used to subscribe. We need more than one subscriber
+   * for states that have more than one parent: if several parents bear us,
+   * we need to subscribe with different wildcard values - since different
+   * parents may have different values for wildcards. "parents" and
+   * "subscribers" are therefore parallel vectors.
    */
   private Vector subscribers;
   
@@ -247,10 +248,10 @@ public class EDState implements EDNotifiable {
     else l = sm.getSpecification().getManager().getEventDistiller().getTime()
     + tb;
     
-    //errorManager.print("EDState: " + myID + " checking parent...", 
+    //errorManager.print("EDState: " + myID + " checking parent...",
     //EDErrorManager.STATE);
     
-    // Have we already been born by this parent? -- this can be the case in 
+    // Have we already been born by this parent? -- this can be the case in
     // counter or loop states
     int i = parents.indexOf(parent);
     
@@ -260,7 +261,7 @@ public class EDState implements EDNotifiable {
       if(tb != -1) {
         // this is how it should be
         //((EDSubscriber)subscribers.get(i)).resetTimebound(l);
-        // hack -- extend timelimit here
+        // XXX - hack -- extend timelimit here
         tl = l;
       }
       // put most recent parent at the end of the list -- see reap()
@@ -274,10 +275,10 @@ public class EDState implements EDNotifiable {
       
       debug.debug("Subscribing...");
       
-      EDSubscriber edsubscriber = new EDSubscriber(createFilter(wc, l), this, 
+      EDSubscriber edsubscriber = new EDSubscriber(createFilter(wc, l), this,
       sm);
       bus.subscribe(edsubscriber);
-
+      
       debug.debug("Subscription complete");
       
       // put most recent parent at the end of the list
@@ -338,7 +339,7 @@ public class EDState implements EDNotifiable {
       // state machine progress
       succeed();
       
-      if(absorb) 
+      if(absorb)
         debug.debug("Absorbing event");
       return absorb;
     }// synch
@@ -356,7 +357,7 @@ public class EDState implements EDNotifiable {
     // this state may be breaking the loop of its parent
     for (int i = 0; i < parents.size(); i++) {
       EDState parent = (EDState)parents.get(i);
-      if (parent != null && parent != this && parent.getCount() == -1) 
+      if (parent != null && parent != this && parent.getCount() == -1)
         parent.kill();
     }
     
@@ -450,7 +451,7 @@ public class EDState implements EDNotifiable {
     }
     
     // if we're still here, timebound has failed
-    debug.debug("currentTime is " + currentTime + 
+    debug.debug("currentTime is " + currentTime +
     "\nmost recent parent time is " +
     getTimestampForState((EDState)parents.lastElement()));
     debug.debug("Timed out");
@@ -529,7 +530,8 @@ public class EDState implements EDNotifiable {
    * Build a Siena filter to subscribe this state.
    * If expected value begins with an asterisk "*" it will be considered a
    * wildcard and will bind to anything.
-   * @param wc the table containing the wildcards values to insert in the subscription
+   * @param wc the table containing the wildcards values to insert in the 
+   * subscription
    * @param timeLimit the time within which the notification must be matched
    * @return the siena.Filter object to use to subscribe this state
    */
@@ -537,14 +539,16 @@ public class EDState implements EDNotifiable {
     Filter f = new Filter();
     
     // go through the constraints
-    for(Enumeration enumeration = constraints.keys(); enumeration.hasMoreElements();){
+    for(Enumeration enumeration = constraints.keys();
+    enumeration.hasMoreElements();) {
       String attName = (String)enumeration.nextElement();
       AttributeConstraint ac = (AttributeConstraint)constraints.get(attName);
       AttributeValue attributevalue = ac.value;
       
       // "**.." is escape char for "*..", so subscribe removing the escape char
       if(attributevalue.stringValue().startsWith("**"))
-        f.addConstraint(attName, new AttributeConstraint(ac.op, attributevalue.stringValue().substring(1)));
+        f.addConstraint(attName, new AttributeConstraint(ac.op,
+        attributevalue.stringValue().substring(1)));
       // wildcard: do we already have a value for this?
       else if(attributevalue.stringValue().startsWith("*")){
         if(wc.get(attName) == null) // no value registered

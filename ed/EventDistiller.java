@@ -17,6 +17,7 @@ import org.apache.log4j.PropertyConfigurator;
  *
  * TODO: Fix timestamp warning if the timestamp attribute is bad
  * TODO: Support more than 1 sec reordering time
+ * TODO: Make getTime static
  *
  * @author Janak J Parekh, parts by Enrico Buonnano
  * @version $Revision$
@@ -403,6 +404,7 @@ public class EventDistiller implements Runnable, Notifiable {
         if (owner != null) owner.notify(n);
         // else send it to the public siena
         else publicSiena.publish(n);
+        debug.debug("Notification " + n + " sent externally!");
       }
     }
     catch(SienaException e) { e.printStackTrace(); }
@@ -419,8 +421,17 @@ public class EventDistiller implements Runnable, Notifiable {
    */
   public void setOutputFile(File outputFile) { this.outputFile = outputFile; }
   
-  /** @return the time to use a s a refernece. */
-  long getTime() {
+  /** 
+   * Get the "current system" time.  This isn't as simple as it seems, since
+   * if we are event-driven we consider our time to be the time of the last-
+   * received event.
+   *
+   * For the other case, we return current time minus the timeSkew.  The skew
+   * "delays" failures, etc.
+   *
+   * @return Time in standard UNIX time format 
+   */
+  /*static*/ long getTime() {
     if (eventDriven) return lastEventTime;
     return System.currentTimeMillis() - timeSkew;
   }

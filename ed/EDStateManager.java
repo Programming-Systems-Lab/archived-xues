@@ -38,7 +38,11 @@ Comparable {
   /** Debugging context */
   static Category debug =
   Category.getInstance(EDStateManager.class.getName());
-    
+
+  /** Separate category for reaper */
+  static Category reapDebug =
+  Category.getInstance(EDStateManager.class.getName() + ".reaper");
+  
   /** The ed that owns us. */
   private EventDistiller ed = null;
   
@@ -96,13 +100,13 @@ Comparable {
   
   /** The reaper thread. Disposes state machines that have timed out. */
   public void run() {
-    debug.info("Reaper started");
+    reapDebug.info("Reaper started");
     while(!ed.inShutdown) {
       try { Thread.currentThread().sleep(EDConst.REAP_INTERVAL);  }
       catch(InterruptedException ex) { ; }
       reap();                          // Why was this commented out?
     }
-    debug.info("In shutdown: no longer reaping");
+    reapDebug.info("In shutdown: no longer reaping");
   }
   
   void reap() {
@@ -112,13 +116,14 @@ Comparable {
       for (int i = 0; i < specifications.size(); i++) {
         Vector stateMachines =
         ((EDStateMachineSpecification)specifications.get(i)).stateMachines;
-        
+
+        reapDebug.debug("About to start another reap tick");
         synchronized(stateMachines) {
           for (int j = 0; j < stateMachines.size(); j++) {
             EDStateMachine reapand = (EDStateMachine)stateMachines.get(j);
-            debug.debug("Attempting to reap " + reapand.myID);
+            reapDebug.debug("Attempting to reap " + reapand.myID);
             if(reapand.reap()) {
-              debug.debug("Reap of " + reapand.myID + " successful!");
+              reapDebug.debug("Reap of " + reapand.myID + " successful!");
               stateMachines.remove(j);
               j--;
             }
