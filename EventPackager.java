@@ -34,7 +34,11 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.23  2001-07-23 02:45:44  aq41
+ * Revision 1.24  2001-07-31 19:13:36  aq41
+ * Added capability to perform actions on notifications from EPHandler.cfg file
+ * instead of hard coding the actions in EventPackager.java
+ *
+ * Revision 1.23  2001/07/23 02:45:44  aq41
  * Configuration file containing filter properties added instead of being
  * hardcoded within EventPackager.java
  *
@@ -128,7 +132,7 @@ public class EventPackager implements Notifiable {
     private String filterName; // filter component name
     private int maxresults = 5; // the max num of results that
                                 //can be returned from an EPLookup query
-    
+    private EPHandler handler = null;
     private static String[] tableCreationSQL = {		
 	"create table EVENTS (id integer,"+
 	"time bigint,"+
@@ -210,14 +214,17 @@ public class EventPackager implements Notifiable {
 	
 	try{
 	    FileReader reader = new FileReader("EventPackager.cfg");
+	    if(DEBUG)System.out.println("file reader");
 	    in = new BufferedReader(reader);
 	    String inputLine = in.readLine();
 	    int numberOfFilters =0;
 	    Filter filterName = null;	    
-	    StringTokenizer st = new StringTokenizer (inputLine);
+	    StringTokenizer st = null;
 	    
 	    while(inputLine != null && inputLine.length() > 0){
 		numberOfFilters++;
+		st = new StringTokenizer (inputLine);
+		if(DEBUG)System.out.println("inputLine: "+ inputLine);
 		String word = null;
 		String first = null;
 		String second = null;
@@ -226,14 +233,19 @@ public class EventPackager implements Notifiable {
 		while(st.hasMoreTokens()){
 		    word = st.nextToken();
 		    wordCount++;
+		    if(DEBUG)System.out.println("tokens read: " +word );
 		    //String filterName= "filter"+numberOfFilters;
-		    if (word.endsWith(",") && wordCount  == 1){
+		    if (!word.endsWith(",") && wordCount  == 1){
 			filterName  = new Filter();
 			wordCount--;
+			if(DEBUG)System.out.println("filter initialized");
 		    }
 		    else if(word.endsWith(";") && wordCount % 3 == 0){
 			third = word;
+			third = third.substring(0, third.length() -1);
+			if(DEBUG)System.out.println("first: " + first + "third: " + third);
 			filterName.addConstraint(first, third);
+			System.out.println("filter constrain: " + filterName);
 			try{
 			    siena.subscribe(filterName, this);
 			}
@@ -241,21 +253,23 @@ public class EventPackager implements Notifiable {
 			    e.printStackTrace();
 			}
 		    }
-		    else{
-			if (word.endsWith(",") && wordCount % 3 == 1){
+		    
+		    else if (word.endsWith(",") && wordCount % 3 == 1){
 			    first = word;
-			}
-			else if(word.endsWith(",") && wordCount % 3 == 2){
-			    second = word;
-			}
-			//else if (word.endsWith(",") && wordCount % 3 == 0){
-			//third = word;
-			//}
-		    }//else
+			    first = first.substring(0, first.length()-1);
+		    }
+		    else if(word.endsWith(",") && wordCount % 3 == 2){
+			second = word;
+			second = second.substring(0, second.length()-1);
+		    }
+				
 		    
 		}//while more tokens
-		in.readLine();
+		if(DEBUG)System.out.println("next line read");
+		inputLine = in.readLine();
+		if(DEBUG)System.out.println("line read in: " + inputLine);
 	    }//while 
+	    System.out.println("filtername: " + filterName);
 	}//try
 	catch (IOException e){
 	    System.out.println("Error: " + e);
@@ -270,25 +284,30 @@ public class EventPackager implements Notifiable {
 	    }
 	}//finally
 	
-	/*	
-		Filter f = new Filter();
-		f.addConstraint("Type","SmartEvent");
-		try {
-		siena.subscribe(f, this);
-		} catch(SienaException e) { e.printStackTrace(); }
-		
-		Filter g = new Filter();
-		g.addConstraint("Type","DirectEvent");
-		try {
-		siena.subscribe(g, this);
-		} catch(SienaException e) { e.printStackTrace(); }
-		Filter h = new Filter();
-		h.addConstraint("Type","EPLookup");
-		try {
-		siena.subscribe(h, this);
-		} catch(SienaException e) { e.printStackTrace(); }    
-	*/
-    }
+	// making a hashtable containing action Strings to use on a certain
+	// type of notification. EPHandler.cfg contains the list of actions that
+	// can be performed.
+	
+	Hashtable actions = new Hashtable();
+	try{
+	    FileReader reader = new FileReader("EPHandler.cfg");
+	    BufferedReader in2 = new BufferedReader(reader);
+	    String inputLine = in2.readLine();
+	    StringTokenizer st = null;
+	    while(inputLine != null && inputLine.length() > 0){
+		inputLine.trim();
+		st = new StringTokenizer(inputLine);
+		String notificationType = st.nextToken();
+		actions.put(notificationType, inputLine.substring(notificationType.length()+1));
+		inputLine = in2.readLine();
+	    }
+	}
+	catch(IOException e){
+	    System.out.println("Error: " + e);
+	}
+	System.out.println("hashtable: " + actions);
+        handler = new EPHandler(actions);
+    }//constructor
     
     /**
      * Run routine.
@@ -351,47 +370,48 @@ public class EventPackager implements Notifiable {
      */
     public void notify(Notification n) {
 	if(DEBUG) System.err.println("EventPackager: received notification " + n);
+	handler.performing_action(n);
 	
-	Notification q = null;
+	/*notify(n);
+	  Notification q = null;
+	  
+	  /* if we get a SMARTEVENT - extract data and add a tuple*/
+	/*if(n.getAttribute("Type").stringValue().equals("SmartEvent")) {
+	  int myCurrent = ++current; //increment tuple id
+	  String data = n.getAttribute("SmartEvent").stringValue();
+	  
+	  createNewDataFile(myCurrent, data); //put data in file with name of myCurrent
+	  addTuple(System.currentTimeMillis(), "SmartEvent", "Siena", myCurrent, data);      
+	  q = KXNotification.EventPackagerKXNotification(11111,22222,(String)null, data);
+	  
+	  /* if we get an EPLOOKUP - extract needed attributes, run query */ 
+	/* } else if (n.getAttribute("Type").stringValue().equals("EPLookup")) {
+	    
+	   long starttime = Long.parseLong(n.getAttribute("Start").stringValue());
+	   long endtime = Long.parseLong(n.getAttribute("End").stringValue());
+	   String lookuptype = n.getAttribute("LookupType").stringValue();
+	   int max = Integer.parseInt(n.getAttribute("MaxResults").stringValue());
+	   
+	   if (max < 0 )
+	   max = 0;
+	   else if (max > maxresults)
+	   max = maxresults;
+	   
+	   queryTimes(starttime, endtime, lookuptype, max); 
+	   
+	   } else {
+	   // Direct Siena thing, just send it out
+	   q = KXNotification.EventPackagerKXNotification(11111,22222,n);
+	   }
 	
-	/* if we get a SMARTEVENT - extract data and add a tuple*/
-	if(n.getAttribute("Type").stringValue().equals("SmartEvent")) {
-	    int myCurrent = ++current; //increment tuple id
-	    String data = n.getAttribute("SmartEvent").stringValue();
-	    
-	    createNewDataFile(myCurrent, data); //put data in file with name of myCurrent
-	    addTuple(System.currentTimeMillis(), "SmartEvent", "Siena", myCurrent,
-		     data);      
-	    q = KXNotification.EventPackagerKXNotification(11111,22222,(String)null,
-							   data);
-	    
-	    /* if we get an EPLOOKUP - extract needed attributes, run query */ 
-	} else if (n.getAttribute("Type").stringValue().equals("EPLookup")) {
-	    
-	    long starttime = Long.parseLong(n.getAttribute("Start").stringValue());
-	    long endtime = Long.parseLong(n.getAttribute("End").stringValue());
-	    String lookuptype = n.getAttribute("LookupType").stringValue();
-	    int max = Integer.parseInt(n.getAttribute("MaxResults").stringValue());
-	    
-	    if (max < 0 )
-		max = 0;
-	    else if (max > maxresults)
-		max = maxresults;
-	    
-	    queryTimes(starttime, endtime, lookuptype, max); 
-	    
-	} else {
-	    // Direct Siena thing, just send it out
-	    q = KXNotification.EventPackagerKXNotification(11111,22222,n);
-	}
-	
-	try {
-	    if(DEBUG) System.err.println("EventPackager: sending notification " + q);
-	    
-	    if ( !n.getAttribute("Type").stringValue().equals("EPLookup") )
-		siena.publish(q);
-	    
-	} catch(SienaException e) { e.printStackTrace(); }
+	   try {
+	   if(DEBUG) System.err.println("EventPackager: sending notification " + q);
+	   
+	   if ( !n.getAttribute("Type").stringValue().equals("EPLookup") )
+	   siena.publish(q);
+	   
+	   } catch(SienaException e) { e.printStackTrace(); }
+	*/
     }
     
     /** Unused Siena construct. */
@@ -591,7 +611,7 @@ public class EventPackager implements Notifiable {
 	    Vector v = Tuple.parseResultSet(statement.executeQuery("select * from EVENTS") );
 	    
 	    System.out.println("\nThe current data table is:");
-	    System.out.println(Tuple.tuplesToString(v));
+	    //System.out.println(Tuple.tuplesToString(v));
 	} catch (SQLException e) {
 	    System.err.println(e);
 	}
