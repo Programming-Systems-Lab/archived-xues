@@ -12,6 +12,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.lf5.DefaultLF5Configurator;
 
 import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.input.EPInput;
@@ -22,6 +23,7 @@ import psl.xues.ep.transform.EPTransform;
 import psl.xues.ep.transform.EPTransformInterface;
 import psl.xues.ep.store.EPStore;
 import psl.xues.ep.store.EPStoreInterface;
+import psl.xues.ep.gui.EPgui;
 
 /**
  * Event Packager for XUES.
@@ -85,7 +87,9 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    *
    * @param configFile The configuration file for EP's initial config.
    */
-  public EventPackager(String configFile) { this(configFile, false, null); }
+  public EventPackager(String configFile) { 
+    this(configFile, false, null, false); 
+  }
   
   /**
    * Full CTOR.
@@ -95,7 +99,8 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    * @param debugFile Specify log4j-compliant debug specification file, or
    * null.
    */
-  public EventPackager(String configFile, boolean debugging, String debugFile) {
+  public EventPackager(String configFile, boolean debugging, String debugFile,
+  boolean gui) {
     // Initialize the debugging context
     initDebug(debugging, debugFile);
     
@@ -114,6 +119,11 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     
     // Start ourselves up.  XXX - do we want to do this permanently?
     new Thread(this).start();
+    
+    // Start GUI
+    if(gui) {
+      new EPgui(this);
+    }
   }
   
   /**
@@ -189,7 +199,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
     // Stop ourselves from doing anything "new" first
     shutdown = true;
     
-    // Now, wait up to 20 seconds (1 second at a time), and if we're not in 
+    // Now, wait up to 20 seconds (1 second at a time), and if we're not in
     // shutdown by then, forcibly put ourselves in shutdown.  Kind of hacky -
     // a "poll-then-sleep" cycle.
     for(int i=0; i < 20; i++) {
@@ -201,7 +211,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
         break;
       }
     }
-
+    
     // We've waited... are we shutting down???
     if(dequeueing == true && dequeueThread != null) {
       debug.warn("Shutdown did not start yet, attempting forcible shutdown");
@@ -264,7 +274,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
    */
   public static void main(String args[]) {
     String configFile = defaultConfigFile, debugFile = null;
-    boolean debugging = false;
+    boolean debugging = false, gui = false;
     
     if(args.length > 0) {
       for(int i=0; i < args.length; i++) {
@@ -275,12 +285,14 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
         else if(args[i].equals("-df")) {
           debugging = true;
           debugFile = args[++i];
+        } else if(args[i].equals("-gui")) {
+          gui = true;
         } else
           usage();
       }
     }
     
-    new EventPackager(configFile, debugging, debugFile);
+    new EventPackager(configFile, debugging, debugFile, gui);
   }
   
   /** Prints usage. */
@@ -324,7 +336,7 @@ EPOutputInterface, EPTransformInterface, EPStoreInterface {
       return false;
     }
     
-    // Verify timestamp and source
+    // Verify timestamp and source?
     if(epe.getTimestamp() == -1) {
       debug.warn("Received event without timestamp, putting current time");
       epe.setTimestamp(System.currentTimeMillis());

@@ -91,7 +91,9 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
   public GaugeControl createGauge(GaugeID gauge, StringPairVector setupParams,
   StringPairVector mappings) {
     if (managesType(gauge.gaugeType)) { // Our gauge to manage
-      debug.debug("createGauge called for gauge " + gauge);
+      debug.debug("CreateGauge called for gaugeID \"" + gauge.toString() + "\"");
+      // Evil hack, the GaugeID changes later which messes us up
+      String hashGaugeID = gauge.toString();
       
       // "Dummy" handle.  What's the point?
       SienaGaugeMgrGaugeHandle gaugeHandle=new SienaGaugeMgrGaugeHandle(gauge);
@@ -100,7 +102,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
       debug.debug("About to start creating gauge");
       SienaEDGauge sed = new SienaEDGauge(gauge, getGaugeMgrID(), setupParams,
       mappings, EDOutputBus);
-      gauges.put(gauge, sed);
+      gauges.put(hashGaugeID, sed);
       debug.debug("Gauge creation complete");
       
       // Now maintain the gaugeTypes we are currently managing
@@ -132,13 +134,16 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGaugeMgr {
    * @return A boolean indicating success.
    */
   public boolean deleteGauge(GaugeID gaugeID) {
-    debug.debug("deleteGauge called");
+    debug.debug("DeleteGauge called for gaugeID \"" + gaugeID.toString() + "\"");
     SienaEDGauge seg = null;
-    seg = (SienaEDGauge)gauges.get(gaugeID);
-    if(seg == null) return false; // Can't shut down if we don't have a handle
+    seg = (SienaEDGauge)gauges.get(gaugeID.toString());
+    if(seg == null) {
+      debug.warn("Not deleting gauge, no such handle");
+      return false; // Can't shut down if we don't have a handle
+    }
     
     seg.shutdown();       // Notify the gauge it's about to be shut down
-    gauges.remove(gaugeID); // Remove it from the hash
+    gauges.remove(gaugeID.toString()); // Remove it from the hash
     
     // Remove it from the managing set
     HashSet gt = (HashSet)gaugeTypes.get(gaugeID.gaugeType);

@@ -8,8 +8,6 @@
     <include name="tools/hsqldb-1.61/lib/hsqldb.jar" />
     <include name="tools/log4j-1.2.4/dist/lib/log4j-1.2.4.jar" />
     <include name="tools/crimson-1.1.3/crimson.jar" />
-    <include name="cmu/classes/gaugeInfrastructure.jar" />
-    <include name="cmu/classes/gaugeInfrastructureSiena.jar" />
   </patternset>
   <!-- Now build our classpath and tell Ant to ignore the environment 
        classpath -->
@@ -63,10 +61,6 @@
     <unjar src="${rootdir}/tools/log4j-1.2.4/dist/lib/log4j-1.2.4.jar" 
            dest="${distdir}/ed-classes" />
     <unjar src="${rootdir}/tools/crimson-1.1.3/crimson.jar" 
-           dest="${distdir}/ed-classes" />
-    <unjar src="${rootdir}/cmu/classes/gaugeInfrastructure.jar" 
-           dest="${distdir}/ed-classes" />
-    <unjar src="${rootdir}/cmu/classes/gaugeInfrastructureSiena.jar" 
            dest="${distdir}/ed-classes" />
     <jar jarfile="${distdir}/ed-support.jar" basedir="${distdir}/ed-classes" />
   </target>

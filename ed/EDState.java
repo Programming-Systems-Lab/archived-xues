@@ -158,7 +158,7 @@ public class EDState implements EDNotifiable {
     this.absorb = e.absorb;
     
     this.sm = sm;
-    this.myID = sm.myID + ":" + name;
+    this.myID = sm.myID + "." + name;
     this.bus = sm.getSpecification().getManager().getEventDistiller().getBus();
     
     this.children = e.children;
@@ -166,7 +166,7 @@ public class EDState implements EDNotifiable {
     this.fail_actions = e.fail_actions;
     
     // Build the debugger
-    debug = Logger.getLogger(EDState.class.getName() + ":" + myID);
+    debug = Logger.getLogger(EDState.class.getName() + "." + myID);
   }
   
   /**

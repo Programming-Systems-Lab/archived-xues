@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 
 /**
  * Input mechanism to (launch and) handle Phil's load probe.
@@ -122,6 +123,13 @@ public class LoadProbeInput extends EPInput {
       
       // Now build the event and send it out
       Notification n = new Notification();
+      String hostname = null;
+      try {
+        hostname = InetAddress.getLocalHost().getHostName();
+        n.putAttribute("Host", hostname);
+      } catch(Exception e) {
+        debug.warn("Could not put hostname in notification");
+      }
       n.putAttribute("CPU", cpu);
       n.putAttribute("RAMFree", ramFree);
       n.putAttribute("SystemRunLength", systemRunLength);

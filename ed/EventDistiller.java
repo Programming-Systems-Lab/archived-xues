@@ -268,13 +268,15 @@ public class EventDistiller implements Runnable, Notifiable {
   
   /** Initialize debugging */
   private static void initDebug(boolean debug, String debugFile) {
-    debugEnabled = debug;
     // Set up logging
     if(debug == true && debugFile == null) {
+      debugEnabled = true;
       BasicConfigurator.configure();             // Basic (all) debugging)
     } else if(debugFile != null) { // Do it whether or not debugging is true
+      debugEnabled = true;
       PropertyConfigurator.configure(debugFile); // Log4j format file
     } else {                                     // No debugging at all
+      debugEnabled = false;
       BasicConfigurator.configure();
       Logger.getRootLogger().setLevel(Level.INFO);
     }

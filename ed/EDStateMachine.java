@@ -78,7 +78,7 @@ public class EDStateMachine implements Comparable {
     this.myID = specification.getName() + ":" + specification.getNewID();
 
     // Instantiate debugger.  XXX - can we append myID like this?
-    debug = Logger.getLogger(EDStateMachine.class.getName() + ":" + myID);
+    debug = Logger.getLogger(EDStateMachine.class.getName() + "." + myID);
 
     debug.debug("StateMachine instantiated");
     

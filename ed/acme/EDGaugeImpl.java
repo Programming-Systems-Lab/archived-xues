@@ -25,6 +25,7 @@ import psl.xues.ed.EDNotifiable;
  *
  * <!--
  * TODO:
+ * - Better setupParams handling?
  * - Support dynamic rule creation upon gauge creation request (currently,
  * we assume gauges are already instantiated... instead, setup parameter with
  * XML embedded?)
@@ -52,12 +53,18 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
     this.EDOutputBus = EDOutputBus;
     
     // Insert code to check setup parameters
-    debug.debug("Called with mappings " + mappings);
+    debug.debug("Called with mappings " + mappings + " and SetupParams " +
+    setupParams);
     
     // Build the subscription filter.
     Filter sienaFilter = new Filter();
     for(int i=0; i < mappings.size(); i++) {
       sienaFilter.addConstraint(mappings.nameAt(i), Op.ANY, "");
+    }
+    // Setup params handling: take them and make them more constraints
+    // on the filter, except these are both LHS and RHS.
+    for(int i=0; i < setupParams.size(); i++) {
+      sienaFilter.addConstraint(setupParams.nameAt(i), setupParams.valueAt(i));
     }
     
     // Create a subscription for the left-hand-side of the mappings.
@@ -190,6 +197,9 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
    * Shut down this gauge.
    */
   public void shutdown() {
+    debug.debug("Shutting down...");
+    // Unsubscribe from the bus, so we don't report anything
+    EDOutputBus.unsubscribe(this);
     return; // Do nothing for now.
   }
   
@@ -200,6 +210,7 @@ public class EDGaugeImpl extends GaugeImpl implements EDNotifiable {
    * @param n The notification.
    */
   public boolean notify(Notification n) {
+    debug.debug("Notify received");
     Iterator values = n.attributeNamesIterator();
     GaugeValueVector gvv = new GaugeValueVector();
     while(values.hasNext()) {
