@@ -100,8 +100,9 @@ public class EDBus {
     private long waitTime;
 
 
-    private boolean DEBUG = true;
+    private boolean VERBOSE = true;
 
+    private EDErrorManager em;
 
 
     /**
@@ -124,6 +125,7 @@ public class EDBus {
 	subscribers = new Vector();
 	subsHash = new Hashtable();
 	eventQueue = new EDQueue();
+	em = null;
 
 	new Thread(){
 		public void run(){
@@ -133,19 +135,46 @@ public class EDBus {
     }
 
     private void dumpSubscribers(){
-	System.out.println("EDBus:******Start dumping subscribers*****");
+	verbosePrintln("EDBus:******Start dumping subscribers*****");
 	for(int i = 0;i<subscribers.size();i++){
 	    EDNotifiable n = ((Subscriber)subscribers.elementAt(i)).n;
 	    if(n instanceof EDStateManager){
-		System.out.println("Manager");
+		verbosePrintln("Manager");
 	    }else if(n instanceof EDState){
-		System.out.println("EDState: "+((EDState)n).myID);
+		verbosePrintln("EDState: "+((EDState)n).myID);
 	    }else{
-		System.out.println(n);
+		verbosePrintln(n);
 	    }
 	}
-	System.out.println("***End dumping subscribers.\n");
+	verbosePrintln("***End dumping subscribers.\n");
+    }
 
+    private void verbosePrintln(Object s){
+	if(VERBOSE){
+	    if(em!=null){
+		em.println("EDBus: "+s,EDErrorManager.DISPATCHER);
+	    }else{
+		System.out.println("EDBus: "+s);
+	    }
+	}
+    }
+
+    private void errorPrintln(Object s){
+	if(em!=null){
+	    em.println("EDBus: "+s,EDErrorManager.ERROR);
+	}else{
+	    System.out.println("EDBus: "+s);
+	}
+    }
+
+
+
+    /**
+     * Set the error manager.
+     */
+
+    public void setErrorManager(EDErrorManager em){
+	this.em = em;
     }
 
 
@@ -166,7 +195,7 @@ public class EDBus {
 	    subsHash.put(n,s);
 	    subscribers.add(s);
 	    Collections.sort(subscribers);
-	    if(DEBUG) dumpSubscribers();
+	    dumpSubscribers();
 	}
     }
 
@@ -190,7 +219,7 @@ public class EDBus {
 	    
 	    subsHash.remove(n);
 	    boolean returnVal = subscribers.remove(s);
-	    if(DEBUG) dumpSubscribers();
+	    dumpSubscribers();
 	    return returnVal;
 	}
     }
@@ -205,7 +234,7 @@ public class EDBus {
 	if(dispatching){
 	    eventQueue.enqueue(e);
 	}else{
-	    System.err.println("Cannot publish when EDBus has been shutdown.");
+	    errorPrintln("Cannot publish when EDBus has been shutdown.");
 	}
     }
 
@@ -254,7 +283,7 @@ public class EDBus {
 		   ((autoflushMode==AUTOFLUSH_DISABLED)&&
 		    eventQueue.canDequeueWithLength(waitTime))){
 		    
-		    if(DEBUG)System.out.println("Dispatcher dequeuing");
+		    verbosePrintln("Dispatcher dequeuing");
 		    dispatch(eventQueue.dequeue());
 		}else{
 		    // this is really stupid and wasteful.
@@ -269,7 +298,7 @@ public class EDBus {
 		}
 	    }catch(InterruptedException exception){
 		//OK, I don't know why this happened. Report anyway
-		System.err.println("Dispatcher interuppted");
+		verbosePrintln("Dispatcher interuppted");
 	    }
 	}
 	synchronized(this){
@@ -393,10 +422,8 @@ class Subscriber implements Comparable{
 	    AttributeValue value = e.getAttribute(constraintName);
 
 	    if(value==null){
-		if(DEBUG){
-		    System.out.println("Missing AttributeValue "+
-				       "in Notification");
-		}
+		System.err.println("Missing AttributeValue "+
+			       "in Notification");
 		return false;
 	    }
 
@@ -424,7 +451,7 @@ class Subscriber implements Comparable{
 	if(ac.op==Op.ANY){
 	    // if you get this far, the attribute should at least exist
 	    // thus, always accept in this case
-	    if(DEBUG)System.out.println("Matching the *ANY* rule");
+	    // println("Matching the *ANY* rule");
 	    return true;
 	}else if(ac.op==Op.EQ){
 	    /*
@@ -442,3 +469,5 @@ class Subscriber implements Comparable{
 	}
     }
 }// Subscriber
+
+
