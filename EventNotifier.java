@@ -14,7 +14,11 @@ import java.util.*;
  * @version 0.01 (9/7/2000)
  *
  * $Log$
- * Revision 1.1  2000-09-07 23:15:25  jjp32
+ * Revision 1.2  2000-09-08 20:03:26  jjp32
+ *
+ * Finished network functionality in TriKXEventNotifier
+ *
+ * Revision 1.1  2000/09/07 23:15:25  jjp32
  *
  * Added EventNotifier code; updated previous event code
  *
@@ -45,6 +49,8 @@ public class EventNotifier implements GroupspaceService,
 
   public int callback(GroupspaceEvent ge) {
     // Received event, talk to TriKX
+
+    return GroupspaceCallback.CONTINUE;
 
   }
 
