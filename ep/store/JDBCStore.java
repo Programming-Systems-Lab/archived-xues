@@ -8,6 +8,14 @@ import psl.xues.ep.event.EPEvent;
 /**
  * JDBC store mechanism.
  *
+ * Copyright (c) 2002: The Trustees of Columbia University in the
+ * City of New York.  All Rights Reserved.
+ *
+ * <!--
+ * TODO:
+ * - Support anonymous and passwordless database connections
+ * -->
+ *
  * @author Janak J Parekh
  * @version $Revision$
  */
@@ -61,12 +69,15 @@ public class JDBCStore extends EPStore {
     // Attempt connection
     debug.debug("Connecting to jdbc:" + dbType + ":" + dbName + "...");
     try {
-      Connection con = DriverManager.getConnection("jdbc:" + dbType + ":" + 
+      conn = DriverManager.getConnection("jdbc:" + dbType + ":" + 
       dbName, username, password);
       // TODO: anonymous connections?
     } catch(Exception e) {
       debug.error("Can't connect to database", e);
     }
+    
+    // Connection successful
+    debug.debug("Initialization complete");
   }
   
   /**
@@ -76,6 +87,8 @@ public class JDBCStore extends EPStore {
    * @return The event in EPEvent form, or null if it doesn't exist.
    */
   public EPEvent requestEvent(Object ref) {
+    
+    
     
     return null;
     
