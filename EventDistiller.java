@@ -19,7 +19,11 @@ import siena.*;
  * @version 0.9
  *
  * $Log$
- * Revision 1.17  2001-05-21 00:43:04  jjp32
+ * Revision 1.18  2001-05-27 23:55:13  jjp32
+ * Added embeddable support from development branch, but fixed the
+ * non-returning-constructor problem
+ *
+ * Revision 1.17  2001/05/21 00:43:04  jjp32
  * Rolled in Enrico's changes to main Xues trunk
  *
  * Revision 1.16.4.4  2001/05/06 08:01:48  eb659
@@ -126,7 +130,7 @@ import siena.*;
  * Updating
  *
  */
-public class EventDistiller implements Notifiable {
+public class EventDistiller implements Runnable, Notifiable {
   /**
    * We maintain a stack of events to process - this way incoming
    * callbacks don't get tied up - they just push onto the stack.
@@ -136,11 +140,21 @@ public class EventDistiller implements Notifiable {
   /** My main execution context */
   private Thread edContext = null;
 
+  /** Reference to state machine manager. */
+  EDStateManager edsm;
+
   /** Private (internal) siena for the state machines */
   private Siena privateSiena = null;
 
   /** Public (KX) siena to communicate with the outside world */
   private Siena publicSiena = null;
+
+    /** 
+     * An object that instantiates an EventDistiller. In this case 
+     * we communicate with it derectly, by sending it notifications,
+     * otherwise we use Siena. 
+     */
+    private Notifiable owner = null;
 
   /** Private loopback Siena */
     //private Siena loopbackSiena = null;
@@ -178,9 +192,7 @@ public class EventDistiller implements Notifiable {
 	new EventDistiller();
     }
 
-  /**
-   * Print usage.
-   */
+  /** Prints usage. */
   public static void usage() {
     System.out.println("usage: java EventDistiller [-f stateSpecFile] "+
 		       "[-s sienaHost] [-d] [-?]");
@@ -189,16 +201,24 @@ public class EventDistiller implements Notifiable {
     System.exit(-1);
   }
 
+
   /**
-   * CTOR.
+   * Constructs a new EventDistiller with an owner.
+   * If you use this constructor, pass events to ED directly through 
+   * the notify method using EDInputNotification.
+   *
+   * @param owner the object to which we return notifications
+   */
+  public EventDistiller(Notifiable owner) { 
+    this.owner = owner;
+    // Create a new thread context for us to run in
+    new Thread(this).start();
+  }
+  
+  /**
+   * Standard, non-embedded CTOR.
    */
   public EventDistiller() { 
-    eventProcessQueue = new Vector();
-
-    // Set the current execution context, so if the callback is called
-    // it can wake up a sleeping distiller
-    edContext = Thread.currentThread();
-
     // Siena handling
     // Subscribe to the "master" Siena
     publicSiena = new HierarchicalDispatcher();
@@ -221,6 +241,14 @@ public class EventDistiller implements Notifiable {
       publicSiena.subscribe(generalFilter, this);
     } catch(SienaException e) { e.printStackTrace(); }
 
+    /** Start execution of the new EventDistiller. */
+  public void run() {
+    eventProcessQueue = new Vector();
+
+    // Set the current execution context, so if the callback is called
+    // it can wake up a sleeping distiller
+    edContext = Thread.currentThread();
+
     // Create private siena
     privateSiena = new HierarchicalDispatcher();
     try {
@@ -229,7 +257,7 @@ public class EventDistiller implements Notifiable {
     } catch(Exception e) { e.printStackTrace(); }
     
     // Initialize state machine manager.  Hand it the private siena.
-    EDStateManager edsm = new EDStateManager(privateSiena, this, 
+    edsm = new EDStateManager(privateSiena, this, 
 					     stateSpecFile);
 
     /* Add a shutdown hook */
@@ -328,20 +356,25 @@ public class EventDistiller implements Notifiable {
   /**
    * Propagates a given notification to the world - or
    * internally, if it is an internal notification.
-   * @param n the notofication to propagate
+   * @param n the notofication to propagate, 
+   *          must be in already wrapped format
    */
   void sendPublic(Notification n) {
     if(EventDistiller.DEBUG)
       System.err.println("YES! EventDistiller: sending event " + n);
+
     try {
 	/* if this is an internal notification
 	 * we just send it through to ourselves. */
 	if (n.getAttribute("Internal") != null && 
 	    n.getAttribute("Internal").booleanValue()) 
 	    privateSiena.publish(KXNotification.EDInternalNotification(n)); 
-	
-	// Propagate the notification up, but wrap it in KX form (... ?)
-	else publicSiena.publish(n); 
+	else { // the notification goes outside
+	    // if we have an owner, send him the notification
+	    if (owner != null) owner.notify(n);
+	    // else send it to the public siena
+	    else publicSiena.publish(n); 
+	}
     }
     catch(SienaException e) { e.printStackTrace(); }
   }
