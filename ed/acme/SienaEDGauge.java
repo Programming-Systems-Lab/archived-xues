@@ -5,7 +5,7 @@ import edu.cmu.cs.able.gaugeInfrastructure.*;
 import java.util.*;
 
 /**
- * Siena communication layer for EDGauges.
+ * Siena transport layer for ED architectural gauges.
  *
  * @author ABLE (http://www-2.cs.cmu.edu/afs/cs.cmu.edu/project/able/www/)
  * @version $Revision$
@@ -22,7 +22,7 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGauge {
    * @param setupParams The parameters that the gauge uses to set itself up.
    * @param mappings The property that the <pre>date</pre> value is associated with.
    */
-  public SienaNounLoadT(GaugeID gaugeID, String creatorID, 
+  public SienaEDGauge(GaugeID gaugeID, String creatorID, 
   StringPairVector setupParams, StringPairVector mappings) {
     super(gaugeID, creatorID, setupParams, mappings);
     Global.debug("Creating implementation");
@@ -32,98 +32,51 @@ extends edu.cmu.cs.able.gaugeInfrastructure.Siena.SienaGauge {
     finalizeCreation(creatorID, impl.consistentlyCreated());
   }
   
-  /** 
-   * A command-line interface to start the gauge.
+ 
+  /** The method called when configuring a gauge.
    *
-   * @param args -gt <i>gauge type</i><br>
-   * -gn <i>gauge name</i><br>
-   * -mt <i>model type</i><br>
-   * -mn <i>model name</i><br>
-   * [-setup <i>name=value</i>]<br>
-   * [-mappings <i>name=property</i>]<br>
-   * -creator <i>creator ID</i><br>
-   * -senp <i>siena port</i><br>
-   * [-debug]
+   * @param configParams The configuration parameters for the gauge as (name, value) pairs.
+   *
+   * @return <B>true</B> if the gauge could be configured successfully; <B>false</B> otherwise
+   *
    */
-  public static void main(String [] args) {
-    String creatorID = null;
-    String gaugeName = null;
-    String gaugeType = null;
-    String modelName = null;
-    String modelType = null;
-    StringPairVector mappings = new StringPairVector();
-    StringPairVector setupParams = new StringPairVector();
-    boolean gotMappings = false;
-    boolean gotSetup = false;
-    // Process args
-    boolean ok = true;
-    for (int i = 0; i < args.length && ok; i++) {
-      String tag = args [i];
-      if (args [i].equals("-creator")) {
-        creatorID = args [++i];
-      }
-      else if (args [i].equals("-gn")) {
-        gaugeName = args [++i];
-      }
-      else if (args [i].equals("-gt")) {
-        gaugeType = args [++i];
-      }
-      else if (args [i].equals("-mn")) {
-        modelName = args [++i];
-      }
-      else if (args [i].equals("-mt")) {
-        modelType = args [++i];
-      }
-      else if (args [i].equals("-setup")) {
-        gotSetup = true;
-        i++;
-        while (i < args.length && args [i].charAt(0) != '-') {
-          String setup = args [i];
-          String name = setup.substring(0, setup.indexOf('='));
-          String value = setup.substring(setup.indexOf('=') + 1);
-          setupParams.addElement(name, value);
-          i++;
-        }
-        i--;
-      }
-      else if (args [i].equals("-mappings")) {
-        gotMappings = true;
-        i++;
-        while (i < args.length && args [i].charAt(0) != '-') {
-          String mapping = args [i];
-          String value = mapping.substring(0, mapping.indexOf('='));
-          String property = mapping.substring(mapping.indexOf('=') + 1);
-          mappings.addElement(value, property);
-          i++;
-        }
-        i--;
-      }
-      else if (args [i].equals("-senp")) {
-        edu.cmu.cs.able.gaugeInfrastructure.Siena.Initialization.initSiena(args [++i]);
-      }
-      else if (args [i].equals("-debug")) {
-        edu.cmu.cs.able.gaugeInfrastructure.util.Global.debugFlag = true;
-      }
-      else {
-        ok = false;
-      }
-    }
-    
-    if (!ok) {
-      printUsageMessage();
-      System.exit(0);
-    }
-    
-    GaugeID gid = new GaugeID();
-    gid.modelName = modelName;
-    gid.modelType = modelType;
-    gid.gaugeName = gaugeName;
-    gid.gaugeType = gaugeType;
-    
-    SienaNounLoadT gauge = new SienaNounLoadT(gid, creatorID, setupParams, mappings);
+  public boolean configure(StringPairVector configParams) {
   }
   
-  private static void printUsageMessage() {
-    System.out.println("Usage: SienaNounLoadT -creator <creatorID> -mt <modelType> -mn <modelName> -gt <gaugeType> -gn <gaugeName> -setup <name=value> -mappings <value=property> -senp <sienaport>");
+  /** Returns all the gauge values that the gauge reports.
+   *
+   * @param values This is filled with all the values as a (valueName, propertyName, value) tuple
+   *
+   * @return <B>true</B> if the values were successfully determined; <B>false</B> otherwise.
+   *
+   */
+  public boolean queryAllValues(GaugeValueVector values) {
   }
+  
+  /** The method called to query the state of the gauge
+   *
+   * @param setupParams Will be filled with the parameters with which the gauge was setup, as (name, value) pairs.
+   *
+   * @param configParams Will be filled with the current configuration of the gauge, as (name, value) pairs
+   *
+   * @param mappings Will be filled with the mappings for the gauge, as (name, propertyName) pairs.
+   *
+   * @return <B>true</B> if the gauge successfully returns its state; <B>false</B> otherwise
+   *
+   */
+  public boolean queryState(StringPairVector setupParams, StringPairVector configParams, StringPairVector mappings) {
+  }
+  
+  /** Called when a gauge is queried for a value. This provides an
+   *
+   * alternative to the gauge reporting events.
+   *
+   * @param valueName The name of the value to be queried.
+   *
+   * @return The value corresponding to the name passed in; <B>null</B> indicates that the gauge value could not be determined.
+   *
+   */
+  public String queryValue(String valueName) {
+  }
+  
 }

@@ -94,6 +94,9 @@ public class EventDistiller implements Runnable, Notifiable {
   
   /** Whether the ED has been shut down. */
   private boolean hasShutdown = false;
+
+  /** ACME support? */
+  private String acmeBus = null;
   
   /** Main. */
   public static void main(String args[]) {
@@ -101,6 +104,7 @@ public class EventDistiller implements Runnable, Notifiable {
     boolean e = false, gui = false;
     boolean debugging = false;
     String debugFile = null;                     // Debug properties file
+    String acmeBus = null;                       // ACME Siena bus
     
     for(int i=0; i < args.length; i++) {
       if(args[i].equals("-s"))                   // Siena host
@@ -117,8 +121,10 @@ public class EventDistiller implements Runnable, Notifiable {
         debugFile = args[++i];
       else if (args[i].equals("-event"))         // Event-driven processing
         e = true;
-      else if (args[i].equals("-gui"))           // GUI (XXX - what?)
+      else if (args[i].equals("-gui"))           // GUI feedback
         gui = true;
+      else if (args[i].equals("-acme"))          // ACME integration
+        acmeBus = args[++i];
       else
         usage();
     }
@@ -131,7 +137,7 @@ public class EventDistiller implements Runnable, Notifiable {
   public static void usage() {
     System.err.println("\nUsage: java EventDistiller <-s sienaHost> " +
     "[-f ruleSpecFile]\n\t[-d|-df debugScript] [-o outputFileName] " +
-    "[-event] [-?]");
+    "[-event] [-acme sienaHost] [-?]");
     System.err.println("\t-s:\tSpecify Siena host");
     System.err.println("\t-p:\tSpecify Siena packet receiver port");
     System.err.println("\t-d:\tEnable basic debugging");
@@ -142,6 +148,8 @@ public class EventDistiller implements Runnable, Notifiable {
     "shutdown");
     System.err.println("\t-event:\tSpecify reordering timeout mechanism, see " +
     "docs");
+    System.err.println("\t-acme:\tReport values on ACME gauge bus (requires " +
+    "ACME gauge infrastructure)");
     System.err.println("\t-?:\tSee this description");
     System.exit(-1);
   }
@@ -193,9 +201,11 @@ public class EventDistiller implements Runnable, Notifiable {
    * @param debugging Whether we want debugging-detail information
    * @param debugFile Alternative to default debugging: see log4j properties
    * format to enable this
+   * @param acmeBus ACME bus (optional)
    */
   public EventDistiller(String sienaHost, String sienaPort, String specFile,
-  boolean eventDriven, String outputFile, boolean debugging, String debugFile) {
+  boolean eventDriven, String outputFile, boolean debugging, String debugFile,
+  String acmeBus) {
     this.stateSpecFile = specFile;
     this.eventDriven = eventDriven;
     
@@ -270,6 +280,12 @@ public class EventDistiller implements Runnable, Notifiable {
     
     // Initialize state machine manager.
     manager = new EDStateManager(this);
+
+    // Initialize gauge manager for ACME, if necessary
+    if(acmeBus != null) {
+      this.acmeBus = acmeBus;
+      ///////////
+    }
   }
   
   /** Start execution of the new EventDistiller. */

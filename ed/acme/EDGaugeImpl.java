@@ -7,6 +7,15 @@ import java.util.*;
 /**
  * Event Distiller ACME Gauge Bus implementation.  This maps to a given
  * return value from the state machines.
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
+ *
+ * <!--
+ * TODO:
+ * - Support dynamic rule creation upon gauge creation request
+ * - Additionally, consider probe deployment upon gauge creation request
+ * -->
  *
  * @author Janak J Parekh
  * @version $Revision$
