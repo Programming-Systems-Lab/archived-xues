@@ -53,6 +53,9 @@ public class EDStateMachine implements Comparable {
   
   /** Whether this state machine is currently being reaped. */
   boolean reaping = false;
+
+  /** Whether this state machine can currently be reaped. */
+  boolean dontreap = false;
   
   /**
    * How many states are succeeding at this point.
@@ -101,6 +104,21 @@ public class EDStateMachine implements Comparable {
       state.bear(null);
     }
   }
+
+  /**
+   * Disable reaping - needed if something "essential" happens.  Synchronized
+   * so that it won't coincide with a reaping.
+   */
+  synchronized void disableReap() {
+    dontreap = true;
+  }
+  
+  /**
+   * Reenable reaping
+   */
+  synchronized void enableReap() {
+    dontreap = false;
+  }
   
   /**
    * Reap ourselves if necessary. The Grim Reaper (in EventDistiller) will
@@ -109,6 +127,12 @@ public class EDStateMachine implements Comparable {
    * @return whether this machine is 'dead' and can be removed
    */
   synchronized boolean reap() {
+    /* Should I not reap? */
+    if(dontreap == true) {
+      debug.debug("Skipping reaping, I'm doing something");
+      return false;
+    }
+    
     reaping = true;
     debug.debug("Attempting to reap myself");
     

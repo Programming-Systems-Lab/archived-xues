@@ -33,12 +33,12 @@ import org.apache.log4j.Category;
  * @author Janak J Parekh (jjp32@cs.columbia.edu)
  * @version $Revision$
  */
-public class EDStateManager implements Rulebase, Runnable, EDNotifiable, 
+public class EDStateManager implements Rulebase, Runnable, EDNotifiable,
 Comparable {
   /** Debugging context */
   static Category debug =
   Category.getInstance(EDStateManager.class.getName());
-
+  
   /** Separate category for reaper */
   static Category reapDebug =
   Category.getInstance(EDStateManager.class.getName() + ".reaper");
@@ -112,29 +112,37 @@ Comparable {
   void reap() {
     //    errorManager.print("%", EDErrorManager.REAPER);
     
+    // Make a copy of the CURRENT specifications, which will be reaped.
+    // If any new specifications are added in the meantime, too bad,
+    // they'll miss this reap cycle.
+    
+    Vector specificationsCopy = null;
     synchronized(specifications) {
-      for (int i = 0; i < specifications.size(); i++) {
-        Vector stateMachines =
-        ((EDStateMachineSpecification)specifications.get(i)).stateMachines;
-
-        reapDebug.debug("About to start another reap tick");
-        synchronized(stateMachines) {
-          for (int j = 0; j < stateMachines.size(); j++) {
-            EDStateMachine reapand = (EDStateMachine)stateMachines.get(j);
-            reapDebug.debug("Attempting to reap " + reapand.myID);
-            if(reapand.reap()) {
-              reapDebug.debug("Reap of " + reapand.myID + " successful!");
-              stateMachines.remove(j);
-              j--;
-            }
-            else {
-              debug.debug("Did not reap " + reapand.myID);
-            }
+      specificationsCopy = new Vector(specifications);
+    }
+    
+    for (int i = 0; i < specificationsCopy.size(); i++) {
+      Vector stateMachines =
+      ((EDStateMachineSpecification)specificationsCopy.get(i)).stateMachines;
+      
+      reapDebug.debug("About to start another reap tick");
+      synchronized(stateMachines) {
+        for (int j = 0; j < stateMachines.size(); j++) {
+          EDStateMachine reapand = (EDStateMachine)stateMachines.get(j);
+          reapDebug.debug("Attempting to reap " + reapand.myID);
+          if(reapand.reap()) {
+            reapDebug.debug("Reap of " + reapand.myID + " successful!");
+            stateMachines.remove(j);
+            j--;
+          }
+          else {
+            debug.debug("Did not reap " + reapand.myID);
           }
         }
       }
     }
   }
+  
   
   /**
    * Callback.  We receive callbacks to dynamically
@@ -342,7 +350,7 @@ Comparable {
     
     // don't allow duplicate names
     if (hasName(edsms.getName())) {
-      publishError("Could not add rule '" + edsms.getName() + 
+      publishError("Could not add rule '" + edsms.getName() +
       "': already exists");
       return false;
     }

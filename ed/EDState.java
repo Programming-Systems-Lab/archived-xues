@@ -298,23 +298,25 @@ public class EDState implements EDNotifiable {
   }
   
   /**
-   * Handles callbacks from the dispatcher. The statemachine is synchronized, so that states
-   * do not succeed while the mahcine is being reaped. Note that ANY notification
-   * we receive satisfies the state, since we build a precise filter in createFilter().
-   * All we need to do is register the timestamp and the wildcard values.
+   * Handles callbacks from the dispatcher. We turn off reaping while this 
+   * happens, in case any "succeeds" occur during our notification.
+   * Note that ANY notification we receive satisfies the state, since we build 
+   * a precise filter in createFilter(). All we need to do is register the 
+   * timestamp and the wildcard values.
    */
   public synchronized boolean notify(Notification n) {
     debug.debug("Received " + n);
-    synchronized(sm){
-      // check time - this is a hack, see createFilter()
-      if (n.getAttribute(EDConst.TIME_ATT_NAME).longValue() > tl){
-        // notif is too late
-        debug.warn("Rejecting late notification");
-        kill();
-        return false;
-      }
-      
-      // hang on while the machine is being reaped
+    sm.disableReap();
+
+    // check time - this is a hack, see createFilter()
+    if (n.getAttribute(EDConst.TIME_ATT_NAME).longValue() > tl){
+      // notif is too late
+      debug.warn("Rejecting late notification");
+      kill();
+      return false;
+    }
+    
+    // hang on while the machine is being reaped
             /*if (sm.reaping) {
               try{
               errorManager.println("EDState " + myID + ": waiting" + n,
@@ -322,27 +324,28 @@ public class EDState implements EDNotifiable {
               wait(); }
               catch(InterruptedException ex) { ; }
             }*/
+    
+    // register timestamp
+    ts = n.getAttribute(EDConst.TIME_ATT_NAME).longValue();
+    
+    // registrer wildcard values
+    if(parents.size() > 1) wildHash = new Hashtable();
+    for(Enumeration enumeration = constraints.keys(); enumeration.hasMoreElements();){
+      String s = (String)enumeration.nextElement();
+      String s1 = ((AttributeConstraint)constraints.get(s)).value.stringValue();
       
-      // register timestamp
-      ts = n.getAttribute(EDConst.TIME_ATT_NAME).longValue();
-      
-      // registrer wildcard values
-      if(parents.size() > 1) wildHash = new Hashtable();
-      for(Enumeration enumeration = constraints.keys(); enumeration.hasMoreElements();){
-        String s = (String)enumeration.nextElement();
-        String s1 = ((AttributeConstraint)constraints.get(s)).value.stringValue();
-        
-        if(s1.startsWith("*") && !s1.startsWith("**"))
-          wildHash.put(s1.substring(1), n.getAttribute(s));
-      }
-      
-      // state machine progress
-      succeed();
-      
-      if(absorb)
-        debug.debug("Absorbing event");
-      return absorb;
-    }// synch
+      if(s1.startsWith("*") && !s1.startsWith("**"))
+        wildHash.put(s1.substring(1), n.getAttribute(s));
+    }
+    
+    // state machine progress
+    succeed();
+    
+    if(absorb)
+      debug.debug("Absorbing event");
+    
+    sm.enableReap();
+    return absorb;
   }
   
   /**
@@ -530,7 +533,7 @@ public class EDState implements EDNotifiable {
    * Build a Siena filter to subscribe this state.
    * If expected value begins with an asterisk "*" it will be considered a
    * wildcard and will bind to anything.
-   * @param wc the table containing the wildcards values to insert in the 
+   * @param wc the table containing the wildcards values to insert in the
    * subscription
    * @param timeLimit the time within which the notification must be matched
    * @return the siena.Filter object to use to subscribe this state

@@ -288,23 +288,32 @@ public class EDBus {
    * @param e  The <code>Notification</code> to be sent
    */
   private void dispatch(Notification e){
+    // Build a private category
+    Category debugDispatch = Category.getInstance(EDBus.class.getName() +
+    ".dispatch");
+
+    debugDispatch.debug("Starting dispatch of notification" + e);
+
     // Make a copy first.  Important because we want the dispatch-list to be
     // consistent from the very start of the dispatching.
-    debug.debug("Starting dispatch of notification");
     Vector copyOfSubscribers = null;
     synchronized(subscribers) {
       copyOfSubscribers = new Vector(subscribers);
     }
+
+    debugDispatch.debug("Subscriber copy complete, beginning enumeration");
     Enumeration elements = copyOfSubscribers.elements();
     boolean absorbed = false;
     while(elements.hasMoreElements() && !absorbed){
       EDSubscriber thisSubscriber =
       (EDSubscriber) elements.nextElement();
       if(thisSubscriber.acceptsNotification(e)){
+        debugDispatch.debug("Subscriber " + thisSubscriber + 
+        " interested, notifying subscriber");
         absorbed = thisSubscriber.n.notify(e);
       }
     }
-    debug.debug("Dispatch complete");
+    debugDispatch.debug("Dispatch complete");
   }
   
   public static void main(String[] args){

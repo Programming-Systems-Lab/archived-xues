@@ -65,16 +65,14 @@ public class EDQueue {
     if(ordering==REORDERING_DISABLED){
       q.add(n);
       return;
-    }if(ordering==REORDERING_ENABLED){
+    } if(ordering==REORDERING_ENABLED){
       synchronized(q){
         if(n.getAttribute(TS_STR)==null){
           q.add(n);
           ordering = REORDERING_DISABLED;
-          System.err.println("No timestamp - "
-          +"enter fallback mode.");
+          System.err.println("No timestamp - enter fallback mode.");
           return;
-        }else if((q.size()==0)||
-        (n.getAttribute(TS_STR).longValue()>=
+        } else if((q.size()==0)||(n.getAttribute(TS_STR).longValue()>=
         ((Notification)q.elementAt(q.size()-1)
         ).getAttribute(TS_STR).longValue())){
           q.add(n);
