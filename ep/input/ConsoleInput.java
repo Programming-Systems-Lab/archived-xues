@@ -12,6 +12,7 @@ import org.w3c.dom.Element;
 import psl.xues.ep.event.StringEvent;
 import psl.xues.ep.event.DOMEvent;
 import psl.xues.ep.event.SienaEvent;
+import psl.xues.ep.store.EPStore;
 
 import siena.Notification;
 
@@ -28,6 +29,12 @@ import siena.Notification;
  * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
+ *
+ * <!--
+ * TODO;
+ * - Support replay, database maintenance
+ * - Consider combining with configuration to support GUI frontend
+ * -->
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
@@ -104,6 +111,10 @@ public class ConsoleInput extends EPInput {
         "  {\"a1\"=(valuetype)\"data\", ...} as the parameter; supported valuetypes\n" +
         "  include String, boolean, double, or long.  If valuetype is not specified,\n" +
         "  String is assumed\n" +
+        "- REPLAY <StoreName> [-s SourceName] [-t StartTime EndTime] [-o]: replay a set\n" +
+        "  of events to the associated output.  If you use -t, specify BOTH start and end\n" +
+        "  times, in long integer form; -o implies \"Original Time Framing\", which plays\n" +
+        "  back events with the time intervals in which they were originally received.\n" +
         "- SHUTDOWN: shuts down the Event Packager cleanly\n" +
         "-------------------");
       }
@@ -200,6 +211,51 @@ public class ConsoleInput extends EPInput {
           ep.injectEvent(new SienaEvent(getName(), n));
       }
       
+      else if(isCommand(command, "replay")) {
+        // Arguments parsing, much like main()
+        StringTokenizer tok = new StringTokenizer(command);
+        String storeName = null;
+        String sourceName = null;
+        long beginTime = -1;
+        long endTime = -1;
+        boolean originalTime = false;
+        try {
+          // Skip over command declaration; this should never fail
+          tok.nextToken();
+          // Now parse
+          while(tok.hasMoreTokens()) {
+            String param = tok.nextToken();
+            if(!param.startsWith("-")) { // Must be store name
+              storeName = param;
+            } else if(param.equals("-s")) { // Source name
+              sourceName = tok.nextToken();
+            } else if(param.equals("-t")) { // Timestamp range
+              beginTime = Long.parseLong(tok.nextToken());
+              endTime = Long.parseLong(tok.nextToken());
+            } else if(param.equals("-o")) { // Original timestamp
+              originalTime = true;
+            }
+          }
+        } catch(Exception e) {
+          out.println("Error parsing replay request, try again");
+          continue;
+        }
+        
+        if(storeName == null) {
+          out.println("Store name must be specified for replay");
+          continue;
+        } else if(sourceName == null && (beginTime == -1 || endTime == -1)) {
+          out.println("Either source or timestamp range must be specified");
+          continue;
+        }
+        
+        // Now replay!
+        EPStore eps = ep.getStore(storeName);
+        if(eps.playbackEvents(getName(), sourceName, beginTime, endTime, 
+        originalTime) == false) {
+          out.println("No events to replay!");
+        }
+      }
       // Invalid
       else {
         // If we're in ep-shutdown, let bygones be bygones

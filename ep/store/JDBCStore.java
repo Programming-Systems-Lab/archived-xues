@@ -15,7 +15,36 @@ import psl.xues.ep.event.EPEvent;
 import psl.xues.ep.util.Base64;
 
 /**
- * JDBC store mechanism.
+ * JDBC store mechanism.  We support most JDBC databasers, including
+ * Hypersonic-SQL (tested), PostgreSQL (tested), and even possibly
+ * SQL Server 2000 (untested).
+ * <p>
+ * Usage: <em>([] implies an optional parameter)</em></p>
+ * <p><tt>
+ * &lt;Stores&gt;<br>
+ * <blockquote>&lt;Store Name="<em>instance name</em>" 
+ * Type="psl.xues.ep.store.JDBCStore" DBType="<em>database type</em>"
+ * DBDriver="<em>database driver</em>" [DBName="<em>database name</em>"]
+ * [TableName="<em>table name</em>"] Username="<em>username</em>"
+ * Password="<em>password</em>" /&gt;<br></blockquote>
+ * &lt;/Stores&gt;
+ * </tt></p>
+ * <p>
+ * Attributes/parameters:<ol>
+ * <li><b>DBType</b>: The database type name (for JDBC).</li>
+ * <li><b>DBDriver</b>: The database driver (full classname; for JDBC).</li>
+ * <li><b>DBName</b>: The name of the database to use.  If none is specified,
+ * "EventPackager" will be used.  If the database does not exist, it will 
+ * automatically be created.</li>
+ * <li><b>DBTable</b>: The name of the table to use.  If none is specified,
+ * "EPData" will be used.  If the table does not exist, it will automatically
+ * be created.</li>
+ * <li><b>Username</b>: The username to use when connecting to the JDBC
+ * driver.  (Required for now; anonymous connections may be supported in the
+ * future.)</li>
+ * <li><b>Password</b>: The password to use when connecting to the JDBC
+ * driver. (For a passwordless connection, specify an empty string.)</li>
+ * </ol>
  * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
@@ -36,9 +65,9 @@ public class JDBCStore extends EPStore {
   /** Database driver for this type */
   private String dbDriver = null;
   /** Name of database */
-  private String dbName = null;
+  private String dbName = "EventPackager";
   /** Name of table */
-  private String tableName = null;
+  private String tableName = "EPData";
   /** Username */
   private String username = null;
   /** Password */

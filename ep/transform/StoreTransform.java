@@ -9,8 +9,17 @@ import org.w3c.dom.Element;
  * Transform that snapshots the current event and writes it to the
  * configured store.
  * <p>
+ * Attributes/parameters: <ol>
+ * <li><b>StoreName</b>: Specifies the store instance to capture events to.
+ * </ol>
+ * <p>
  * Copyright (c) 2002: The Trustees of Columbia University in the
  * City of New York.  All Rights Reserved.
+ * 
+ * <!--
+ * TODO:
+ * - Consider additional filtration mechanisms.
+ * -->
  *
  * @author Janak J Parekh
  * @version $Revision$

@@ -129,6 +129,68 @@ public abstract class EPStore implements Runnable, EPPlugin {
   }
   
   /**
+   * Another utility method to play back events.  Will create a new playback
+   * thread that injects events into EP on behalf of an input.
+   *
+   * @param sourceAs The source to play back as, into EP.
+   * @param sourceFrom The source to play events from.
+   * @param t1 The lower timebound (inclusive).
+   * @param t2 The upper timebound (inclusive).
+   * @param originalTime Use original time spacing?
+   * @return A boolean indicating if any events were queued for play.
+   */
+  public boolean playbackEvents(String sourceAs, String sourceFrom,
+  long t1, long t2, boolean originalTime) {
+    Object[] refs = null;
+    if(t1 != -1 && t2 != -1 && sourceFrom != null) {
+      refs = requestEvents(sourceFrom, t1, t2);
+    } else if(t1 != -1 && t2 != -1) {
+      refs = requestEvents(t1, t2);
+    } else if(sourceFrom != null) {
+      refs = requestEvents(sourceFrom);
+    } else {
+      debug.warn("PlaybackEvents requested with no source and no timestamp");
+      return false;
+    }
+    
+    if(refs == null) {
+      debug.debug("No events found to actually playback");
+      return false;
+    }
+    
+    // There's data to play back
+    playbackEvents(sourceAs, refs, originalTime);
+    return true;
+  }
+  
+  /**
+   * Same as previous method, but search for all sources.
+   *
+   * @param sourceAs The source to play back as, into EP.
+   * @param t1 The lower timebound (inclusive).
+   * @param t2 The upper timebound (inclusive).
+   * @param originalTime Use original time spacing?
+   * @return A boolean indicating if any events were queued for play.
+   */
+  public boolean playbackEvents(String sourceAs, long t1, long t2,
+  boolean originalTime) {
+    return playbackEvents(sourceAs, null, t1, t2, originalTime);
+  }
+  
+  /**
+   * Same as previous methods, but all time across one source.
+   *
+   * @param sourceAs The source to play back as, into EP.
+   * @param sourceFrom The source to play events from.
+   * @param originalTime Use original time spacing?
+   * @return A boolean indicating if any events were queued for play.
+   */
+  public boolean playbackEvents(String sourceAs, String sourceFrom,
+  boolean originalTime) {
+    return playbackEvents(sourceAs, sourceFrom, -1, -1, originalTime);
+  }
+  
+  /**
    * Run.
    */
   public void run() {

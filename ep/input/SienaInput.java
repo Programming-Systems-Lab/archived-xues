@@ -283,22 +283,9 @@ public class SienaInput extends EPInput implements Notifiable {
         }
         // Now playback based on what we have
         EPStore eps = ep.getStore(store);
-        Object[] refs = null;
-        if(t1 != -1 && t2 != -1) {
-          if(source != null) {
-            refs = eps.requestEvents(source, t1, t2);
-          } else {
-            refs = eps.requestEvents(t1, t2);
-          }
-        } else {
-          refs = eps.requestEvents(source);
-        }
-        
-        if(refs != null) {
-          // There's data to play back
-          eps.playbackEvents(getName(), refs, orgTime);
-        } else {
+        if(eps.playbackEvents(getName(), source, t1, t2, orgTime) == false) {
           debug.debug("No events found to actually playback");
+          // XXX - send Siena notification back?
         }
       }
     }
