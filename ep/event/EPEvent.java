@@ -9,8 +9,17 @@ package psl.xues.ep.event;
  * @author Janak J Parekh <janak@cs.columbia.edu>
  * @version $Revision$
  */
-abstract class EPEvent {
+public abstract class EPEvent {
+  /** Intrinsic format.  Override this. */
   private final String format = "EPEvent";
+  
+  /**
+   * CTOR.
+   */
+  public EPEvent() {
+    
+    
+  }
   
   /**
    * Get the format (type) of this event.

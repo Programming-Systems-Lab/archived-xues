@@ -25,8 +25,13 @@ public class EventPackager implements Runnable {
   public static final String defaultConfigFile = "EPConfig.xml";
 
   /** Event formats */
-  Hashtable eventFormats = null;
+  HashMap eventFormats = null;
   
+  /** Inputters */
+  HashMap inputters = null;
+  
+  /** Outputters */
+  HashMap outputters = null;
   
   /**
    * Default embedded CTOR.

@@ -1,5 +1,8 @@
 package psl.xues.ep.event;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+
 /**
  * Default EP event representation: hierarchical format.  Supports many
  * possible inputs, including both flat and XML-like hierarchies.
@@ -8,6 +11,12 @@ package psl.xues.ep.event;
  * @revision $Revision$
  */
 public class HierarchicalEvent extends EPEvent {
+  private final String format = "HierarchicalEvent";
+  private Document eventData = null;
+  
+  /**
+   * Create an empty HierarchicalEvent.
+   */
   public HierarchicalEvent() {
     
   }

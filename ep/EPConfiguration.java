@@ -2,6 +2,7 @@ package psl.xues.ep;
 
 import java.io.*;
 import javax.xml.parsers.*;
+import java.util.*;
 
 import org.apache.log4j.Category;
 import org.apache.log4j.BasicConfigurator;
@@ -24,7 +25,7 @@ class EPConfiguration {
   /** log4j category class */
   static Category debug =
   Category.getInstance(EPConfiguration.class.getName());
-
+  
   private EventPackager ep = null;
   
   public EPConfiguration(String configFile, EventPackager ep) {
@@ -39,7 +40,7 @@ class EPConfiguration {
       debug.fatal("Failed to read the configuration file", e);
       System.exit(-1);                           // XXX - shouldn't exit here?
     }
-
+    
     // Parse the configuration
     parseConfiguration(config);
   }
@@ -47,7 +48,7 @@ class EPConfiguration {
   private void parseConfiguration(Document config) {
     // Get the root
     Element e = config.getDocumentElement();
-
+    
     // Get the event formats
     NodeList eventFormatsList = e.getElementsByTagName("EventFormats");
     if(eventFormatsList.getLength() == 0) {
@@ -62,7 +63,7 @@ class EPConfiguration {
     
     // Build event format representations for EP
     buildEventFormats(eventFormats);
-
+    
     // Now load the inputters and outputters
     NodeList inputtersList = e.getElementsByTagName("InputFormats");
     if(inputtersList.getLength() == 0) {
@@ -72,9 +73,9 @@ class EPConfiguration {
       buildInputters(inputtersList.item(0).getChildNodes());
     }
   }
-
+  
   private void buildEventFormats(NodeList eventFormats) {
-    ep.eventFormats = new Hashtable();
+    ep.eventFormats = new HashMap();
     
     for(int i=0; i < eventFormats.getLength(); i++) {
       // Load via reflection and store in event format hash
@@ -84,7 +85,7 @@ class EPConfiguration {
         debug.warn("Invalid event format detected, ignoring");
         continue;
       }
-
+      
       // Try loading this one
       EPEvent epe = null;
       try {
@@ -95,12 +96,12 @@ class EPConfiguration {
         "\", ignoring", e);
         continue;
       }
-
+      
       // ... and store
       ep.eventFormats.put(eventFormatName, epe);
     }
   }
-
+  
   private void buildInputters(NodeList inputters) {
     if(inputters.getLength() == 0) {
       debug.warn("No inputters found, EP won't be all that useful");
@@ -119,7 +120,9 @@ class EPConfiguration {
       EPInput epi = null;
       try {
         debug.debug("Loading inputter \"" + inputterName + "\"...");
-        epi = (EPInput)Class.forName(inputterName).newInstance();
+        epi = (EPInput)Class.forName(inputterName).getConstructor(new Object[]
+        { EPConfiguration.getClass() }).newInstance(new Object[] { this });
+        ep.inputters.put(inputterName, epi);
       } catch(Exception e) {
         debug.warn("Failed in loading inputter \"" + inputterName +
         "\", ignoring", e);
@@ -127,4 +130,34 @@ class EPConfiguration {
       }
     }
   }
+  
+  private void buildOutputters(NodeList outputters) {
+    if(outputters.getLength() == 0) {
+      debug.warn("No outputters found");
+      return;
+    }
+    
+    for(int i=0; i < outputters.getLength(); i++) {
+      Element outputter = outputters.item(i);
+      String outputterName = outputter.getAttribute("Name");
+      if(outputterName = null) {
+        debug.warn("Invalid outputter detected, ignoring");
+        continue;
+      }
+      
+      // Try loading this one
+      EPOutput epo = null;
+      try {
+        debug.debug("Loading outputter \"" + outputterName + "\"...");
+        epo = (EPOutput)Class.forName(outputterName).getConstructor(new Object[]
+        { EPConfiguration.getClass() }).newInstance(new Object[] { this });
+        ep.outputters.put(outputterName, epo);
+      } catch(Exception e) {
+        debug.warn("Failed in loading outputter \"" + outputterName +
+        "\", ignoring", e);
+        continue;
+      }
+    }
+  }
+  
 }
