@@ -5,7 +5,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.StringTokenizer;
 import org.w3c.dom.Element;
+import psl.xues.ep.event.StringEvent;
 
 /**
  * Console interface to the Event Packager.  Primarily for administrative
@@ -73,11 +75,26 @@ public class ConsoleInput extends EPInput {
         out.println("-------------------\n" +
         "Available commands:\n"+
         "- HELP: produces this output\n"+
+        "- INJECTSTRING: injects a StringEvent into EP for testing\n" +
         "- SHUTDOWN: shuts down the Event Packager cleanly\n" +
         "-------------------");
       } else if(isCommand(command, "shutdown")) {
         ep.shutdown();
         break;
+      } else if(isCommand(command, "injectstring")) {
+        // Grab the actual string from the input
+        StringTokenizer tok = new StringTokenizer(command, "\"");
+        String data = null;
+        try {
+          tok.nextToken(); // Ignore the stuff outside
+          data = tok.nextToken();
+        } catch(Exception e) {
+          out.println("Invalid format for injecting a string");
+          continue;
+        }
+        debug.debug("Injecting " + data);
+        StringEvent se = new StringEvent(getName(), data);
+        ep.injectEvent(se);
       } else {
         // If we're in ep-shutdown, let bygones be bygones
         if(ep.inShutdown()) break;

@@ -267,8 +267,8 @@ class EPConfiguration {
       debug.debug("Loading transform \"" + transformName + "\"...");
       // XXX - Should we be making a deep copy of the transform element,
       // since we're handing it to a potentially unknown constructor?
-      ept = (EPTransform)Class.forName(transformName).getConstructor(new Class[]
-      { transform.getClass() }).newInstance(new Object[] { transform });
+      ept = (EPTransform)Class.forName(transformType).getConstructor(new Class[]
+      { Element.class }).newInstance(new Object[] { transform });
     } catch(Exception e) {
       debug.warn("Failed in loading transform \"" + transformName +
       "\", ignoring", e);
