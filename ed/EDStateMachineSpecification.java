@@ -8,11 +8,11 @@ import siena.*;
 
 /**
  * Class to specify a machine template.
- *
- * Copyright (c) 2000-2001: The Trustees of Columbia University in the
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
  * City of New York.  All Rights Reserved.
  *
- * @author Janak J Parekh (janak@cs.columbia.edu)
+ * @author Janak J Parekh
  * @version $Revision$
  */
 public class EDStateMachineSpecification {

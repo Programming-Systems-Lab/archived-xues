@@ -1,17 +1,19 @@
-package psl.xues.ed;
+package psl.xues.ed.tests;
 
 import java.util.*;
 import siena.*;
+import psl.xues.ed.*;
 
 /**
- * Tester class for EDBus.
+ * Tester class for EDBus.<br>
  * NOTE: Changing Comparable of Subscriber on the fly is not tested.
- *
- * Created: Wed Jun 13 16:57:03 2001
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
  *
  * @author James Wu
+ * @version $Revision$
  */
-
 public class EDBusTester {
     public static void main(String[] args){
 	

@@ -2,7 +2,15 @@ package psl.xues.ed;
 
 import siena.Notification;
 
-/** Constants in ED. */
+/** 
+ * Constants in ED.
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
+ *
+ * @author Enrico Buonnano, parts by Janak J Parekh
+ * @version $Revision$
+ */
 public abstract class EDConst {
   // Criteria for instantiating state machines.
   /** only one machine is instantiated. */

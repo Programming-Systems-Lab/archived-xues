@@ -5,11 +5,16 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import siena.*;
+import psl.xues.ed.*;
 
 /**
  * Tester for the functionality in the OR representation.
- * @author enrico buonanno
- * @version 0.1
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
+ *
+ * @author Enrico Buonanno
+ * @version $Revision$
  */
 public class EDTestOR {
 

@@ -3,7 +3,7 @@ package psl.xues.ed;
 import java.util.*;
 import siena.*;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 
 /**
  * The Event Distiller Bus that's a simplified event bus with single threaded
@@ -41,14 +41,16 @@ import org.apache.log4j.Category;
  * <BR>
  * Note: Timestamps are consider essential for all notifications coming into
  *       the bus, since we wish to reorder them if they come in out-of-order.
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
  *
  * @author James Wu <jw402@columbia.edu>
  * @version $Revision$
  */
 public class EDBus {
-  /** log4j category class */
-  static Category debug =
-  Category.getInstance(EDBus.class.getName());
+  /** Log4j debugging class */
+  static Logger debug = Logger.getLogger(EDBus.class.getName());
   
   // Constants
   
@@ -151,7 +153,7 @@ public class EDBus {
    *          for dispatch
    * @param c <code>Comparable</code> for dispatch ordering
    */
-  public void subscribe(Filter filter, EDNotifiable ednotifiable, 
+  public void subscribe(Filter filter, EDNotifiable ednotifiable,
   Comparable comparable){
     subscribe(new EDSubscriber(filter, ednotifiable, comparable));
   }
@@ -289,18 +291,18 @@ public class EDBus {
    */
   private void dispatch(Notification e){
     // Build a private category
-    Category debugDispatch = Category.getInstance(EDBus.class.getName() +
+    Logger debugDispatch = Logger.getLogger(EDBus.class.getName() +
     ".dispatch");
-
+    
     debugDispatch.debug("Starting dispatch of notification" + e);
-
+    
     // Make a copy first.  Important because we want the dispatch-list to be
     // consistent from the very start of the dispatching.
     Vector copyOfSubscribers = null;
     synchronized(subscribers) {
       copyOfSubscribers = new Vector(subscribers);
     }
-
+    
     debugDispatch.debug("Subscriber copy complete, beginning enumeration");
     Enumeration elements = copyOfSubscribers.elements();
     boolean absorbed = false;
@@ -308,7 +310,7 @@ public class EDBus {
       EDSubscriber thisSubscriber =
       (EDSubscriber) elements.nextElement();
       if(thisSubscriber.acceptsNotification(e)){
-        debugDispatch.debug("Subscriber " + thisSubscriber + 
+        debugDispatch.debug("Subscriber " + thisSubscriber +
         " interested, notifying subscriber");
         absorbed = thisSubscriber.n.notify(e);
       }
@@ -316,8 +318,9 @@ public class EDBus {
     debugDispatch.debug("Dispatch complete");
   }
   
-  public static void main(String[] args){
-    EDBusTester.main(null);
-  }
+  /* public static void main(String[] args){
+   *  EDBusTester.main(null);
+   * } 
+   */
 }// EDBus
 

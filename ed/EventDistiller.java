@@ -1,31 +1,37 @@
 package psl.xues.ed;
 
 import psl.kx.*;
+
 import java.io.*;
 import java.util.*;
+
 import siena.*;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
+import org.apache.log4j.Level;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.PropertyConfigurator;
 
 /**
  * The Event Distiller.
- *
- * Copyright (c) 2000-2001: The Trustees of Columbia University and the
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
  * City of New York.  All Rights Reserved.
  *
- * TODO: Fix timestamp warning if the timestamp attribute is bad
- * TODO: Support more than 1 sec reordering time
- * TODO: Make getTime static
+ * <!--
+ * TODO:
+ * - Fix timestamp warning if the timestamp attribute is bad
+ * - Support more than 1 sec reordering time
+ * - Make getTime static
+ * -->
  *
  * @author Janak J Parekh, parts by Enrico Buonnano
  * @version $Revision$
  */
 public class EventDistiller implements Runnable, Notifiable {
-  /** log4j category class */
-  static Category debug =
-  Category.getInstance(EventDistiller.class.getName());
+  /** Log4j logging class */
+  static Logger debug =
+  Logger.getLogger(EventDistiller.class.getName());
   
   /**
    * We maintain a stack of events to process - this way incoming
@@ -40,7 +46,6 @@ public class EventDistiller implements Runnable, Notifiable {
   EDStateManager manager;
   
   /** Internal event dispatcher. */
-  private Siena privateSiena = null;
   private EDBus bus;
   
   /** Public (KX) siena to communicate with the outside world */
@@ -92,62 +97,56 @@ public class EventDistiller implements Runnable, Notifiable {
   
   /** Main. */
   public static void main(String args[]) {
-    String of = null, sf = null, sh = null;
+    String of = null, sf = null, sh = null, sp = null;
     boolean e = false, gui = false;
     boolean debugging = false;
     String debugFile = null;                     // Debug properties file
     
-    if(args.length > 0) { // Siena host specified?
-      for(int i=0; i < args.length; i++) {
-        if(args[i].equals("-s"))
-          sh = args[++i];
-        else if(args[i].equals("-f"))
-          sf = args[++i];
-        else if (args[i].equals("-o"))
-          of = args[++i];
-        else if (args[i].equals("-d"))
-          debugging = true;
-        else if (args[i].equals("-df"))
-          debugFile = args[++i];
-        else if (args[i].equals("-event"))
-          e = true;
-        else if (args[i].equals("-gui"))
-          gui = true;
-        else
-          usage();
-      }
+    for(int i=0; i < args.length; i++) {
+      if(args[i].equals("-s"))                   // Siena host
+        sh = args[++i];
+      else if(args[i].equals("-p"))              // Siena port
+        sp = args[++i];
+      else if(args[i].equals("-f"))              // State description file
+        sf = args[++i];
+      else if (args[i].equals("-o"))             // State description output
+        of = args[++i];
+      else if (args[i].equals("-d"))             // Verbose console debugging
+        debugging = true;
+      else if (args[i].equals("-df"))            // Debugging specified by file
+        debugFile = args[++i];
+      else if (args[i].equals("-event"))         // Event-driven processing
+        e = true;
+      else if (args[i].equals("-gui"))           // GUI (XXX - what?)
+        gui = true;
+      else
+        usage();
     }
     
-    // Make sure a Siena host has been specified
-    if (sh == null) {
-      System.err.println("FATAL: " + 
-      "Must specify a Siena host for standalone operation");
-      usage();
-    }
-
-    EventDistiller ed = new EventDistiller(sh, sf, e, of, debugging, 
+    EventDistiller ed = new EventDistiller(sh, sp, sf, e, of, debugging,
     debugFile);
   }
   
   /** Prints usage. */
   public static void usage() {
-    System.err.println("\nUsage: java EventDistiller <-s sienaHost> " + 
-    "[-f ruleSpecFile]\n\t[-d|-df debugScript] [-o outputFileName] " + 
+    System.err.println("\nUsage: java EventDistiller <-s sienaHost> " +
+    "[-f ruleSpecFile]\n\t[-d|-df debugScript] [-o outputFileName] " +
     "[-event] [-?]");
-    System.err.println("\t-s:\tSpecify Siena host (required)");
+    System.err.println("\t-s:\tSpecify Siena host");
+    System.err.println("\t-p:\tSpecify Siena packet receiver port");
     System.err.println("\t-d:\tEnable basic debugging");
-    System.err.println("\t-df:\tEnable complex debugging - must specify \n" + 
+    System.err.println("\t-df:\tEnable complex debugging - must specify \n" +
     "\t\tlog4j-compliant properties file");
     System.err.println("\t-f:\tRule specification file, see docs");
-    System.err.println("\t-o:\tSpecify output rules file to be written on " + 
+    System.err.println("\t-o:\tSpecify output rules file to be written on " +
     "shutdown");
-    System.err.println("\t-event:\tSpecify reordering timeout mechanism, see " + 
+    System.err.println("\t-event:\tSpecify reordering timeout mechanism, see " +
     "docs");
     System.err.println("\t-?:\tSee this description");
     System.exit(-1);
   }
-
-  /** 
+  
+  /**
    * Simple CTOR for embedded operation.  Assumes an EventDistiller with no
    * rules.  To add rules, use the dynamic rulebase notification updates.
    *
@@ -176,7 +175,7 @@ public class EventDistiller implements Runnable, Notifiable {
     this.owner = owner;
     this.stateSpecFile = spec;
     this.eventDriven = eventDriven;
-
+    
     initDebug(debugging, debugFile);
     
     init();                            // finish preparing before returning
@@ -188,29 +187,38 @@ public class EventDistiller implements Runnable, Notifiable {
    * Receives notificaions through Siena.
    *
    * @param sienaHost the siena host through which we receive events
-   * @param specFile name of rule spedification file, could be null
+   * @param sienaPort The port for the siena packet receiver, can be null
+   * @param specFile name of rule spedification file, can be null
    * @param outputFile what the outputFile for the rulebase is
    * @param debugging Whether we want debugging-detail information
    * @param debugFile Alternative to default debugging: see log4j properties
    * format to enable this
    */
-  public EventDistiller(String sienaHost, String specFile, boolean eventDriven,
-  String outputFile, boolean debugging, String debugFile) {
+  public EventDistiller(String sienaHost, String sienaPort, String specFile,
+  boolean eventDriven, String outputFile, boolean debugging, String debugFile) {
     this.stateSpecFile = specFile;
     this.eventDriven = eventDriven;
-
+    
     initDebug(debugging, debugFile);
     
     // Subscribe to the "master" Siena
     publicSiena = new HierarchicalDispatcher();
+
+    if(sienaHost == null && sienaPort == null) {
+      debug.warn("Siena host and receive port not specified, operating in standalone mode");
+    }
+    
+    // Set receiver and master properties
     try {
       ((HierarchicalDispatcher)publicSiena).
-      setReceiver(new TCPPacketReceiver(0));
-      ((HierarchicalDispatcher)publicSiena).setMaster(sienaHost);
-    } catch(Exception e) { 
+      setReceiver(new TCPPacketReceiver(
+      (sienaPort == null) ? 0 : Integer.parseInt(sienaPort)));
+      if(sienaHost != null)
+        ((HierarchicalDispatcher)publicSiena).setMaster(sienaHost);
+    } catch(Exception e) {
       // Failed, print error and quit
-      debug.fatal("Can't subscribe to Siena server", e);
-      System.exit(-1);                           // XXX - should NOT do this
+      debug.fatal("Can't set Siena server parameters", e);
+      System.exit(-1);                           // XXX - should NOT do this?
     }
     
     // Subscribe to event distiller input
@@ -218,18 +226,18 @@ public class EventDistiller implements Runnable, Notifiable {
     generalFilter.addConstraint(EDConst.INPUT_ATTR,EDConst.INPUT_VAL);
     try {
       publicSiena.subscribe(generalFilter, this);
-    } catch(SienaException e) { 
+    } catch(SienaException e) {
       debug.warn("Warning: failed in incoming event subscription; " +
       "events may not be received", e);
     }
-
+    
     if(outputFile != null) {
       setOutputFile(new File(outputFile));
     }
     init();
     run(); /* Don't need to create new thread */
   }
-
+  
   /** Initialize debugging */
   private static void initDebug(boolean debug, String debugFile) {
     // Set up logging
@@ -239,11 +247,9 @@ public class EventDistiller implements Runnable, Notifiable {
       PropertyConfigurator.configure(debugFile); // Log4j format file
     } else {                                     // No debugging at all
       BasicConfigurator.configure();
-      // Deprecated
-      // BasicConfigurator.disableDebug();
-      Category.getDefaultHierarchy().disableDebug();
+      Logger.getRootLogger().setLevel(Level.INFO);
     }
-  }      
+  }
   
   /** Initializes ED, creating internal bus and manager. */
   private void init() {
@@ -336,10 +342,10 @@ public class EventDistiller implements Runnable, Notifiable {
     /* Shut down the dispatchers */
     if (owner == null) try {
       ((HierarchicalDispatcher)publicSiena).shutdown();
-    } catch(Exception e) { 
+    } catch(Exception e) {
       debug.warn("Couldn't process Siena shutdown request", e);
     }
-
+    
     // Shut down EDBus
     bus.shutdown();
     
@@ -358,7 +364,7 @@ public class EventDistiller implements Runnable, Notifiable {
    */
   public void notify(Notification n) {
     debug.debug("Received notification " + n);
-
+    
     // Publish internally, we no longer care about discriminating, let
     // Siena do all the work.  The dispatcher will then process the event
     queue(n);
@@ -394,8 +400,8 @@ public class EventDistiller implements Runnable, Notifiable {
     debug.debug("Sending out " + n);
     
     try {
-      // If this is an internal notification, we just send it through to 
-      // ourselves. 
+      // If this is an internal notification, we just send it through to
+      // ourselves.
       if (n.getAttribute("internal") != null &&
       n.getAttribute("internal").booleanValue())
         bus.publish(KXNotification.EDInternalNotification(n, getTime()));
@@ -413,15 +419,15 @@ public class EventDistiller implements Runnable, Notifiable {
   // standard methods
   
   /**
-   * Set the output file of the Event Distiller's rulebase.  
-   * Useful if you're running an embedded EventDistiller and want it to save 
+   * Set the output file of the Event Distiller's rulebase.
+   * Useful if you're running an embedded EventDistiller and want it to save
    * the changes you feed it.
    *
    * @param outputFile the file to write the rulebase on shutdown
    */
   public void setOutputFile(File outputFile) { this.outputFile = outputFile; }
   
-  /** 
+  /**
    * Get the "current system" time.  This isn't as simple as it seems, since
    * if we are event-driven we consider our time to be the time of the last-
    * received event.
@@ -429,14 +435,14 @@ public class EventDistiller implements Runnable, Notifiable {
    * For the other case, we return current time minus the timeSkew.  The skew
    * "delays" failures, etc.
    *
-   * @return Time in standard UNIX time format 
+   * @return Time in standard UNIX time format
    */
   /*static*/ long getTime() {
     if (eventDriven) return lastEventTime;
     return System.currentTimeMillis() - timeSkew;
   }
   
-  /** 
+  /**
    * Return the internal EDBus.
    *
    * XXX - why is this needed?

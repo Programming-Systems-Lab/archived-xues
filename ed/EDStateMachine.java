@@ -5,24 +5,26 @@ import psl.kx.KXNotification;
 import siena.*;
 import java.util.*;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 
 /**
  * Event Distiller State Machine.
- *
- * Copyright (c) 2001: The Trustees of Columbia University and the
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
  * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO:
  * - Not interested in notification of state zero (CTOR)
  * - Multiple actions in case of notification
+ * -->
  *
- * @author Janak J Parekh (jjp32@cs.columbia.edu)
+ * @author Janak J Parekh
  * @version $Revision$
  */
 public class EDStateMachine implements Comparable {
   /** Logger.  Set when we have our own ID */
-  private Category debug = null;
+  private Logger debug = null;
   
   /** the manager */
   private EDStateManager manager = null;
@@ -76,7 +78,7 @@ public class EDStateMachine implements Comparable {
     this.myID = specification.getName() + ":" + specification.getNewID();
 
     // Instantiate debugger.  XXX - can we append myID like this?
-    debug = Category.getInstance(EDStateMachine.class.getName() + ":" + myID);
+    debug = Logger.getLogger(EDStateMachine.class.getName() + ":" + myID);
 
     debug.debug("StateMachine instantiated");
     

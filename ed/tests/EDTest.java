@@ -4,75 +4,16 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import siena.*;
+import psl.xues.ed.*;
 
 /**
  * Generates ED-like XML notification.
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
+ *
  * @author Janak J Parekh
- * @version 0.1
- *
- * $Log$
- * Revision 1.1  2002-06-18 20:05:58  jjp32
- * Sorry, some more cleanup
- *
- * Revision 1.3  2002/02/12 00:18:02  jjp32
- *
- * Bug fixes.
- *
- * IMPORTANT: it's no longer called "timestamp", but rather "Timestamp" as per the docs
- *
- * Revision 1.2  2002/01/23 02:25:10  jjp32
- * Fixed package designators associated with "move"
- *
- * Revision 1.1  2002/01/23 02:17:15  jjp32
- *
- * Another massive update - repackaging xues so I can release
- * EventDistiller separately (jar time coming up tomorrow :-))
- *
- * Revision 1.4  2002/01/23 02:05:28  jjp32
- * Massive update:
- * - Converted error handling completely to log4j
- * - Fixed several small bugs
- * - Removed hardcoding in preparation for release
- * - Began improving comments
- *
- * Revision 1.3  2001/06/18 17:44:51  jjp32
- *
- * Copied changes from xues-eb659 and xues-jw402 into main trunk.  Main
- * trunk is now development again, and the aforementioned branches are
- * hereby closed.
- *
- * Revision 1.1.4.2  2001/05/21 00:47:25  jjp32
- * Synched up changes with main Xues trunk
- *
- * Revision 1.1.4.1  2001/05/02 00:04:27  eb659
- *
- * Tested and fixed a couple of things.
- * New architecture works, and can be tested using EDTest.
- * Reaper thread needs revision...
- * Can we get rid of internal 'loopback' notifications?
- *
- * Revision 1.1  2001/03/08 01:29:15  jjp32
- * Oops, forgot to commit these
- *
- * Revision 1.3  2001/01/30 06:26:18  jjp32
- *
- * Lots and lots of updates.  EventDistiller is now of demo-quality.
- *
- * Revision 1.2  2001/01/30 02:39:36  jjp32
- *
- * Added loopback functionality so hopefully internal siena gets the msgs
- * back
- *
- * Revision 1.1  2001/01/30 00:24:50  jjp32
- *
- * Bug fixes, added test class
- *
- * Revision 2.2  2001/01/29 04:04:48  png3
- * Added package psl.metaparser statements.  Can you say "Oops?"
- *
- * Revision 2.1  2001/01/28 17:52:17  png3
- * New version of Metaparser: fully multithreaded.  PrintWriter logs.
- *
+ * @version $Revision$
  */
 public class EDTest implements Notifiable {
   

@@ -3,10 +3,15 @@ package psl.xues.ed.tests;
 import java.io.*;
 import java.util.*;
 import siena.*;
+import psl.xues.ed.*;
 
 /**
  * Tester for the embedded constructor.
- * @author enrico buonanno
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
+ *
+ * @author Enrico Buonanno
  * @version $Revision$
  */
 public class EDTestConstruct implements Notifiable {

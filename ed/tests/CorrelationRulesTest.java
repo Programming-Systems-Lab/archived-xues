@@ -7,12 +7,16 @@ package psl.xues.ed.tests;
 
 import psl.events.siena.utils.*;
 import siena.*;
+import psl.xues.ed.*;
 
 /**
  * The CorrelationRules tester for Peppo.
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
  *
  * @author Janak J Parekh <janak@cs.columbia.edu>
- * @version 1.0
+ * @version $Revision$
  */
 public class CorrelationRulesTest {
   

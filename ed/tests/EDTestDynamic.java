@@ -5,14 +5,17 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import siena.*;
+import psl.xues.ed.*;
 
 /**
  * We use this to test various functionalities of the ED,
  * in particular those that need to work dynamically.
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
  *
  * @author enrico buonanno
- * @version 0.1
- *
+ * @version $Revision$
  */
 public class EDTestDynamic {
 

@@ -3,31 +3,33 @@ package psl.xues.ed;
 import java.util.*;
 import siena.*;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 
 /**
  * Individual Event Distiller state machine state.  A state is matched
  * against a String attribute-String value pair.  A upper bound
  * timestamp may be applied.
- *
- * TODO:
- * -the bear method:
- * set parent, subscribe, wait...
- * -the kill/reap method
- * alive to false
- * -the notify method
- * if succeed, send notifs, and bear children
- * etc...
- *
- * Copyright (c) 2001: The Trustees of Columbia University and the
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
  * City of New York.  All Rights Reserved.
  *
- * @author Janak J Parekh (jjp32@cs.columbia.edu)
+ * <!--
+ * TODO:
+ * - the bear method:
+ *   set parent, subscribe, wait...
+ * - the kill/reap method
+ *   alive to false
+ * - the notify method
+ *   if succeed, send notifs, and bear children
+ *   etc...
+ * -->
+ *
+ * @author Janak J Parekh, parts by Enrico Buonnano
  * @version $Revision$
  */
 public class EDState implements EDNotifiable {
   /** Logger.  Set when we have our own ID */
-  private Category debug = null;
+  private Logger debug = null;
   
   /** The name of this state. */
   private String name;
@@ -138,7 +140,7 @@ public class EDState implements EDNotifiable {
     fail_actions = listToArray(failActionsList);
     
     // Build a generic debugger
-    debug = Category.getInstance(EDState.class.getName());
+    debug = Logger.getLogger(EDState.class.getName());
   }
   
   /**
@@ -164,7 +166,7 @@ public class EDState implements EDNotifiable {
     this.fail_actions = e.fail_actions;
     
     // Build the debugger
-    debug = Category.getInstance(EDState.class.getName() + ":" + myID);
+    debug = Logger.getLogger(EDState.class.getName() + ":" + myID);
   }
   
   /**

@@ -3,11 +3,15 @@ package psl.xues.ed;
 import java.util.*;
 import siena.*;
 
-import org.apache.log4j.Category;
-
 /**
- *  Helper class to keep track of an individual subscriber of
- *  <code>EDBus</code>.
+ * Helper class to keep track of an individual subscriber of
+ * <code>EDBus</code>.
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
+ *
+ * @author James Wu
+ * @version $Revision$
  */
 class EDSubscriber implements Comparable{
   private boolean DEBUG = false;

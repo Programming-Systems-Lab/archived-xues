@@ -7,14 +7,17 @@ import siena.*;
  * The Queue used in EDBus.
  * Buffers all the events while optionally reordering
  * <code>Notification</code>s based on the timestamp attribute.
- *
- *
+ * <p>
  * If you don't need reordering, do this:<BR>
  * <pre>
  * new EDQueue(EDQueue.REORDERING_DISABLED);
  * </pre>
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
  *
  * @author James Wu <jw402@columbia.edu>
+ * @version $Revision$
  */
 
 public class EDQueue {

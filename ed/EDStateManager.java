@@ -5,43 +5,46 @@ import java.io.*;
 import java.util.*;
 import siena.*;
 
-import org.apache.xerces.parsers.SAXParser;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 
 /**
  * Event Distiller State Machine Manager
- *
+ * <p>
  * This class exists to manage many instances of state machines.  It
  * keeps track of the templates, garbage collects, finalizes them.
- * NOTE: This class no longer creates state machines.  See
- * "EDStateMachineSpecification", below, which acts like a creation
+ * <b>NOTE:</b> This class no longer creates state machines.  See
+ * "EDStateMachineSpecification", which acts like a creation
  * template mechanism.
- *
- * Copyright (c) 2000: The Trustees of Columbia University in the
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
  * City of New York.  All Rights Reserved.
  *
+ * <!--
  * TODO:
  * - More efficient way of garbage collecting state machines
  * - Event/reap collision
+ * -->
  *
- * @author Janak J Parekh (jjp32@cs.columbia.edu)
+ * @author Janak J Parekh
  * @version $Revision$
  */
 public class EDStateManager implements Rulebase, Runnable, EDNotifiable,
 Comparable {
   /** Debugging context */
-  static Category debug =
-  Category.getInstance(EDStateManager.class.getName());
+  static Logger debug = Logger.getLogger(EDStateManager.class.getName());
   
-  /** Separate category for reaper */
-  static Category reapDebug =
-  Category.getInstance(EDStateManager.class.getName() + ".reaper");
+  /** Separate context for reaper */
+  static Logger reapDebug =
+  Logger.getLogger(EDStateManager.class.getName() + ".reaper");
   
   /** The ed that owns us. */
   private EventDistiller ed = null;
@@ -70,12 +73,11 @@ Comparable {
     // Do we have a spec filename?
     if(specFileName != null) {
       // Initialize SAX parser and run it on the file
-      sxp = new SAXParser();
-      sxp.setContentHandler(new EDHandler(this));
       try {
-        sxp.parse(new InputSource(new FileInputStream(specFileName)));
-      }
-      catch(Exception e) {
+        sxp = SAXParserFactory.newInstance().newSAXParser();
+        sxp.parse(new InputSource(new FileInputStream(specFileName)),
+        new EDHandler(this));
+      } catch(Exception e) {
         debug.fatal("EDStateManager init failed", e);
         System.exit(-1);                         // XXX - should we do this?
       }
@@ -190,21 +192,18 @@ Comparable {
   
   /**
    * Dynamically add a rule.
+   *
    * @param s the XML representation of the new rule
-   * @author enrico buonanno
    */
   public void dynamicAddRule(String s){
     debug.info("Adding rule " + s.substring(0, 30));
     if(s == null) return;
     
-    // Initialize SAX parser if we don-t have one
-    if (sxp == null) {
-      sxp = new SAXParser();
-      sxp.setContentHandler(new EDHandler(this));
-    }
     // parse the string - this effectively adds the rule
     try {
-      sxp.parse(new InputSource(new StringReader(s)));
+      // Initialize a SAX parser if we don't have one
+      if (sxp == null) sxp = SAXParserFactory.newInstance().newSAXParser();
+      sxp.parse(new InputSource(new StringReader(s)), new EDHandler(this));
     } catch(Exception e) {
       debug.error("Could not parse rule specification", e);
       return;

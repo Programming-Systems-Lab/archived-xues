@@ -6,7 +6,7 @@ import siena.*;
 
 /** 
  * Represents a SMSpec in the tree of the RuleDesigner.
- *
+ * <p>
  * This file contains all the objects that are needed in the XML generator / 
  * rule designer for the tree representation of a rule. Each object can 
  * represent a specification, a state, an action, or a folder of actions. Each 
@@ -14,9 +14,12 @@ import siena.*;
  * a vector representation of the variables that need to be represented in the 
  * tree, as well as methods that are called by the GUI to modify the 
  * represented object.
+ * <p>
+ * Copyright (c) 2000-2002: The Trustees of Columbia University and the
+ * City of New York.  All Rights Reserved.
  *
- * @author Enrico Buonnano <eb659@columbia.edu>
- * @version 0.5
+ * @author Enrico Buonnano
+ * @version $Revision$
  */
 class SpecNode implements TreeNode {
 
